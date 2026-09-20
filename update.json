@@ -1,0 +1,12 @@
+{
+  "app": {
+    "version": "2026.09.20.1",
+    "file": "Dachplaner-PV.html",
+    "notes": "Erste Version mit Update-Funktion."
+  },
+  "library": {
+    "version": "2026.09.20",
+    "file": "library.json",
+    "notes": "Bibliothek und Artikelpreise, Stand 20.09.2026."
+  }
+}
