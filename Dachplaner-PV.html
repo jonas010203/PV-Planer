@@ -2151,7 +2151,7 @@ $("#homeBtn").onclick=()=>goHome();
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.20.1", UPDATE_URL="", LIB_BUILD="2026.09.20";
+const APP_VERSION="2026.09.20.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.20";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 const updUrl=()=>String(SET.updateUrl||UPDATE_URL||"").trim().replace(/\/+$/,"");
