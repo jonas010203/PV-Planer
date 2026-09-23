@@ -550,9 +550,10 @@ button.sm{padding:2px 8px;font-size:12px}
       <button role="tab" data-tab="module" type="button">3 Module</button>
       <button role="tab" data-tab="unterbau" type="button">4 Unterbau</button>
       <button role="tab" data-tab="strings" type="button">5 Strings</button>
-      <button role="tab" data-tab="speicher" type="button">6 Speicher</button>
-      <button role="tab" data-tab="angebot" type="button">7 Angebot</button>
-      <button role="tab" data-tab="export" type="button">8 Export</button>
+      <button role="tab" data-tab="kabel" type="button">6 Kabel</button>
+      <button role="tab" data-tab="speicher" type="button">7 Speicher</button>
+      <button role="tab" data-tab="angebot" type="button">8 Angebot</button>
+      <button role="tab" data-tab="export" type="button">9 Export</button>
       <button role="tab" data-tab="lib" type="button">Bibliothek</button>
     </nav>
   </header>
@@ -652,8 +653,25 @@ function buildBatteries(){
   [[10,"100",118.8,160.6],[15,"150",178.2,240.9],[20,"200",237.6,321.2],[25,"250",297,401.5],[30,"300",356.4,481.8],[35,"350",415.8,562.1],[40,"400",475.2,642.4]].forEach(([k,n,a,b])=>L.push(bat("bat-sun-sbh"+n,"Sungrow","SBH"+n,k,a,b,50)));
   return L;
 }
+/* Max. PV-Generatorleistung (kWp) aus den Datenblättern, siehe Planungssitzung. Wo nicht bekannt: kein Eintrag (Feld bleibt leer). */
+const MAXDC={
+  "inv-sma-sb15":3.0,"inv-sma-sb25":5.0,"inv-sma-sb3":5.5,"inv-sma-sb3.6":5.5,"inv-sma-sb4":7.5,"inv-sma-sb5":7.5,"inv-sma-sb6":9.0,
+  "inv-sma-sbse3.6":7.2,"inv-sma-sbse4":8.0,"inv-sma-sbse5":10.0,"inv-sma-sbse6":12.0,
+  "inv-sma-stpx12":18.0,"inv-sma-stpx15":22.5,"inv-sma-stpx20":30.0,"inv-sma-stpx25":37.5,
+  "inv-fro-primo50":7.5,"inv-fro-primo60":9.0,"inv-fro-primo82":12.3,
+  "inv-fro-gen24-3":4.5,"inv-fro-gen24-4":6.0,"inv-fro-gen24-5":7.5,"inv-fro-gen24-6":9.0,"inv-fro-gen24-8":12.0,"inv-fro-gen24-10":15.0,
+  "inv-sun-sg15rt":22.5,"inv-sun-sg17rt":25.5,"inv-sun-sg20rt":30.0,
+  "inv-sun-sh5":7.5,"inv-sun-sh6":9.0,"inv-sun-sh8":12.0,"inv-sun-sh10":15.0,
+  "inv-sma-stp3av8":15.0,"inv-sma-stp3av10":15.0,
+  "inv-sma-stptl15":27.0,"inv-sma-stptl20":36.0,"inv-sma-stptl25":45.0,
+  "inv-fro-symoadv10":15.0,"inv-fro-symoadv12.5":18.8,"inv-fro-symoadv15":22.5,
+  "inv-fro-verto15":22.5,"inv-fro-verto17.5":26.25,"inv-fro-verto20":30.0,"inv-fro-verto25":37.5,"inv-fro-verto30":45.0,
+  "inv-sun-sh15t":30.0,"inv-sun-sh20t":40.0,"inv-sun-sh25t":50.0
+};
+/* Bis zu wie viel Prozent der Max.-PV-Generatorleistung als unbedenklich gilt (Überdimensionierung) */
+const MAXDC_OVER=1.15;
 const DEF_MODULES = buildModules();
-const DEF_INVERTERS = buildInverters();
+const DEF_INVERTERS = buildInverters().map(x=>MAXDC[x.id]!=null?Object.assign(x,{maxDc:MAXDC[x.id]}):x);
 const DEF_BATTERIES = buildBatteries();
 const LIB_VER = 3;
 /* alte Näherungswerte aus Version 1 (werden ersetzt, eigene Einträge bleiben) */
@@ -709,13 +727,17 @@ let projList = [];
 const UI = {tab:"karte", tool:"select", selFace:null, selObst:null, selString:null, selWr:null, draft:[], scalePts:[], libKind:"modules", libSel:null, view:{x:0,y:0,k:1}};
 const uid = (p)=>p+"-"+Math.random().toString(36).slice(2,8);
 const rad = d=>d*Math.PI/180;
+const clampNum=(v,min,max)=>Math.min(max,Math.max(min,Number.isFinite(v)?v:min));
+/* Grenzwerte gegen unsinnige oder beschädigte Projektdaten (z. B. aus einer importierten Datei) */
+const FIELD_BOUNDS={pitch:[0,80],gap:[0,0.3],edgeE:[0,3],edgeR:[0,3],edgeS:[0,3],edge:[0,3],offU:[-10,10],offV:[-10,10]};
+function clampFace(f){ for(const k in FIELD_BOUNDS){ if(f[k]!=null) f[k]=clampNum(f[k],...FIELD_BOUNDS[k]); } return f; }
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt = (n,d=2)=>Number.isFinite(n)?n.toFixed(d).replace(".",","):"–";
 
 function newProject(name){
   return {id:uid("p"),name:name||"Neues Projekt",kunde:"",adresse:"",bearbeiter:"",datum:new Date().toISOString().slice(0,10),
-    scale:null,imgW:1200,imgH:800,modId:DEFAULT_MOD_ID,tmin:-10,tmax:70,
+    scale:null,imgW:1200,imgH:800,modId:DEFAULT_MOD_ID,tmin:-10,tmax:70,lat:51,shade:{on:false,date:"ws"},
     faces:[],obst:[],wrs:[],strings:[],bats:[]};
 }
 const modOf = ()=>LIB.modules.find(m=>m.id===P.modId)||null;
@@ -723,7 +745,8 @@ const invOf = id=>LIB.inverters.find(i=>i.id===id)||null;
 
 /* ───────── Geometrie ───────── */
 function centroid(pts){ let x=0,y=0; pts.forEach(p=>{x+=p[0];y+=p[1]}); return [x/pts.length,y/pts.length]; }
-function frame(f){
+function frame(f0){
+  const f=clampFace(f0);
   const [p0,p1]=f.pts; let ex=p1[0]-p0[0], ey=p1[1]-p0[1]; const L=Math.hypot(ex,ey)||1; ex/=L; ey/=L;
   let vx=-ey, vy=ex; const c=centroid(f.pts);
   if((c[0]-p0[0])*vx+(c[1]-p0[1])*vy<0){vx=-vx;vy=-vy;}
@@ -748,11 +771,13 @@ function azimuthOf(f){ const fr=frame(f); const dx=-fr.vx, dy=-fr.vy; let a=Math
 function compass(a){ return ["N","NO","O","SO","S","SW","W","NW"][Math.round(a/45)%8]; }
 
 /* Kontext einer Dachfläche: Geometrie in Metern (u = entlang Traufe, v = entlang Sparren) */
-function faceCtx(f){
+function faceCtx(f0){
+  const f=clampFace(f0);
   const fr=frame(f), M=modOf(), poly=f.pts.map(p=>toUV(fr,p));
   const c={fr,poly,M,f,mu:0,mv:0,fitAt:()=>false};
   if(!M||f.pts.length<3) return c;
   c.mu=(f.orient==="l"?M.h:M.w)/1000; c.mv=(f.orient==="l"?M.w:M.h)/1000;
+  if(!(c.mu>0.05)||!(c.mv>0.05)) return c; /* Modulmaße unplausibel (z. B. defekter Bibliothekseintrag) */
   let umin=1e9,umax=-1e9,vmin=1e9,vmax=-1e9;
   poly.forEach(q=>{umin=Math.min(umin,q[0]);umax=Math.max(umax,q[0]);vmin=Math.min(vmin,q[1]);vmax=Math.max(vmax,q[1]);});
   Object.assign(c,{umin,umax,vmin,vmax});
@@ -783,7 +808,7 @@ function faceCells(f){
   if(!c.M||f.pts.length<3) return out;
   const {mu,mv,fr}=c, g=f.gap, tog=new Set(f.tog||[]);
   const v0=c.vmin+c.eE+(f.offV||0);
-  const nJ=Math.max(0,Math.floor((c.vmax-v0)/(mv+g))+1);
+  const nJ=Math.min(400,Math.max(0,Math.floor((c.vmax-v0)/(mv+g))+1));
   const add=(i,j,u,v,fit)=>{
     const cs=[[u,v],[u+mu,v],[u+mu,v+mv],[u,v+mv]];
     out.cells.push({key:f.id+":"+i+","+j,i,j,u,v,fit,active:fit!==tog.has(i+","+j),xy:cs.map(q=>toXY(fr,q[0],q[1])),c:toXY(fr,u+mu/2,v+mv/2)});
@@ -792,7 +817,7 @@ function faceCells(f){
     for(let j=0;j<nJ;j++){ const v=v0+j*(mv+g); let i=0;
       for(let u=c.umin;u<=c.umax;){ if(c.fitAt(u,v)){ add(i++,j,u,v,true); u+=mu+g; } else u+=0.01; } }
   } else {
-    const u0=c.umin+c.eS+(f.offU||0), nI=Math.max(0,Math.floor((c.umax-u0)/(mu+g))+1);
+    const u0=c.umin+c.eS+(f.offU||0), nI=Math.min(400,Math.max(0,Math.floor((c.umax-u0)/(mu+g))+1));
     for(let j=0;j<nJ;j++)for(let i=0;i<nI;i++){ const u=u0+i*(mu+g), v=v0+j*(mv+g); add(i,j,u,v,c.fitAt(u,v)); }
   }
   return out;
@@ -847,7 +872,7 @@ function checkString(s){
   r.isc=M.isc; r.wp=n*M.wp;
   if(!inv){ r.items.push(["Kein Wechselrichter zugewiesen","warn"]); r.level="warn"; return r; }
   const mp=inv.mppts[s.mppt]||inv.mppts[0];
-  const par=P.strings.filter(x=>x.wr===s.wr&&x.mppt===s.mppt);
+  const par=P.strings.filter(x=>x.wr===s.wr&&x.mppt===s.mppt&&x.mods.length>0); /* leere Strings zählen nicht als parallele Leitung */
   const add=(txt,lv)=>{ r.items.push([txt,lv]); if(lv==="bad") r.level="bad"; else if(lv==="warn"&&r.level!=="bad") r.level="warn"; };
   add(`U_OC kalt (${P.tmin} °C) ${fmt(r.vocCold,0)} V ≤ ${inv.vmax} V`, r.vocCold<=inv.vmax?"ok":"bad");
   add(`U_MPP kalt ${fmt(r.vmppCold,0)} V ≤ ${inv.mppMax} V`, r.vmppCold<=inv.mppMax?"ok":"warn");
@@ -884,8 +909,15 @@ async function saveLib(kind){
   try{ await S.set("lib/"+kind,{ver:LIB_VER,items:LIB[kind]}); }catch(e){ toast("Bibliothek konnte nicht gespeichert werden"); }
 }
 async function loadProject(id){
-  const d=await S.get("projects/"+id); if(!d) return;
-  P=d; P.bats=P.bats||[]; if(!modOf()) P.modId=DEFAULT_MOD_ID; P.faces.forEach(f=>{f.tog=f.tog||[];}); P.strings.forEach(s=>{s.mods=s.mods||[];});
+  const d=await S.get("projects/"+id); if(!d){ toast("Projekt konnte nicht geladen werden"); return; }
+  P=d;
+  for(const k of ["faces","obst","wrs","strings","bats"]) if(!Array.isArray(P[k])) P[k]=[];
+  if(!modOf()) P.modId=DEFAULT_MOD_ID;
+  P.faces.forEach(f=>{ f.tog=Array.isArray(f.tog)?f.tog:[]; f.pts=Array.isArray(f.pts)?f.pts:[]; f.gap=Number.isFinite(f.gap)?f.gap:0.02; f.pitch=Number.isFinite(f.pitch)?f.pitch:35; });
+  P.obst.forEach(o=>{ o.margin=Number.isFinite(o.margin)?o.margin:0.3; o.height=Number.isFinite(o.height)?o.height:0; });
+  if(!Number.isFinite(P.lat)) P.lat=51; if(!P.shade||typeof P.shade!=="object") P.shade={on:false,date:"ws"};
+  P.strings.forEach(s=>{ s.mods=Array.isArray(s.mods)?s.mods:[]; });
+  if(!Number.isFinite(P.tmin)) P.tmin=-10; if(!Number.isFinite(P.tmax)) P.tmax=70;
   const im=await S.get("projectimg/"+id);
   await setImage(im?.data||null,false);
   UI.selFace=P.faces[0]?.id||null; UI.selObst=null; UI.selString=P.strings[0]?.id||null; UI.selWr=P.wrs[0]?.id||null; UI.draft=[]; UI.scalePts=[];
@@ -981,7 +1013,7 @@ function paint(){
   const st=getComputedStyle(document.documentElement);
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.fillStyle=st.getPropertyValue("--stage").trim()||"#c9d1d4"; ctx.fillRect(0,0,CW,CH);
-  drawScene(ctx,UI.view,{ui:true,ghost:UI.tab==="module",strings:UI.tab==="strings",numbers:UI.tab==="module"||UI.tab==="strings",lw:1,fontK:1});
+  drawScene(ctx,UI.view,{ui:true,ghost:UI.tab==="module",strings:UI.tab==="strings",numbers:UI.tab==="module"||UI.tab==="strings",cable:UI.tab==="kabel",lw:1,fontK:1});
   updateHud();
 }
 function haloText(g,txt,x,y,size,color,align){
@@ -1036,6 +1068,8 @@ function drawScene(g,V,o){
     });
   });
   if(typeof drawSub==="function"&&(o.sub||(o.ui&&UI.tab==="unterbau"))) drawSub(g,V,o);
+  if(typeof drawShade==="function"&&P.shade&&P.shade.on&&o.ui) drawShade(g,V,o);
+  if(typeof drawCables==="function"&&o.cable) drawCables(g,V,o);
   // Strings: Verlauf + Nummern
   if(o.strings){
     P.strings.forEach(s=>{
@@ -1175,6 +1209,10 @@ function cellAt(w){
   return null;
 }
 function onClick(w,s,e){
+  if(UI.tab==="kabel"&&UI.tool==="wrpos"){
+    const wr=P.wrs.find(x=>x.id===UI.selWr)||P.wrs[0]; if(!wr){ toast("Kein Wechselrichter im Projekt"); return; }
+    wr.pos=[Math.round(w[0]*10)/10,Math.round(w[1]*10)/10]; UI.tool="select"; changed(true); renderSide(); toast("Standort für "+wr.name+" gesetzt"); return;
+  }
   if(UI.tab==="karte"){
     if(UI.scalePts.length>=2) UI.scalePts=[]; UI.scalePts.push(w); draw(); renderSide(); if(UI.scalePts.length===2){ const li=$("#scaleLen"); if(li) li.focus(); } return;
   }
@@ -1185,7 +1223,7 @@ function onClick(w,s,e){
     }
     if(UI.tool==="obst"){
       UI.draft.push(w); if(UI.draft.length===2){
-        const o={id:uid("o"),name:"Hindernis "+(P.obst.length+1),pts:UI.draft.slice(),margin:0.3};
+        const o={id:uid("o"),name:"Hindernis "+(P.obst.length+1),pts:UI.draft.slice(),margin:0.3,height:0.6};
         P.obst.push(o); UI.selObst=o.id; UI.selFace=null; UI.draft=[]; UI.tool="select"; changed(true); renderSide();
       } else draw();
       return;
@@ -1234,8 +1272,8 @@ const selObst=()=>P.obst.find(o=>o.id===UI.selObst)||null;
 const selStr=()=>P.strings.find(s=>s.id===UI.selString)||null;
 function num(id,label,val,attr,step,extra=""){ return `<label class="f">${label}<input id="${id}" type="number" step="${step||"any"}" value="${val}" ${attr} ${extra}></label>`; }
 function txt(id,label,val,attr){ return `<label class="f">${label}<input id="${id}" type="text" value="${esc(val)}" ${attr}></label>`; }
-const STEPS=["karte","dach","module","unterbau","strings","speicher","angebot","export"];
-const STEP_LABEL={karte:"Karte",dach:"Dach",module:"Module",unterbau:"Unterbau",strings:"Strings",speicher:"Speicher",angebot:"Angebot",export:"Export"};
+const STEPS=["karte","dach","module","unterbau","strings","kabel","speicher","angebot","export"];
+const STEP_LABEL={karte:"Karte",dach:"Dach",module:"Module",unterbau:"Unterbau",strings:"Strings",kabel:"Kabel",speicher:"Speicher",angebot:"Angebot",export:"Export"};
 function navMsg(){
   if(UI.tab==="karte") return P.scale?["Maßstab gesetzt","ok"]:["Maßstab fehlt noch","warn"];
   if(UI.tab==="dach") return P.faces.length?[P.faces.length+" Dachfläche"+(P.faces.length>1?"n":""),"ok"]:["Noch keine Dachfläche","warn"];
@@ -1243,6 +1281,7 @@ function navMsg(){
   if(UI.tab==="unterbau"){ if(!P.sub||!P.sub.on) return ["Nicht aktiv",""]; return SUB&&SUB.warn.length?[SUB.warn.length+" Hinweis"+(SUB.warn.length>1?"e":""),"warn"]:["Schienen und Haken gelegt","ok"]; }
   if(UI.tab==="strings"){ const used=new Set(P.strings.flatMap(s=>s.mods)); const rest=MODS.filter(m=>!used.has(m.key)).length; return rest?[rest+" Module ohne String","warn"]:(MODS.length?["Alle Module zugeordnet","ok"]:["",""]); }
   if(UI.tab==="speicher") return P.bats.length?[P.bats.length+" Speicher gewählt","ok"]:["Optional: kein Speicher","" ];
+  if(UI.tab==="kabel"){ const n=P.wrs.filter(w=>w.pos).length; return n?[n+" von "+P.wrs.length+" Standorten gesetzt","ok"]:["Standorte optional, für Kabellängen nötig",""]; }
   if(UI.tab==="angebot"){ const n=P.offer?P.offer.items.length:0; return n?[n+" Positionen","ok"]:["Noch keine Positionen","warn"]; }
   return ["",""];
 }
@@ -1324,10 +1363,19 @@ function renderStats(){
   const d=$("#wrStat"); if(d) d.innerHTML=wrStatHtml();
   renderNav();
 }
+function wrCheck(w){
+  const M=modOf(), inv=invOf(w.invId); if(!inv) return null;
+  const kwp=P.strings.filter(s=>s.wr===w.id).reduce((a,s)=>a+s.mods.length*(M?M.wp:0),0)/1000;
+  if(inv.maxDc){
+    const ratio=kwp/inv.maxDc, lv=ratio<=MAXDC_OVER?"ok":"warn";
+    return {kwp,label:`Max. PV-Generatorleistung ${fmt(ratio*100,0)} % (${fmt(inv.maxDc,1)} kWp lt. Datenblatt, bis ${fmt(MAXDC_OVER*100,0)} % gelten als unbedenklich)`,lv};
+  }
+  const ratio=inv.pac?kwp/inv.pac:0, lv=ratio>1.5?"bad":ratio>1.25?"warn":"ok";
+  return {kwp,label:`DC/AC ${fmt(ratio,2)} (keine Max.-PV-Generatorleistung hinterlegt, Näherung über die AC-Leistung)`,lv};
+}
 function wrStatHtml(){
-  const M=modOf(); return P.wrs.map(w=>{ const inv=invOf(w.invId); const kwp=P.strings.filter(s=>s.wr===w.id).reduce((a,s)=>a+s.mods.length*(M?M.wp:0),0)/1000;
-    const ratio=inv&&inv.pac?kwp/inv.pac:0; const lv=ratio>1.5?"bad":ratio>1.25?"warn":"ok";
-    return `<div class="row"><span class="grow">${esc(w.name)}: ${fmt(kwp,2)} kWp DC${inv?` / ${fmt(inv.pac,1)} kW AC`:""}</span><span class="pill ${lv}">DC/AC ${fmt(ratio,2)}</span></div>`; }).join("");
+  const M=modOf(); return P.wrs.map(w=>{ const inv=invOf(w.invId); const c=wrCheck(w);
+    return `<div class="row"><span class="grow">${esc(w.name)}: ${fmt(c?c.kwp:0,2)} kWp DC${inv?` / ${fmt(inv.pac,1)} kW AC`:""}</span><span class="pill ${c?c.lv:""}">${esc(c?c.label:"?")}</span></div>`; }).join("");
 }
 
 function renderSide(){
@@ -1369,7 +1417,8 @@ function renderSide(){
       ${(f.kU||f.kV)?`<button data-act="resetDims" type="button">Maße auf Bildmaßstab zurücksetzen</button>`:""}
       <div class="row"><button data-act="rotEave" type="button">Andere Kante als Traufe</button><button data-act="delFace" class="dng" type="button">Fläche löschen</button></div>
       <div id="faceStat">${faceStatHtml()}</div></div>`;
-    if(o) h+=`<div class="sec"><h2>Hindernis bearbeiten</h2>${txt("oName","Name",o.name,'data-o="name"')}${num("oMargin","Abstand rundherum (m)",o.margin,'data-o="margin" min="0"',0.05)}<button data-act="delObst" class="dng" type="button">Hindernis löschen</button></div>`;
+    if(o) h+=`<div class="sec"><h2>Hindernis bearbeiten</h2>${txt("oName","Name",o.name,'data-o="name"')}<div class="grid2">${num("oMargin","Abstand rundherum (m)",o.margin,'data-o="margin" min="0"',0.05)}${num("oHeight","Höhe über Dachfläche (m)",o.height||0,'data-o="height" min="0" max="5"',0.1)}</div><div class="hint">Höhe wird für die Verschattungsschätzung unten gebraucht, 0 m = wirft keinen Schatten.</div><button data-act="delObst" class="dng" type="button">Hindernis löschen</button></div>`;
+    h+=shadeSideHtml();
   }
   else if(UI.tab==="module"){
     const f=selFace();
@@ -1380,8 +1429,8 @@ function renderSide(){
     <div class="sec"><h2>Dachflächen</h2><div class="list">${P.faces.map((x,i)=>{const n=GEO[i]?GEO[i].cells.filter(c=>c.active).length:0; return `<div class="${x.id===UI.selFace?"sel":""}" data-act="selFace" data-id="${x.id}"><span class="grow">${esc(x.name)}</span><span class="mono">${n} Mod.</span></div>`;}).join("")}</div></div>`;
     if(f) h+=`<div class="sec"><h2>Belegung ${esc(f.name)}</h2>
       <label class="f">Ausrichtung der Module<select id="fOrient" data-f="orient"><option value="p"${f.orient==="p"?" selected":""}>Hochkant</option><option value="l"${f.orient==="l"?" selected":""}>Quer</option></select></label>
-      <div class="grid2" style="grid-template-columns:repeat(3,1fr)">${num("fEdgeE","Traufe (m)",f.edgeE??f.edge,'data-f="edgeE" min="0"',0.05)}${num("fEdgeR","First (m)",f.edgeR??f.edge,'data-f="edgeR" min="0"',0.05)}${num("fEdgeS","Seite (m)",f.edgeS??f.edge,'data-f="edgeS" min="0"',0.05)}</div>
-      <div class="grid2">${num("fGap","Modulfuge (m)",f.gap,'data-f="gap" min="0"',0.005)}<label class="f">Belegungsart<select id="fPack" data-f="pack"><option value="grid"${f.pack==="rows"?"":" selected"}>Raster (Spalten fluchtend)</option><option value="rows"${f.pack==="rows"?" selected":""}>Reihen einzeln (mehr Module)</option></select></label></div>
+      <div class="grid2" style="grid-template-columns:repeat(3,1fr)">${num("fEdgeE","Traufe (m)",f.edgeE??f.edge,'data-f="edgeE" min="0" max="3"',0.05)}${num("fEdgeR","First (m)",f.edgeR??f.edge,'data-f="edgeR" min="0" max="3"',0.05)}${num("fEdgeS","Seite (m)",f.edgeS??f.edge,'data-f="edgeS" min="0" max="3"',0.05)}</div>
+      <div class="grid2">${num("fGap","Modulfuge (m)",f.gap,'data-f="gap" min="0" max="0.3"',0.005)}<label class="f">Belegungsart<select id="fPack" data-f="pack"><option value="grid"${f.pack==="rows"?"":" selected"}>Raster (Spalten fluchtend)</option><option value="rows"${f.pack==="rows"?" selected":""}>Reihen einzeln (mehr Module)</option></select></label></div>
       <div class="row"><button data-act="optGrid" class="pri" type="button">Belegung optimieren</button><button data-act="optRows" type="button">Maximal füllen</button></div>
       <div class="hint">„Optimieren“ probiert beide Ausrichtungen und verschiebt das Raster, bis die meisten Module passen. „Maximal füllen“ richtet jede Reihe einzeln aus.</div>
       <div class="grid2">${num("fOffU","Raster versetzt ← → (m)",f.offU,'data-f="offU"',0.05)}${num("fOffV","Raster versetzt ↑ ↓ (m)",f.offV,'data-f="offV"',0.05)}</div>
@@ -1401,7 +1450,8 @@ function renderSide(){
       ${w?`<button data-act="delWr" class="dng" type="button">„${esc(w.name)}“ entfernen</button>`:""}</div>
     <div class="sec"><h2>Strings</h2>
       <div class="list" id="strList">${stringListHtml()}</div>
-      <button data-act="addStr" class="pri" type="button" ${w?"":"disabled"}>String anlegen</button></div>`;
+      <div class="row"><button data-act="addStr" class="pri" type="button" ${w?"":"disabled"}>String anlegen</button><button data-act="autoStr" type="button" ${w?"":"disabled"}>Unzugeordnete automatisch zuordnen</button></div>
+      <div class="hint">Ordnet alle noch nicht zugewiesenen Module dem gewählten Wechselrichter zu: je Dachfläche eigene Strings, so lang wie Spannung und MPPT-Eingang erlauben.</div></div>`;
     if(s){ const cur=P.wrs.find(x=>x.id===s.wr), inv=cur&&invOf(cur.invId);
       h+=`<div class="sec"><h2>${esc(s.name)}</h2>
         ${txt("sName","Name",s.name,'data-s="name"')}
@@ -1413,6 +1463,7 @@ function renderSide(){
     h+=`<div class="sec"><h2>Auslegung</h2><div class="grid2">${num("tmin","Tmin Modul (°C)",P.tmin,'data-p="tmin"',1)}${num("tmax","Tmax Zelle (°C)",P.tmax,'data-p="tmax"',1)}</div>
       <div class="hint">U_OC kalt mit Temperaturkoeffizient auf Tmin. U_MPP heiß mit derselben Näherung. Immer mit dem Datenblatt gegenprüfen.</div></div>`;
   }
+  else if(UI.tab==="kabel"){ h=cableSideHtml(); }
   else if(UI.tab==="speicher"){
     h=`<div class="sec"><h2>Speicher im Projekt</h2><div id="batList" class="sec">${batHtml()}</div></div>
     <div class="sec"><h2>Speicher hinzufügen</h2>
@@ -1451,7 +1502,7 @@ side.addEventListener("input",e=>{
   if(t.dataset.f==="dimU"||t.dataset.f==="dimV"){
     const f=selFace(), v=parseFloat(t.value); if(!f||!(v>0.3)) return; const b=baseDims(f);
     if(t.dataset.f==="dimU") f.kU=v/b.eave; else f.kV=v/b.raf; changed(); return; }
-  if(t.dataset.f){ const f=selFace(); if(!f) return; f[t.dataset.f]=t.dataset.f==="pitch"?Math.max(0,Math.min(80,val)):val; changed(); }
+  if(t.dataset.f){ const f=selFace(); if(!f) return; const k=t.dataset.f, b=FIELD_BOUNDS[k]; f[k]=b?clampNum(val,...b):val; changed(); }
   else if(t.dataset.o){ const o=selObst(); if(!o) return; o[t.dataset.o]=val; changed(); }
   else if(t.dataset.p&&t.dataset.p!=="modId"){ P[t.dataset.p]=val; if(t.dataset.p==="name"){ const it=projList.find(p=>p.id===P.id); if(it) it.name=val; fillProjSel(); } changed(); }
   else if(t.dataset.s){ const s=selStr(); if(!s||t.tagName==="SELECT") return; s[t.dataset.s]=val; $("#strList").innerHTML=stringListHtml(); scheduleSave(); }
@@ -1499,6 +1550,7 @@ side.addEventListener("click",e=>{
       if(inv){ mp=inv.mppts.findIndex((m,i)=>used.filter(s=>s.mppt===i).length<m.strings); if(mp<0) mp=0; }
       const s={id:uid("s"),name:"String "+(P.strings.length+1),wr:w.id,mppt:mp,color:STRING_COLORS[P.strings.length%STRING_COLORS.length],mods:[]};
       P.strings.push(s); UI.selString=s.id; changed(); renderSide(); break; }
+    case "autoStr": autoAssignStrings(); break;
     case "addBat": { const B=LIB.batteries.find(x=>x.id===$("#batAdd").value); if(!B) break; const wr=P.wrs.find(w=>w.id===UI.selWr)||P.wrs[0]; P.bats.push({id:uid("b"),batId:B.id,wr:wr?wr.id:null,qty:1}); changed(); renderSide(); break; }
     case "delBat": P.bats=P.bats.filter(b=>b.id!==id); changed(); renderSide(); break;
     case "selStr": UI.selString=id; renderSide(); draw(); break;
@@ -1610,10 +1662,14 @@ function offerFromPlan(){
     if(b.cross) add.push(newItem({t:"free",name:"Kreuzverbinder / Befestigung Trägerschienen (Querformat)",qty:b.cross,unit:"Stk",note:"Preis eintragen"}));
     add.push(newItem({t:"free",name:"Holzbauschrauben für Dachhaken, Kleinteile",qty:1,unit:"Pausch.",note:"nach K2-Stückliste ergänzen"}));
   }
-  const ns=P.strings.filter(s=>s.mods.length).length;
+  const strWithMods=P.strings.filter(s=>s.mods.length), ns=strWithMods.length;
   if(ns){
-    const rolls=Math.max(1,Math.ceil(ns*20/100));
-    ["schwarz","rot"].forEach(c=>link("Solarkabel",["6mm²",c,"100 m"],"Solarkabel H1Z2Z2-K 6 mm² "+c+", 100 m Rolle",rolls,"Rolle",{note:"Schätzung 20 m je String – wird durch die Kabelplanung ersetzt"}));
+    const known=strWithMods.filter(s=>stringCableLen(s)!=null);
+    let meters, note;
+    if(known.length===ns){ meters=known.reduce((a,s)=>a+(cableCheck(s)?.len||0),0)*2; note="Aus den Kabellängen im Schritt „Kabel“ (Hin- und Rückleiter)"; }
+    else{ meters=ns*20*2; note="Schätzung 20 m je String (Hin- und Rückleiter) – im Schritt „Kabel“ Wechselrichter-Standort setzen für die echte Länge"; }
+    const rolls=Math.max(1,Math.ceil(meters/2/100));
+    ["schwarz","rot"].forEach(c=>link("Solarkabel",["6mm²",c,"100 m"],"Solarkabel H1Z2Z2-K 6 mm² "+c+", 100 m Rolle",rolls,"Rolle",{note}));
   }
   const eaton=SET.pref==="Eaton";
   const linkAny=(levels,fallback,qty)=>{
@@ -1778,12 +1834,14 @@ async function offerPdf(){
     head();
     o.items.forEach((it,i)=>{
       const nameL=doc.splitTextToSize(T(it.name),X.qty-X.name-14), artL=doc.splitTextToSize(T(artNo(it)),X.name-X.art-2);
-      const h=Math.max(nameL.length,artL.length)*4.1+2.4;
+      const noteL=it.note?doc.splitTextToSize(T(it.note),X.qty-X.name-14):[];
+      const h=Math.max(nameL.length,artL.length)*4.1+noteL.length*3.5+2.4;
       if(y+h>276){ doc.addPage(); y=22; head(); }
       doc.setFontSize(8.8);
       doc.text(String(i+1),X.pos+1,y); artL.forEach((l,k)=>doc.text(l,X.art,y+k*4.1)); nameL.forEach((l,k)=>doc.text(l,X.name,y+k*4.1));
       const q=+it.qty||0; doc.text(T(fmt(q,q%1?2:0)+" "+(it.unit||"")),X.qty+9,y,{align:"right"});
       doc.text(T(eur(effVk(it))),X.unit+11,y,{align:"right"}); doc.text(T(eur(lineSum(it))),X.total-1,y,{align:"right"});
+      if(noteL.length){ doc.setFont("helvetica","italic"); doc.setFontSize(7.5); doc.setTextColor(150,90,0); noteL.forEach((l,k)=>doc.text(l,X.name,y+nameL.length*4.1+k*3.5)); doc.setTextColor(20); doc.setFont("helvetica","normal"); doc.setFontSize(8.8); }
       y+=h; doc.setDrawColor(215); doc.setLineWidth(0.15); doc.line(L,y-3.2,R,y-3.2);
     });
     if(y>268){ doc.addPage(); y=22; }
@@ -1839,8 +1897,11 @@ function runsOf(cells,key,ord,step){
   });
   return runs;
 }
+const SUB_BOUNDS={spar:[0.3,1.2],span:[0.3,3],over:[0,1],klemm:[10,45],ext:[0.02,0.5],therm:[3,17.6]};
 function computeSub(){
-  const S=P.sub, res={faces:[],bom:{rails:{},conn:0,endcap:0,hooks:0,mid:0,end:0,cross:0,rail_m:0},warn:[]};
+  const S=P.sub;
+  for(const k in SUB_BOUNDS) if(S[k]!=null) S[k]=clampNum(S[k],...SUB_BOUNDS[k]);
+  const res={faces:[],bom:{rails:{},conn:0,endcap:0,hooks:0,mid:0,end:0,cross:0,rail_m:0},warn:[]};
   const lens=(S.lens&&S.lens.length?S.lens:SUB_LENS).slice().sort((a,b)=>b-a);
   const single=lens.length===1; res.req=[];
   const addRail=(L,warnTxt)=>{
@@ -1981,9 +2042,9 @@ side.addEventListener("click",e=>{
 });
 side.addEventListener("input",e=>{
   const t=e.target; if(!P||UI.tab!=="unterbau") return;
-  if(t.dataset.subf){ const f=selFace(); if(f){ f[t.dataset.subf]=parseFloat(t.value)||0; recompute(); draw(); renderNav(); scheduleSave(); } return; }
+  if(t.dataset.subf){ const f=selFace(); if(f){ f[t.dataset.subf]=clampNum(parseFloat(t.value)||0,-5,5); recompute(); draw(); renderNav(); scheduleSave(); } return; }
   const k=t.dataset.sub; if(!k||t.type==="checkbox"||t.tagName==="SELECT") return;
-  P.sub[k]=parseFloat(t.value)||0; recompute(); draw(); scheduleSave();
+  const b=SUB_BOUNDS[k]; P.sub[k]=b?clampNum(parseFloat(t.value)||0,...b):(parseFloat(t.value)||0); recompute(); draw(); scheduleSave();
 });
 side.addEventListener("change",e=>{
   const t=e.target; if(!P||UI.tab!=="unterbau") return;
@@ -2131,14 +2192,14 @@ function homeCards(){
 function renderHome(){
   const el=$("#home");
   el.innerHTML=`<div class="homewrap">${updateBannerHtml()}<div class="homehead"><div><h1>Projekte</h1><div class="hint">${projList.length} Projekt${projList.length===1?"":"e"} · zuletzt bearbeitete zuerst</div></div>
-    <div class="row"><input id="hQ" type="text" placeholder="Suchen: Name, Kunde, Adresse" value="${esc(HOME.q)}" style="width:240px"><select id="hSt" style="width:auto"><option value="">Alle Status</option>${STATUSES.map(s=>`<option${s===HOME.st?" selected":""}>${s}</option>`).join("")}</select><button data-pa="import" type="button">Projekt importieren</button><input id="hImp" type="file" accept=".json,.dachplaner.json" hidden><button class="pri" data-pa="new" type="button">Neues Projekt</button></div></div>
+    <div class="row"><input id="hQ" type="text" placeholder="Suchen: Name, Kunde, Adresse" value="${esc(HOME.q)}" style="width:240px"><select id="hSt" style="width:auto"><option value="">Alle Status</option>${STATUSES.map(s=>`<option${s===HOME.st?" selected":""}>${s}</option>`).join("")}</select><button data-pa="import" type="button">Projekt importieren</button><input id="hImp" type="file" accept=".json,.dachplaner.json" hidden><button data-pa="test" type="button">Selbsttest</button><button class="pri" data-pa="new" type="button">Neues Projekt</button></div></div>
     <div class="pgrid" id="pgrid">${homeCards()}</div></div>`;
 }
 $("#home").addEventListener("input",e=>{ if(e.target.id==="hQ"){ HOME.q=e.target.value; $("#pgrid").innerHTML=homeCards(); } });
 $("#home").addEventListener("change",e=>{ if(e.target.id==="hImp"&&e.target.files[0]){ importProjectFile(e.target.files[0]); e.target.value=""; return; } if(e.target.id==="hSt"){ HOME.st=e.target.value; $("#pgrid").innerHTML=homeCards(); } });
 $("#home").addEventListener("click",e=>{
   const b=e.target.closest("[data-pa]");
-  if(b){ const a=b.dataset.pa, id=b.dataset.id; if(a==="upd") updateDialog(); else if(a==="new") newDialog(); else if(a==="import") $("#hImp").click(); else if(a==="exp") exportProject(id); else if(a==="open") openProject(id); else if(a==="edit") editDialog(id); else if(a==="dup") duplicateProject(id); else if(a==="del") deleteDialog(id); return; }
+  if(b){ const a=b.dataset.pa, id=b.dataset.id; if(a==="upd") updateDialog(); else if(a==="test") selfTestModal(); else if(a==="new") newDialog(); else if(a==="import") $("#hImp").click(); else if(a==="exp") exportProject(id); else if(a==="open") openProject(id); else if(a==="edit") editDialog(id); else if(a==="dup") duplicateProject(id); else if(a==="del") deleteDialog(id); return; }
   const c=e.target.closest("[data-open]"); if(c) openProject(c.dataset.open);
 });
 $("#home").addEventListener("keydown",e=>{ if(e.key==="Enter"&&e.target.dataset&&e.target.dataset.open) openProject(e.target.dataset.open); });
@@ -2151,7 +2212,7 @@ $("#homeBtn").onclick=()=>goHome();
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.20.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.20";
+const APP_VERSION="2026.09.23.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.23";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 const updUrl=()=>String(SET.updateUrl||UPDATE_URL||"").trim().replace(/\/+$/,"");
@@ -2253,6 +2314,280 @@ async function autoCheckUpdate(){
   if(!IS_APP()||!updUrl()) return;
   await checkUpdate(true);
 }
+</script>
+<script>
+/* ───────── Automatische Stringzuordnung ─────────
+   Ordnet unzugeordnete Module dem gewählten Wechselrichter zu: je Dachfläche eigene, gleich lange Strings,
+   so lang wie Spannung (Voc kalt, Vmpp im MPP-Fenster) und die Kapazität der MPP-Eingänge es erlauben. */
+function stringSizeFor(M,inv){
+  const tc=M.tcVoc/100;
+  const vocCold=n=>n*M.voc*(1+tc*(P.tmin-25)), vmppCold=n=>n*M.vmpp*(1+tc*(P.tmin-25)), vmppHot=n=>n*M.vmpp*(1+tc*(P.tmax-25));
+  let nMax=1; while(vocCold(nMax+1)<=inv.vmax && vmppCold(nMax+1)<=inv.mppMax) nMax++;
+  let n=nMax; while(n>1 && vmppHot(n)<inv.mppMin) n--;
+  return Math.max(1,n);
+}
+function autoAssignStrings(){
+  const w=P.wrs.find(x=>x.id===UI.selWr)||P.wrs[0]; if(!w){ toast("Erst einen Wechselrichter wählen"); return; }
+  const inv=invOf(w.invId); if(!inv){ toast("Wechselrichter unbekannt"); return; }
+  const M=modOf(); if(!M){ toast("Erst ein Modul wählen"); return; }
+  const used=new Set(P.strings.flatMap(s=>s.mods));
+  const free=MODS.filter(m=>!used.has(m.key));
+  if(!free.length){ toast("Keine unzugeordneten Module"); return; }
+  const nTarget=stringSizeFor(M,inv);
+  const cap=inv.mppts.map((mp,i)=>{
+    const par=P.strings.filter(s=>s.wr===w.id&&s.mppt===i).length;
+    const byCurrent=Math.min(mp.strings,Math.floor(mp.isc/M.isc)||1,Math.floor(mp.imax/M.impp)||1);
+    return Math.max(0,byCurrent-par);
+  });
+  const byFace={}; free.forEach(m=>{ (byFace[m.fi]=byFace[m.fi]||[]).push(m); });
+  const chunks=[];
+  Object.values(byFace).forEach(list=>{
+    list.sort((a,b)=>a.j-b.j||a.i-b.i);
+    const n=list.length, parts=Math.max(1,Math.ceil(n/nTarget));
+    const base=Math.floor(n/parts), extra=n%parts; let idx=0;
+    for(let p=0;p<parts;p++){ const len=base+(p<extra?1:0); if(len>0) chunks.push(list.slice(idx,idx+len)); idx+=len; }
+  });
+  /* Belegte Länge je MPPT (damit parallele Strings am selben Eingang möglichst gleich lang bleiben) */
+  const lenOnMppt=inv.mppts.map((mp,i)=>{ const ex=P.strings.find(s=>s.wr===w.id&&s.mppt===i&&s.mods.length>0); return ex?ex.mods.length:null; });
+  let added=0, addedMods=0, skipped=0;
+  chunks.sort((a,b)=>b.length-a.length); // größere Gruppen zuerst, damit sie einen eigenen MPPT-Eingang bekommen
+  for(const chunk of chunks){
+    const free=cap.map((c,i)=>i).filter(i=>cap[i]>0);
+    if(!free.length){ skipped+=chunk.length; continue; }
+    free.sort((a,b)=>{
+      const okA=lenOnMppt[a]==null||lenOnMppt[a]===chunk.length, okB=lenOnMppt[b]==null||lenOnMppt[b]===chunk.length;
+      if(okA!==okB) return okA?-1:1; // MPPT mit gleicher Länge oder noch leer zuerst, sonst würden parallele Strings unterschiedlich lang
+      return cap[b]-cap[a];
+    });
+    const i=free[0]; cap[i]--; lenOnMppt[i]=chunk.length;
+    const s={id:uid("s"),name:"String "+(P.strings.length+1),wr:w.id,mppt:i,color:STRING_COLORS[P.strings.length%STRING_COLORS.length],mods:chunk.map(m=>m.key)};
+    P.strings.push(s); added++; addedMods+=chunk.length;
+  }
+  changed(); renderSide();
+  if(added) UI.selString=P.strings[P.strings.length-1].id;
+  toast(`${added} String${added===1?"":"s"} mit ${addedMods} Modulen angelegt (je ${nTarget} Module)`+(skipped?`, ${skipped} Module ohne freien MPPT-Eingang übrig`:""));
+}
+
+/* ───────── Selbsttest: prüft ein paar feste Rechnungen gegen bekannte Ergebnisse ─────────
+   Kein Ersatz für eine echte Prüfung, aber zeigt sofort, wenn eine spätere Änderung eine Formel kaputt macht. */
+function runSelfTests(){
+  const T=[], eq=(a,b,eps)=>Math.abs(a-b)<=(eps??1e-6);
+  const test=(name,fn)=>{ try{ const ok=fn(); T.push({name,ok:!!ok,err:null}); }catch(e){ T.push({name,ok:false,err:e.message}); } };
+
+  test("Voc kalt / Vmpp heiß (Temperaturkoeffizient)",()=>{
+    const M={voc:52.2,vmpp:44,tcVoc:-0.24}, tc=M.tcVoc/100, n=12, tmin=-10, tmax=70;
+    const vocCold=n*M.voc*(1+tc*(tmin-25)), vmppHot=n*M.vmpp*(1+tc*(tmax-25));
+    return eq(vocCold,679.02,0.01) && eq(vmppHot,470.976,0.01);
+  });
+  test("Staffelpreis: richtige Preisstufe ab Menge",()=>{
+    const a={tiers:[[1,100],[10,90],[50,80]]};
+    return artPrice(a,1)===100 && artPrice(a,9)===100 && artPrice(a,10)===90 && artPrice(a,50)===80 && artPrice(a,1000)===80;
+  });
+  test("Angebot: Summe = Menge × (Einkauf + Aufschlag)",()=>{
+    const ek=20, aufschlag=20, qty=5, vk=ek*(1+aufschlag/100), summe=Math.round(qty*vk*100)/100;
+    return eq(vk,24,0.001) && eq(summe,120,0.01);
+  });
+  test("Geometrie: Rechteck 10 × 6 m ergibt 60 m² (Gauß'sche Flächenformel)",()=>{
+    const poly=[[0,0],[10,0],[10,6],[0,6]]; let A=0;
+    poly.forEach((a,i)=>{ const b=poly[(i+1)%poly.length]; A+=a[0]*b[1]-b[0]*a[1]; });
+    return eq(Math.abs(A)/2,60,0.001);
+  });
+  test("Dachneigung/Fuge werden auf sinnvolle Werte begrenzt",()=>{
+    const f={pts:[[0,0],[100,0],[100,100],[0,100]],pitch:400,gap:-9,orient:"p"};
+    clampFace(f); return f.pitch<=80 && f.gap>=0;
+  });
+  test("Schattenformel: Flachdach entspricht Höhe / tan(Sonnenhöhe)",()=>{
+    const r=shadowOffset(0,180,51,-23.44,1); if(!r) return false;
+    const erwartet=1/Math.tan((90-51-23.44)*Math.PI/180);
+    return eq(r.dv,erwartet,0.001) && eq(r.du,0,0.001);
+  });
+  test("Schattenformel: Norddach bekommt zur Wintersonnenwende kein Licht",()=>shadowOffset(35,0,51,-23.44,1)===null);
+  test("Max.-PV-Regel: 15 % Überschreitung gilt noch als unbedenklich",()=>{
+    const inv={maxDc:10}; const w={id:"t",invId:"t"};
+    return (11.5/inv.maxDc)<=MAXDC_OVER+1e-9 && (11.6/inv.maxDc)>MAXDC_OVER;
+  });
+  test("Spannungsfall-Formel (Kupfer, Hin- und Rückleiter)",()=>{
+    const d=voltageDrop(6,10,20); // 6 mm², 10 A, 20 m einfache Länge
+    return d.dropV>0 && eq(d.dropV,2*20*10*0.0225/6,0.0001);
+  });
+  return T;
+}
+function selfTestModal(){
+  const results=runSelfTests(), bad=results.filter(r=>!r.ok);
+  const body=`<div class="hint" style="margin-bottom:8px">Prüft ein paar feste Rechnungen gegen von Hand nachgerechnete Ergebnisse. Kein Ersatz für eine Prüfung an einem echten Projekt.</div>
+    <div class="stat" style="grid-template-columns:1fr auto">${results.map(r=>`<span>${esc(r.name)}${r.err?" – "+esc(r.err):""}</span><b class="${r.ok?"ok":"bad"}" style="text-align:right">${r.ok?"✓":"✗"}</b>`).join("")}</div>
+    <div class="pill ${bad.length?"bad":"ok"}" style="margin-top:10px">${bad.length?bad.length+" Test(s) fehlgeschlagen":"Alle Tests bestanden"}</div>`;
+  const m=modal("Selbsttest",body,"Schließen",()=>true); m.querySelector('[data-m="cancel"]').remove();
+}
+</script>
+<script>
+/* ───────── Verschattung durch Hindernisse (vereinfachte Abschätzung) ─────────
+   Rechnet den Schattenwurf eines Hindernisses (z. B. Kamin) für EINEN Sonnenstand (Sonnenmittag,
+   gewähltes Datum) exakt in 3D auf die geneigte Dachfläche – keine Jahres- oder Stundensimulation.
+   Prüft nur, ob ein Modul in diesem einen Moment im Schatten liegt, nicht den Ertragsverlust übers Jahr. */
+const SUN_DATES={ws:{label:"Wintersonnenwende (21.12.)",dec:-23.44},eq:{label:"Tagundnachtgleiche (20./21.3. u. 22./23.9.)",dec:0},ss:{label:"Sommersonnenwende (21.6.)",dec:23.44}};
+function sunNoon(latDeg,decDeg){ return {elevDeg:90-latDeg+decDeg,azDeg:180}; }
+/* Schnittpunkt des Sonnenstrahls von der Spitze eines h Meter hohen, senkrecht auf der Dachfläche
+   stehenden Hindernisses mit ebendieser (geneigten) Dachfläche. Ergebnis in der Flächen-Basis (u=Traufe, v=Richtung First).
+   null = Fläche bekommt zu diesem Zeitpunkt keine direkte Sonne (Eigenverschattung durch die Dachneigung). */
+function shadowOffset(pitchDeg,azFaceDeg,latDeg,decDeg,h){
+  if(!(h>0)) return null;
+  const th=rad(pitchDeg), phi=rad(azFaceDeg), sun=sunNoon(latDeg,decDeg);
+  if(sun.elevDeg<=0) return null; // Sonne steht gar nicht über dem Horizont
+  const gamma=rad(sun.elevDeg), alpha=rad(sun.azDeg);
+  const S=[Math.sin(alpha)*Math.cos(gamma),Math.cos(alpha)*Math.cos(gamma),Math.sin(gamma)];
+  const n=[Math.sin(th)*Math.sin(phi),Math.sin(th)*Math.cos(phi),Math.cos(th)];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const Sn=dot(S,n); if(Sn<=1e-6) return null;
+  const t=h*Math.cos(th)/Sn;
+  const D=[-t*S[0],-t*S[1],h-t*S[2]]; // D = (0,0,h) - t*S
+  const u_hat=[Math.cos(phi),-Math.sin(phi),0], w_down=[Math.cos(th)*Math.sin(phi),Math.cos(th)*Math.cos(phi),-Math.sin(th)];
+  return {du:dot(D,u_hat), dv:-dot(D,w_down), elev:sun.elevDeg};
+}
+function faceSunInfo(f){
+  const s=P.shade&&SUN_DATES[P.shade.date]||SUN_DATES.ws;
+  const r=shadowOffset(f.pitch,azimuthOf(f),P.lat||51,s.dec,1);
+  return {lit:!!r, elev:r?r.elev:null, dateLabel:s.label};
+}
+/* Liefert je Fläche die Schattenzonen (Bounding-Box je Hindernis, in u/v der Fläche) und die betroffenen Modul-Keys. */
+function computeShading(){
+  if(!P||!P.shade||!P.shade.on||!GEO.length) return null;
+  const s=SUN_DATES[P.shade.date]||SUN_DATES.ws, res={faces:[],shadedKeys:new Set(),shadedCount:0};
+  P.faces.forEach((f,fi)=>{
+    const geo=GEO[fi]; if(!geo||!geo.fr) return;
+    const info=faceSunInfo(f); const out={fi,lit:info.lit,elev:info.elev,zones:[]}; res.faces.push(out);
+    if(!info.lit) return;
+    const r=shadowOffset(f.pitch,azimuthOf(f),P.lat||51,s.dec,1); if(!r) return;
+    P.obst.forEach(ob=>{
+      if(!(ob.height>0)) return;
+      const cx=(ob.pts[0][0]+ob.pts[1][0])/2, cy=(ob.pts[0][1]+ob.pts[1][1])/2;
+      if(!inPoly([cx,cy],f.pts)) return; // Hindernis steht nicht auf dieser Fläche
+      const [a,b]=ob.pts, corners=[[a[0],a[1]],[b[0],a[1]],[b[0],b[1]],[a[0],b[1]]].map(p=>toUV(geo.fr,p));
+      const du=r.du*ob.height, dv=r.dv*ob.height;
+      const all=corners.concat(corners.map(c=>[c[0]+du,c[1]+dv]));
+      const minU=Math.min(...all.map(c=>c[0])), maxU=Math.max(...all.map(c=>c[0]));
+      const minV=Math.min(...all.map(c=>c[1])), maxV=Math.max(...all.map(c=>c[1]));
+      out.zones.push({minU,maxU,minV,maxV,name:ob.name});
+      geo.cells.filter(c=>c.active).forEach(c=>{
+        const mu=geo.mu,mv=geo.mv;
+        if(c.u<maxU&&c.u+mu>minU&&c.v<maxV&&c.v+mv>minV){ if(!res.shadedKeys.has(c.key)) res.shadedCount++; res.shadedKeys.add(c.key); }
+      });
+    });
+  });
+  return res;
+}
+function drawShade(g,V,o){
+  const sh=computeShading(); if(!sh) return; const lw=o.lw||1;
+  sh.faces.forEach(fs=>{
+    const geo=GEO[fs.fi]; if(!geo) return;
+    fs.zones.forEach(z=>{
+      const pts=[[z.minU,z.minV],[z.maxU,z.minV],[z.maxU,z.maxV],[z.minU,z.maxV]].map(p=>toXY(geo.fr,p[0],p[1]));
+      g.beginPath(); pts.forEach((p,i)=>{ const x=V.x+p[0]*V.k,y=V.y+p[1]*V.k; i?g.lineTo(x,y):g.moveTo(x,y); }); g.closePath();
+      g.fillStyle="rgba(20,20,40,.42)"; g.fill(); g.setLineDash([4,3]); g.strokeStyle="rgba(20,20,40,.85)"; g.lineWidth=1.2*lw; g.stroke(); g.setLineDash([]);
+    });
+  });
+}
+function shadeSideHtml(){
+  const S=P.shade||{on:false,date:"ws"}, sh=S.on?computeShading():null;
+  let res="";
+  if(sh){
+    const lines=[];
+    sh.faces.forEach(fs=>{ const f=P.faces[fs.fi]; if(f&&!fs.lit) lines.push(`<div class="banner">${esc(f.name)}: zu diesem Zeitpunkt kein direktes Sonnenlicht (Dachausrichtung/-neigung)</div>`); });
+    sh.faces.forEach(fs=>{ const f=P.faces[fs.fi]; if(!f||!fs.zones.length) return;
+      const cnt=GEO[fs.fi].cells.filter(c=>c.active&&sh.shadedKeys.has(c.key)).length;
+      if(cnt) lines.push(`<div class="row"><span class="grow">${esc(f.name)}</span><span class="pill warn">${cnt} Modul${cnt===1?"":"e"} evtl. verschattet</span></div>`);
+    });
+    if(!lines.length) lines.push(`<div class="pill ok">Keine Verschattung durch Hindernisse zu diesem Zeitpunkt</div>`);
+    res=lines.join("");
+  }
+  return `<div class="sec"><h2>Verschattung (Schätzung)</h2>
+    <label class="row"><input id="shOn" type="checkbox" data-sh="on" ${S.on?"checked":""}> Verschattung durch Hindernisse anzeigen</label>
+    <div class="grid2"><label class="f">Zeitpunkt<select id="shDate" data-sh="date">${Object.entries(SUN_DATES).map(([k,v])=>`<option value="${k}"${k===S.date?" selected":""}>${esc(v.label)}</option>`).join("")}</select></label>${num("pLat","Breitengrad (°N)",P.lat||51,'data-p="lat" min="30" max="70"',0.1)}</div>
+    <div class="hint">Rechnet nur den Sonnenstand exakt zu Sonnenmittag am gewählten Tag, nicht den ganzen Tag oder das ganze Jahr. Hindernishöhe stellst du bei jedem Hindernis unter „Hindernis bearbeiten“ ein (0 m = keine Verschattung durch dieses Hindernis).</div>
+    ${S.on?`<div class="stat" style="display:block">${res}</div>`:""}</div>`;
+}
+side.addEventListener("change",e=>{
+  const t=e.target; if(!P||UI.tab!=="dach") return;
+  if(t.dataset.sh==="on"){ P.shade.on=t.checked; changed(); renderSide(); draw(); }
+  else if(t.dataset.sh==="date"){ P.shade.date=t.value; changed(); renderSide(); draw(); }
+});
+</script>
+<script>
+/* ───────── Kabelwege und Spannungsfall ─────────
+   Länge = Luftlinie vom ersten Modul des Strings bis zum markierten Wechselrichter-Standort (aus dem
+   Luftbildmaßstab) plus die von dir eingetragene Zusatzstrecke (Kabelführung, Wanddurchführung, Keller).
+   Spannungsfall mit Kupfer bei Betriebstemperatur (ρ ≈ 0,0225 Ω·mm²/m), Hin- und Rückleiter. */
+const CABLE_AREAS=[4,6,10];
+const CABLE_RHO=0.0225; // Ω·mm²/m, Kupfer bei Betriebstemperatur (üblicher Planungswert für Solarkabel)
+const CABLE_LIMIT=1.0;  // % – gängige Faustregel für den DC-Spannungsfall je String
+function voltageDrop(areaMm2,currentA,lengthOneWayM){
+  const dropV=2*lengthOneWayM*currentA*CABLE_RHO/areaMm2;
+  return {dropV};
+}
+function stringCableLen(s){
+  const wr=P.wrs.find(w=>w.id===s.wr); if(!wr||!wr.pos||!s.mods.length) return null;
+  const m=modByKey(s.mods[0]); if(!m) return null;
+  const px=Math.hypot(m.c[0]-wr.pos[0],m.c[1]-wr.pos[1]);
+  return px*(P.scale||0.02);
+}
+function cableCheck(s){
+  const M=modOf(); if(!M||!s.mods.length) return null;
+  const straight=stringCableLen(s); const extra=s.cableExtra||0;
+  const len=straight!=null?straight+extra:null;
+  const area=s.cableArea||6;
+  if(len==null) return {len:null,area,extra};
+  const {dropV}=voltageDrop(area,M.impp,len);
+  const pct=100*dropV/(s.mods.length*M.vmpp);
+  return {len,extra,straight,area,dropV,pct,lv:pct<=CABLE_LIMIT?"ok":pct<=CABLE_LIMIT*2?"warn":"bad"};
+}
+function bestCableArea(s){
+  const M=modOf(); if(!M) return 6; const straight=stringCableLen(s); if(straight==null) return s.cableArea||6;
+  const len=straight+(s.cableExtra||0);
+  for(const a of CABLE_AREAS){ const {dropV}=voltageDrop(a,M.impp,len); if(100*dropV/(s.mods.length*M.vmpp)<=CABLE_LIMIT) return a; }
+  return CABLE_AREAS[CABLE_AREAS.length-1];
+}
+function cableSideHtml(){
+  const M=modOf(), rows=P.strings.filter(s=>s.mods.length);
+  return `<div class="sec"><h2>Wechselrichter-Standort</h2>
+    <div class="hint">Klick auf den Plan markiert, wo das Gerät montiert wird (Keller, Garage, Hausanschlussraum). Ohne Markierung fehlt die Kabellänge.</div>
+    <div class="list">${P.wrs.map(w=>`<div class="${UI.selWr===w.id?"sel":""}" data-act="selWr" data-id="${w.id}"><span class="grow">${esc(w.name)}</span><span class="hint">${w.pos?"Standort gesetzt":"Standort fehlt"}</span></div>`).join("")||`<div class="hint">Noch kein Wechselrichter im Projekt.</div>`}</div>
+    <div class="row">${P.wrs.length?`<button data-act="pickWrPos" class="${UI.tool==="wrpos"?"on":""}" type="button">Standort markieren</button>`:""}${P.wrs.find(w=>w.id===UI.selWr)?.pos?`<button data-act="clearWrPos" type="button">Standort entfernen</button>`:""}</div></div>
+  <div class="sec"><h2>Kabellängen je String</h2>
+    <div class="hint">Spannungsfall gerechnet mit Kupfer bei Betriebstemperatur (ρ = 0,0225 Ω·mm²/m), Hin- und Rückleiter, bei I_MPP. Als Richtwert gelten bis 1 % als unbedenklich.</div>
+    ${rows.map(s=>{ const c=cableCheck(s); const wr=P.wrs.find(w=>w.id===s.wr);
+      if(!c) return "";
+      return `<div class="sec" style="border:1px solid var(--line);border-radius:6px;padding:10px">
+        <div class="row"><b class="grow">${esc(s.name)}</b><span class="hint">${wr?esc(wr.name):"–"}</span></div>
+        ${c.straight==null?`<div class="banner">Wechselrichter-Standort fehlt, Länge nicht berechenbar</div>`:`<div class="stat"><span>Luftlinie</span><b>${fmt(c.straight,1)} m</b></div>`}
+        <div class="grid2">${num("cx"+s.id,"Zusatzstrecke (m)",s.cableExtra||0,'data-cab="extra" data-id="'+s.id+'" min="0"',0.5)}<label class="f">Querschnitt<select data-cab="area" data-id="${s.id}">${CABLE_AREAS.map(a=>`<option value="${a}"${a===(s.cableArea||6)?" selected":""}>${a} mm²</option>`).join("")}</select></label></div>
+        ${c.len!=null?`<div class="stat"><span>Länge gesamt</span><b>${fmt(c.len,1)} m</b><span>Spannungsfall</span><b>${fmt(c.dropV,2)} V</b><span>Anteil an U_MPP</span><b>${fmt(c.pct,2)} %</b></div><span class="pill ${c.lv}">${c.lv==="ok"?"unbedenklich":c.lv==="warn"?"prüfen":"zu hoch, größeren Querschnitt wählen"}</span> <button data-act="cabBest" data-id="${s.id}" type="button">Passenden Querschnitt vorschlagen</button>`:""}</div>`; }).join("")||`<div class="hint">Noch keine belegten Strings.</div>`}</div>`;
+}
+function drawCables(g,V,o){
+  P.strings.filter(s=>s.mods.length).forEach(s=>{
+    const wr=P.wrs.find(w=>w.id===s.wr); if(!wr||!wr.pos) return; const m=modByKey(s.mods[0]); if(!m) return;
+    const x1=V.x+m.c[0]*V.k,y1=V.y+m.c[1]*V.k, x2=V.x+wr.pos[0]*V.k,y2=V.y+wr.pos[1]*V.k;
+    g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.setLineDash([5,4]); g.strokeStyle=s.color; g.lineWidth=1.6*(o.lw||1); g.stroke(); g.setLineDash([]);
+  });
+  P.wrs.filter(w=>w.pos).forEach(w=>{ const x=V.x+w.pos[0]*V.k,y=V.y+w.pos[1]*V.k;
+    g.beginPath(); g.rect(x-6,y-6,12,12); g.fillStyle="#222"; g.fill(); g.strokeStyle="#fff"; g.lineWidth=1.5*(o.lw||1); g.stroke();
+    haloText(g,w.name,x,y-13*(o.fontK||1),10*(o.fontK||1),"#fff");
+  });
+}
+side.addEventListener("input",e=>{
+  const t=e.target; if(!P||UI.tab!=="kabel") return;
+  if(t.dataset.cab==="extra"){ const s=P.strings.find(x=>x.id===t.dataset.id); if(s){ s.cableExtra=parseFloat(t.value)||0; renderSide(); scheduleSave(); } }
+});
+side.addEventListener("change",e=>{
+  const t=e.target; if(!P||UI.tab!=="kabel") return;
+  if(t.dataset.cab==="area"){ const s=P.strings.find(x=>x.id===t.dataset.id); if(s){ s.cableArea=parseInt(t.value); renderSide(); scheduleSave(); } }
+});
+side.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]"); if(!b||!P||UI.tab!=="kabel") return; const act=b.dataset.act, id=b.dataset.id;
+  if(act==="selWr"){ UI.selWr=id; renderSide(); }
+  else if(act==="pickWrPos"){ UI.tool=UI.tool==="wrpos"?"select":"wrpos"; renderSide(); toast(UI.tool==="wrpos"?"Jetzt auf den Plan klicken":"Abgebrochen"); }
+  else if(act==="clearWrPos"){ const w=P.wrs.find(x=>x.id===UI.selWr); if(w){ delete w.pos; changed(); renderSide(); draw(); } }
+  else if(act==="cabBest"){ const s=P.strings.find(x=>x.id===id); if(s){ s.cableArea=bestCableArea(s); renderSide(); scheduleSave(); } }
+});
 </script>
 <script>
 /* ───────── Bibliothek ───────── */
