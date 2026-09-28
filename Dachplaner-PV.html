@@ -465,6 +465,7 @@ button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--a
 button.dng{color:var(--bad)}
 button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .hint{font-size:12px;color:var(--muted)}
+#syncLine a{color:var(--accent);font-weight:600}
 .banner{border:1px solid var(--warn);color:var(--warn);border-radius:5px;padding:6px 9px;font-size:12px}
 .list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .list>div{display:flex;align-items:center;gap:8px;padding:6px 9px;cursor:pointer;border-bottom:1px solid var(--line);background:var(--panel)}
@@ -845,7 +846,8 @@ function faceCtx(f0){
   const fr=frame(f), M=modOf(), poly=f.pts.map(p=>toUV(fr,p));
   const c={fr,poly,M,f,mu:0,mv:0,fitAt:()=>false};
   if(!M||f.pts.length<3) return c;
-  c.mu=(f.orient==="l"?M.h:M.w)/1000; c.mv=(f.orient==="l"?M.w:M.h)/1000;
+  c.dims=o=>o==="l"?[M.h/1000,M.w/1000]:[M.w/1000,M.h/1000];
+  [c.mu,c.mv]=c.dims(f.orient==="m"?rowOri(f,0):f.orient);
   if(!(c.mu>0.05)||!(c.mv>0.05)) return c; /* Modulmaße unplausibel (z. B. defekter Bibliothekseintrag) */
   let umin=1e9,umax=-1e9,vmin=1e9,vmax=-1e9;
   poly.forEach(q=>{umin=Math.min(umin,q[0]);umax=Math.max(umax,q[0]);vmin=Math.min(vmin,q[1]);vmax=Math.max(vmax,q[1]);});
@@ -858,8 +860,7 @@ function faceCtx(f0){
     const [a,b]=o.pts; const cs=[[a[0],a[1]],[b[0],a[1]],[b[0],b[1]],[a[0],b[1]]].map(p=>toUV(fr,p));
     return [Math.min(...cs.map(q=>q[0]))-o.margin,Math.min(...cs.map(q=>q[1]))-o.margin,Math.max(...cs.map(q=>q[0]))+o.margin,Math.max(...cs.map(q=>q[1]))+o.margin];
   });
-  const {mu,mv}=c;
-  c.fitAt=(u,v)=>{
+  c.fitAt=(u,v,mu=c.mu,mv=c.mv)=>{
     const cs=[[u,v],[u+mu,v],[u+mu,v+mv],[u,v+mv]];
     for(const q of cs){
       if(!inPoly(q,poly)) return false;
@@ -871,40 +872,48 @@ function faceCtx(f0){
   };
   return c;
 }
+/* Ausrichtung einer Modulreihe (j = 0 an der Traufe). „m“ = gemischt: jede Reihe einzeln hochkant oder quer */
+function rowOri(f,j){
+  if(f.orient!=="m") return f.orient==="l"?"l":"p";
+  const o=(Array.isArray(f.rowOri)&&f.rowOri[j])||f.rowDef;
+  return o==="l"?"l":"p";
+}
+/* Reihen von der Traufe zum First durchgehen; jede Reihe hat ihre eigene Modulhöhe.
+   cb(i,j,u,v,fit,mu,mv,o) je Rasterplatz; Rückgabe: Liste der Reihen */
+function layoutFace(c,f,cb){
+  const g=f.gap, rows=[], u0=c.umin+c.eS+(f.offU||0); let v=c.vmin+c.eE+(f.offV||0);
+  for(let j=0;j<400&&v<=c.vmax;j++){
+    const o=rowOri(f,j), [mu,mv]=c.dims(o); rows.push({j,o,v});
+    if(f.pack==="rows"){ let i=0;
+      for(let u=c.umin;u<=c.umax;){ if(c.fitAt(u,v,mu,mv)){ cb(i++,j,u,v,true,mu,mv,o); u+=mu+g; } else u+=0.01; } }
+    else{ const nI=Math.min(400,Math.max(0,Math.floor((c.umax-u0)/(mu+g))+1));
+      for(let i=0;i<nI;i++){ const u=u0+i*(mu+g); cb(i,j,u,v,c.fitAt(u,v,mu,mv),mu,mv,o); } }
+    v+=mv+g;
+  }
+  return rows;
+}
 /* Zellen einer Dachfläche (alle Rasterplätze; active = belegt) */
 function faceCells(f){
-  const c=faceCtx(f), out={fr:c.fr,poly:c.poly,cells:[],mu:c.mu,mv:c.mv};
-  if(!c.M||f.pts.length<3) return out;
-  const {mu,mv,fr}=c, g=f.gap, tog=new Set(f.tog||[]);
-  const v0=c.vmin+c.eE+(f.offV||0);
-  const nJ=Math.min(400,Math.max(0,Math.floor((c.vmax-v0)/(mv+g))+1));
-  const add=(i,j,u,v,fit)=>{
+  const c=faceCtx(f), out={fr:c.fr,poly:c.poly,cells:[],rows:[],mu:c.mu,mv:c.mv};
+  if(!c.M||f.pts.length<3||!(c.mu>0.05)||!(c.mv>0.05)) return out;
+  const fr=c.fr, tog=new Set(f.tog||[]);
+  out.rows=layoutFace(c,f,(i,j,u,v,fit,mu,mv,o)=>{
     const cs=[[u,v],[u+mu,v],[u+mu,v+mv],[u,v+mv]];
-    out.cells.push({key:f.id+":"+i+","+j,i,j,u,v,fit,active:fit!==tog.has(i+","+j),xy:cs.map(q=>toXY(fr,q[0],q[1])),c:toXY(fr,u+mu/2,v+mv/2)});
-  };
-  if(f.pack==="rows"){
-    for(let j=0;j<nJ;j++){ const v=v0+j*(mv+g); let i=0;
-      for(let u=c.umin;u<=c.umax;){ if(c.fitAt(u,v)){ add(i++,j,u,v,true); u+=mu+g; } else u+=0.01; } }
-  } else {
-    const u0=c.umin+c.eS+(f.offU||0), nI=Math.min(400,Math.max(0,Math.floor((c.umax-u0)/(mu+g))+1));
-    for(let j=0;j<nJ;j++)for(let i=0;i<nI;i++){ const u=u0+i*(mu+g), v=v0+j*(mv+g); add(i,j,u,v,c.fitAt(u,v)); }
-  }
+    out.cells.push({key:f.id+":"+i+","+j,i,j,u,v,mu,mv,o,fit,active:fit!==tog.has(i+","+j),xy:cs.map(q=>toXY(fr,q[0],q[1])),c:toXY(fr,u+mu/2,v+mv/2)});
+  });
   return out;
 }
 function countFit(f){
-  const c=faceCtx(f); if(!c.M||f.pts.length<3) return 0;
-  const {mu,mv}=c, g=f.gap, v0=c.vmin+c.eE+(f.offV||0), nJ=Math.max(0,Math.floor((c.vmax-v0)/(mv+g))+1); let n=0;
-  if(f.pack==="rows"){ for(let j=0;j<nJ;j++){ const v=v0+j*(mv+g); for(let u=c.umin;u<=c.umax;){ if(c.fitAt(u,v)){ n++; u+=mu+g; } else u+=0.01; } } }
-  else{ const u0=c.umin+c.eS+(f.offU||0), nI=Math.max(0,Math.floor((c.umax-u0)/(mu+g))+1);
-    for(let j=0;j<nJ;j++)for(let i=0;i<nI;i++) if(c.fitAt(u0+i*(mu+g),v0+j*(mv+g))) n++; }
-  return n;
+  const c=faceCtx(f); if(!c.M||f.pts.length<3||!(c.mu>0.05)||!(c.mv>0.05)) return 0;
+  let n=0; layoutFace(c,f,(i,j,u,v,fit)=>{ if(fit) n++; }); return n;
 }
-/* Beste Belegung suchen: Ausrichtung und Rasterversatz (Raster) bzw. nur Ausrichtung (Reihen einzeln) */
+/* Beste Belegung suchen: Ausrichtung und Rasterversatz (Raster) bzw. nur Ausrichtung (Reihen einzeln).
+   Bei gemischter Belegung bleiben die Reihenausrichtungen fest, nur der Versatz wird gesucht. */
 function optimizeFace(f,rows){
   const before=countFit({...f,tog:[]}); let best={n:-1,o:f.orient,ou:0,ov:0};
-  for(const o of ["p","l"]){
+  for(const o of (f.orient==="m"?["m"]:["p","l"])){
     const t={...f,orient:o,tog:[],pack:rows?"rows":"grid",offU:0,offV:0}, M=modOf(); if(!M) return null;
-    const mu=(o==="l"?M.h:M.w)/1000, mv=(o==="l"?M.w:M.h)/1000;
+    const mu=(o==="p"?M.w:M.h)/1000, mv=(o==="l"?M.w:M.h)/1000; /* gemischt: größtes Maß als Suchbereich */
     if(rows){ for(let ov=0;ov<mv+f.gap;ov+=0.05){ t.offV=ov; const n=countFit(t); if(n>best.n+0||(n===best.n&&o===f.orient&&ov<best.ov)) best={n,o,ou:0,ov}; } }
     else for(let ou=0;ou<mu+f.gap;ou+=0.04) for(let ov=0;ov<mv+f.gap;ov+=0.04){ t.offU=ou; t.offV=ov; const n=countFit(t); if(n>best.n) best={n,o,ou,ov}; }
   }
@@ -970,7 +979,7 @@ async function saveProject(){
     if(imgDirty && IMG){ await S.set("projectimg/"+P.id,{data:IMG.src}); imgDirty=false; }
     const meta=metaOf(P), pi=projList.findIndex(p=>p.id===P.id); if(pi>=0) projList[pi]=meta; else projList.push(meta);
     fillProjSel();
-    $("#saveState").textContent="gespeichert";
+    $("#saveState").textContent="gespeichert"; if(typeof syncSoon==="function") syncSoon(8000);
   }catch(e){ $("#saveState").textContent="Speichern fehlgeschlagen"; console.error(e); }
 }
 async function saveLib(kind){
@@ -982,7 +991,9 @@ async function loadProject(id){
   P=d;
   for(const k of ["faces","obst","wrs","strings","bats"]) if(!Array.isArray(P[k])) P[k]=[];
   if(!modOf()) P.modId=DEFAULT_MOD_ID;
-  P.faces.forEach(f=>{ f.tog=Array.isArray(f.tog)?f.tog:[]; f.pts=Array.isArray(f.pts)?f.pts:[]; f.gap=Number.isFinite(f.gap)?f.gap:0.02; f.pitch=Number.isFinite(f.pitch)?f.pitch:35; });
+  P.faces.forEach(f=>{ f.tog=Array.isArray(f.tog)?f.tog:[]; f.pts=Array.isArray(f.pts)?f.pts:[]; f.gap=Number.isFinite(f.gap)?f.gap:0.02; f.pitch=Number.isFinite(f.pitch)?f.pitch:35;
+    if(!["p","l","m"].includes(f.orient)) f.orient="p";
+    f.rowOri=Array.isArray(f.rowOri)?f.rowOri.map(o=>o==="l"?"l":o==="p"?"p":null):[]; });
   P.obst.forEach(o=>{ o.margin=Number.isFinite(o.margin)?o.margin:0.3; o.height=Number.isFinite(o.height)?o.height:0; });
   if(!Number.isFinite(P.lat)) P.lat=51; if(!P.shade||typeof P.shade!=="object") P.shade={on:false,date:"ws"};
   P.strings.forEach(s=>{ s.mods=Array.isArray(s.mods)?s.mods:[]; });
@@ -1403,6 +1414,13 @@ function faceStatHtml(){
   const L=Math.hypot(geo.poly[0][0]-geo.poly[1][0],geo.poly[0][1]-geo.poly[1][1]);
   return `<div class="stat"><span>Module</span><b>${n}</b><span>Leistung</span><b>${fmt(M?n*M.wp/1000:0,2)} kWp</b><span>Traufe</span><b>${fmt(L)} m</b><span>Sparrenlänge</span><b>${fmt(Math.max(...vs)-Math.min(...vs))} m</b><span>Dachfläche</span><b>${fmt(Math.abs(A)/2,1)} m²</b><span>Ausrichtung</span><b>${compass(azimuthOf(f))} ${Math.round(azimuthOf(f))}°</b></div>`;
 }
+/* Gemischte Belegung: Ausrichtung je Modulreihe, Reihe 1 = an der Traufe */
+function rowOriHtml(f){
+  const geo=GEO[P.faces.indexOf(f)]; if(!geo||!geo.rows.length) return `<div class="hint">Noch keine Modulreihen auf dieser Fläche.</div>`;
+  const rows=geo.rows.map(r=>{ const n=geo.cells.filter(c=>c.j===r.j&&c.active).length;
+    return `<label class="f">Reihe ${r.j+1}${r.j===0?" (Traufe)":""} · ${n} Mod.<select data-row="${r.j}"><option value="p"${r.o==="p"?" selected":""}>Hochkant</option><option value="l"${r.o==="l"?" selected":""}>Quer</option></select></label>`; }).join("");
+  return `<div class="grid2">${rows}</div><div class="hint">Jede Reihe von der Traufe aus einzeln einstellen. Ändert sich eine Reihe, rücken die Reihen darüber nach und ihre Handänderungen werden zurückgesetzt.</div>`;
+}
 function stringChecksHtml(){
   const s=selStr(); if(!s) return `<div class="hint">Kein String gewählt.</div>`;
   const r=checkString(s), M=modOf();
@@ -1486,7 +1504,8 @@ function renderSide(){
       ${M?`<div class="stat"><span>Gewählt</span><b>${esc(M.name)}</b><span>Maße</span><b>${M.h} × ${M.w} mm</b><span>U_OC / I_SC</span><b>${M.voc} V / ${M.isc} A</b><span>U_MPP / I_MPP</span><b>${M.vmpp} V / ${M.impp} A</b></div><div class="hint">${M.ok?"Werte aus dem Datenblatt.":"Werte sind Näherungen, bitte prüfen."} Weitere Module unter „Bibliothek“.</div>`:`<div class="banner">Kein Modul gewählt.</div>`}</div>
     <div class="sec"><h2>Dachflächen</h2><div class="list">${P.faces.map((x,i)=>{const n=GEO[i]?GEO[i].cells.filter(c=>c.active).length:0; return `<div class="${x.id===UI.selFace?"sel":""}" data-act="selFace" data-id="${x.id}"><span class="grow">${esc(x.name)}</span><span class="mono">${n} Mod.</span></div>`;}).join("")}</div></div>`;
     if(f) h+=`<div class="sec"><h2>Belegung ${esc(f.name)}</h2>
-      <label class="f">Ausrichtung der Module<select id="fOrient" data-f="orient"><option value="p"${f.orient==="p"?" selected":""}>Hochkant</option><option value="l"${f.orient==="l"?" selected":""}>Quer</option></select></label>
+      <label class="f">Ausrichtung der Module<select id="fOrient" data-f="orient"><option value="p"${f.orient==="p"?" selected":""}>Hochkant</option><option value="l"${f.orient==="l"?" selected":""}>Quer</option><option value="m"${f.orient==="m"?" selected":""}>Gemischt (je Reihe wählbar)</option></select></label>
+      ${f.orient==="m"?rowOriHtml(f):""}
       <div class="grid2" style="grid-template-columns:repeat(3,1fr)">${num("fEdgeE","Traufe (m)",f.edgeE??f.edge,'data-f="edgeE" min="0" max="3"',0.05)}${num("fEdgeR","First (m)",f.edgeR??f.edge,'data-f="edgeR" min="0" max="3"',0.05)}${num("fEdgeS","Seite (m)",f.edgeS??f.edge,'data-f="edgeS" min="0" max="3"',0.05)}</div>
       <div class="grid2">${num("fGap","Modulfuge (m)",f.gap,'data-f="gap" min="0" max="0.3"',0.005)}<label class="f">Belegungsart<select id="fPack" data-f="pack"><option value="grid"${f.pack==="rows"?"":" selected"}>Raster (Spalten fluchtend)</option><option value="rows"${f.pack==="rows"?" selected":""}>Reihen einzeln (mehr Module)</option></select></label></div>
       <div class="row"><button data-act="optGrid" class="pri" type="button">Belegung optimieren</button><button data-act="optRows" type="button">Maximal füllen</button></div>
@@ -1560,6 +1579,7 @@ side.addEventListener("input",e=>{
   if(t.dataset.f==="dimU"||t.dataset.f==="dimV"){
     const f=selFace(), v=parseFloat(t.value); if(!f||!(v>0.3)) return; const b=baseDims(f);
     if(t.dataset.f==="dimU") f.kU=v/b.eave; else f.kV=v/b.raf; changed(); return; }
+  if(t.dataset.f==="orient") return; /* wird im change-Ereignis behandelt */
   if(t.dataset.f){ const f=selFace(); if(!f) return; const k=t.dataset.f, b=FIELD_BOUNDS[k]; f[k]=b?clampNum(val,...b):val; changed(); }
   else if(t.dataset.o){ const o=selObst(); if(!o) return; o[t.dataset.o]=val; changed(); }
   else if(t.dataset.p&&t.dataset.p!=="modId"){ P[t.dataset.p]=val; if(t.dataset.p==="name"){ const it=projList.find(p=>p.id===P.id); if(it) it.name=val; fillProjSel(); } changed(); }
@@ -1571,6 +1591,17 @@ side.addEventListener("change",e=>{
   if(t.dataset.b){ const b=P.bats.find(x=>x.id===t.dataset.id); if(b){ if(t.dataset.b==="qty") b.qty=Math.max(1,Math.round(parseFloat(t.value)||1)); else b.wr=t.value; changed(); renderSide(); } return; }
   if(t.id==="imgFile"&&t.files[0]){ loadImageFile(t.files[0]); return; }
   if(t.dataset.p==="modId"){ P.modId=t.value; changed(); renderSide(); return; }
+  if(t.dataset.row!=null){
+    const f=selFace(); if(!f) return; const j=parseInt(t.dataset.row);
+    const cur=(GEO[P.faces.indexOf(f)]?.rows||[]).map(r=>r.o); cur[j]=t.value==="l"?"l":"p"; f.rowOri=cur;
+    f.tog=(f.tog||[]).filter(k=>parseInt(k.split(",")[1])<j); /* Reihen darunter bleiben unverändert */
+    changed(); renderSide(); return;
+  }
+  if(t.dataset.f==="orient"){
+    const f=selFace(); if(!f) return; const prev=f.orient==="l"?"l":"p";
+    if(t.value==="m"&&f.orient!=="m"){ f.rowDef=prev; f.rowOri=[]; } /* beim Umschalten erst alle Reihen wie bisher */
+    f.orient=t.value; f.tog=[]; changed(); renderSide(); return;
+  }
   if(t.dataset.f&&t.tagName==="SELECT"){ const f=selFace(); f[t.dataset.f]=t.value; f.tog=[]; changed(); renderSide(); return; }
   if(t.dataset.s&&t.tagName==="SELECT"){
     const s=selStr(); if(!s) return; s[t.dataset.s]=t.dataset.s==="mppt"?parseInt(t.value):t.value;
@@ -1974,7 +2005,7 @@ function computeSub(){
   GEO.forEach((g,fi)=>{
     const f=P.faces[fi], cells=g.cells.filter(c=>c.active); const out={fi,rails:[],lower:[],hooks:[]}; res.faces.push(out);
     if(!cells.length||!g.mu||!g.poly.length) return;
-    const {mu,mv}=g, gap=f.gap, r=S.klemm/100, ext=S.ext;
+    const gap=f.gap, r=S.klemm/100, ext=S.ext;
     const umin=Math.min(...g.poly.map(q=>q[0])), u0=umin+(f.sparOff||0);
     const rafters=(a,b)=>{ const out=[]; for(let k=Math.ceil((a-u0)/S.spar-1e-9);u0+k*S.spar<=b+1e-9;k++) out.push(u0+k*S.spar); return out; };
     const pick=(a,b,label)=>{
@@ -1989,9 +2020,11 @@ function computeSub(){
       if(warn) res.warn.push(`${f.name}: an einer ${label} ist der Schienenüberstand größer als ${fmt(S.over,2)} m oder der Hakenabstand größer als ${fmt(S.span,2)} m. Sparrenlage prüfen`);
       return hk;
     };
-    if(f.orient!=="l"){
+    /* Hochkant- und Quermodule getrennt rechnen (bei gemischter Belegung kommen beide auf einer Fläche vor) */
+    ["p","l"].forEach(o=>{ const cs=cells.filter(c=>c.o===o); if(!cs.length) return; const {mu,mv}=cs[0];
+    if(o==="p"){
       /* Hochkant: Schienen waagerecht (parallel zur Traufe), zwei je Modulreihe */
-      runsOf(cells,"v","u",mu+gap).forEach(run=>{
+      runsOf(cs,"v","u",mu+gap).forEach(run=>{
         const a=run[0].u-ext, b=run[run.length-1].u+mu+ext, n=run.length;
         [r*mv,(1-r)*mv].forEach(off=>{
           const v=run[0].v+off, pc=addRail(b-a,f.name+" Schiene"); const hk=pick(a,b,"Schiene");
@@ -2002,7 +2035,7 @@ function computeSub(){
     } else {
       /* Querformat: Schienen senkrecht (Kreuzverbund), Träger waagerecht auf den Haken */
       const cross=[];
-      runsOf(cells,"u","v",mv+gap).forEach(run=>{
+      runsOf(cs,"u","v",mv+gap).forEach(run=>{
         const a=run[0].v-ext, b=run[run.length-1].v+mv+ext, n=run.length;
         [r*mu,(1-r)*mu].forEach(off=>{
           const u=run[0].u+off; const pc=addRail(b-a,f.name+" Schiene");
@@ -2018,6 +2051,7 @@ function computeSub(){
         res.bom.hooks+=hk.length; res.bom.cross+=c.n;
       });
     }
+    });
   });
   if(single){
     /* nur eine Schienenlänge (z. B. 4,80 m): Reste werden für kürzere Stücke weiterverwendet */
@@ -2141,7 +2175,7 @@ async function goHome(){
   clearTimeout(saveTimer);
   if(P){ await saveProject(); }
   P=null; IMG=null; GEO=[]; MODS=[]; SUB=null;
-  showView("home");
+  showView("home"); syncSoon(300);
 }
 async function openProject(id){
   showView("project");
@@ -2156,17 +2190,17 @@ async function createProject(f){
 async function patchProject(id,fn){
   if(P&&P.id===id){ fn(P); await saveProject(); return; }
   const d=await S.get("projects/"+id); if(!d) return; fn(d); d.updated=nowIso();
-  await S.set("projects/"+id,d); const i=projList.findIndex(p=>p.id===id); if(i>=0) projList[i]=metaOf(d);
+  await S.set("projects/"+id,d); const i=projList.findIndex(p=>p.id===id); if(i>=0) projList[i]=metaOf(d); syncSoon();
 }
 async function duplicateProject(id){
   const d=await S.get("projects/"+id); if(!d) return; const img=await S.get("projectimg/"+id);
   const n=JSON.parse(JSON.stringify(d)); n.id=uid("p"); n.name=d.name+" (Kopie)"; n.created=n.updated=nowIso(); n.status="Planung";
   await S.set("projects/"+n.id,n); if(img) await S.set("projectimg/"+n.id,img);
-  projList.push(metaOf(n)); renderHome(); toast("Projekt dupliziert");
+  projList.push(metaOf(n)); renderHome(); toast("Projekt dupliziert"); syncSoon();
 }
 async function deleteProjectById(id){
   await S.del("projects/"+id); await S.del("projectimg/"+id);
-  projList=projList.filter(p=>p.id!==id); if(P&&P.id===id) P=null; renderHome(); toast("Projekt gelöscht");
+  projList=projList.filter(p=>p.id!==id); if(P&&P.id===id) P=null; renderHome(); toast("Projekt gelöscht"); syncSoon(500);
 }
 
 /* Export / Import einzelner Projekte (als Datei, z. B. zum Teilen mit Kollegen) */
@@ -2188,7 +2222,7 @@ async function importProjectFile(file){
     const j=JSON.parse(await file.text()); if(j.type!=="dachplaner-projekt"||!j.project) throw new Error("format");
     const n=j.project; n.id=uid("p"); n.name=(n.name||"Projekt")+" (Import)"; n.updated=nowIso(); if(!n.created) n.created=n.updated;
     await S.set("projects/"+n.id,n); if(j.image) await S.set("projectimg/"+n.id,{data:j.image});
-    projList.push(metaOf(n)); renderHome(); toast("Projekt importiert");
+    projList.push(metaOf(n)); renderHome(); toast("Projekt importiert"); syncSoon();
   }catch(e){ toast("Datei konnte nicht gelesen werden"); }
 }
 
@@ -2250,7 +2284,7 @@ function homeCards(){
 }
 function renderHome(){
   const el=$("#home");
-  el.innerHTML=`<div class="homewrap">${updateBannerHtml()}<div class="homehead"><div><h1>Projekte</h1><div class="hint">${projList.length} Projekt${projList.length===1?"":"e"} · zuletzt bearbeitete zuerst</div></div>
+  el.innerHTML=`<div class="homewrap">${updateBannerHtml()}<div class="homehead"><div><h1>Projekte</h1><div class="hint">${projList.length} Projekt${projList.length===1?"":"e"} · zuletzt bearbeitete zuerst</div><div class="hint" id="syncLine">${syncLineHtml()}</div></div>
     <div class="row"><input id="hQ" type="text" placeholder="Suchen: Name, Kunde, Adresse" value="${esc(HOME.q)}" style="width:240px"><select id="hSt" style="width:auto"><option value="">Alle Status</option>${STATUSES.map(s=>`<option${s===HOME.st?" selected":""}>${s}</option>`).join("")}</select><button data-pa="import" type="button">Projekt importieren</button><input id="hImp" type="file" accept=".json,.dachplaner.json" hidden><button data-pa="test" type="button">Selbsttest</button><button class="pri" data-pa="new" type="button">Neues Projekt</button></div></div>
     <div class="pgrid" id="pgrid">${homeCards()}</div></div>`;
 }
@@ -2258,7 +2292,7 @@ $("#home").addEventListener("input",e=>{ if(e.target.id==="hQ"){ HOME.q=e.target
 $("#home").addEventListener("change",e=>{ if(e.target.id==="hImp"&&e.target.files[0]){ importProjectFile(e.target.files[0]); e.target.value=""; return; } if(e.target.id==="hSt"){ HOME.st=e.target.value; $("#pgrid").innerHTML=homeCards(); } });
 $("#home").addEventListener("click",e=>{
   const b=e.target.closest("[data-pa]");
-  if(b){ const a=b.dataset.pa, id=b.dataset.id; if(a==="upd") updateDialog(); else if(a==="test") selfTestModal(); else if(a==="new") newDialog(); else if(a==="import") $("#hImp").click(); else if(a==="exp") exportProject(id); else if(a==="open") openProject(id); else if(a==="edit") editDialog(id); else if(a==="dup") duplicateProject(id); else if(a==="del") deleteDialog(id); return; }
+  if(b){ const a=b.dataset.pa, id=b.dataset.id; if(a==="sync"||a==="syncnow") e.preventDefault(); if(a==="sync") syncDialog(); else if(a==="syncnow") syncRun(); else if(a==="upd") updateDialog(); else if(a==="test") selfTestModal(); else if(a==="new") newDialog(); else if(a==="import") $("#hImp").click(); else if(a==="exp") exportProject(id); else if(a==="open") openProject(id); else if(a==="edit") editDialog(id); else if(a==="dup") duplicateProject(id); else if(a==="del") deleteDialog(id); return; }
   const c=e.target.closest("[data-open]"); if(c) openProject(c.dataset.open);
 });
 $("#home").addEventListener("keydown",e=>{ if(e.key==="Enter"&&e.target.dataset&&e.target.dataset.open) openProject(e.target.dataset.open); });
@@ -2271,7 +2305,7 @@ $("#homeBtn").onclick=()=>goHome();
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.23.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.23";
+const APP_VERSION="2026.09.28.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.23";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 const updUrl=()=>String(SET.updateUrl||UPDATE_URL||"").trim().replace(/\/+$/,"");
@@ -2375,6 +2409,117 @@ async function autoCheckUpdate(){
 }
 </script>
 <script>
+/* ───────── Projekte über GitHub abgleichen ─────────
+   Jedes Projekt liegt als projects/<id>.json (gleiches Format wie „Exportieren“) in einem PRIVATEN GitHub-Repo.
+   Repo und Token bleiben nur in diesem Browser. SYNC.state merkt sich je Projekt den zuletzt abgeglichenen Stand
+   (sha auf GitHub, „updated“ lokal); daran erkennt der Abgleich, auf welcher Seite sich etwas geändert hat. */
+const lsGet=(k,d)=>{ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } };
+const lsSet=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
+const SYNC={cfg:lsGet("pvplan-sync:cfg",null),state:lsGet("pvplan-sync:state",{}),busy:false,again:false,timer:null,last:null,err:null};
+const syncOn=()=>!!(SYNC.cfg&&SYNC.cfg.repo&&SYNC.cfg.token&&!S.db);
+async function gh(path,opt={}){
+  const r=await fetch("https://api.github.com/repos/"+SYNC.cfg.repo+path,{cache:"no-store",signal:AbortSignal.timeout(20000),...opt,
+    headers:{Authorization:"Bearer "+SYNC.cfg.token,Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28",...(opt.headers||{})}});
+  if(r.status===404) return null;
+  if(!r.ok) throw new Error(r.status===401?"Token ungültig oder abgelaufen":r.status===403?"Token hat keine Schreibrechte auf das Repo":r.status===409||r.status===422?"Projekt wurde gleichzeitig woanders geändert, nächster Abgleich löst das":"GitHub-Fehler "+r.status);
+  return r;
+}
+function b64utf8(s){ const b=new TextEncoder().encode(s); let out=""; for(let i=0;i<b.length;i+=0x8000) out+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(out); }
+async function remoteList(){
+  const r=await gh("/contents/projects"); if(!r) return new Map();
+  return new Map((await r.json()).filter(x=>x.type==="file"&&x.name.endsWith(".json")).map(x=>[x.name.slice(0,-5),x.sha]));
+}
+async function remoteGet(id){ const r=await gh("/contents/projects/"+id+".json",{headers:{Accept:"application/vnd.github.raw+json"}}); return r?r.json():null; }
+async function remotePut(id,sha,d){
+  const img=await S.get("projectimg/"+id);
+  const body={message:"Projekt „"+(d.name||id)+"“",content:b64utf8(JSON.stringify({type:"dachplaner-projekt",ver:1,project:d,image:img?img.data:null}))};
+  if(sha) body.sha=sha;
+  const r=await gh("/contents/projects/"+id+".json",{method:"PUT",body:JSON.stringify(body)}); if(!r) throw new Error("Repo nicht gefunden");
+  SYNC.state[id]={sha:(await r.json()).content.sha,updated:d.updated||""};
+}
+async function remoteDel(id,sha){ await gh("/contents/projects/"+id+".json",{method:"DELETE",body:JSON.stringify({message:"Projekt gelöscht",sha})}); delete SYNC.state[id]; }
+async function storeRemote(id,sha,j){
+  j.project.id=id; await S.set("projects/"+id,j.project);
+  if(j.image) await S.set("projectimg/"+id,{data:j.image}); else await S.del("projectimg/"+id);
+  SYNC.state[id]={sha,updated:j.project.updated||""};
+}
+async function syncRun(){
+  if(!syncOn()) return;
+  if(SYNC.busy){ SYNC.again=true; return; }
+  SYNC.busy=true; SYNC.err=null; syncUi();
+  let got=0, conflicts=0; const st=SYNC.state, openId=P?P.id:null;
+  try{
+    const remote=await remoteList(), local=new Map((await S.list("projects")).map(x=>[x.id,x.data]));
+    for(const [id,sha] of remote){
+      const d=local.get(id), known=st[id];
+      if(!d){ /* hier gelöscht (und seitdem woanders unverändert) oder neu von einem anderen Rechner */
+        if(known&&known.sha===sha) await remoteDel(id,sha);
+        else{ const j=await remoteGet(id); if(j&&j.project){ await storeRemote(id,sha,j); got++; } }
+        continue;
+      }
+      if(d.demo) continue;
+      const localCh=!known||known.updated!==(d.updated||""), remoteCh=!known||known.sha!==sha;
+      if(!localCh&&!remoteCh) continue;
+      if(!remoteCh){ await remotePut(id,sha,d); continue; }
+      if(id===openId) continue; /* geöffnetes Projekt erst beim Schließen abgleichen */
+      const j=await remoteGet(id); if(!j||!j.project) continue;
+      if(!localCh||(j.project.updated||"")===(d.updated||"")){ await storeRemote(id,sha,j); if(localCh===false) got++; continue; }
+      /* auf beiden Seiten geändert: nichts verwerfen, die Version von hier wird als Kopie behalten */
+      const c=clone(d); c.id=uid("p"); c.name=(d.name||"Projekt")+" (Konflikt "+new Date().toLocaleDateString("de-DE")+")";
+      await S.set("projects/"+c.id,c); const img=await S.get("projectimg/"+id); if(img) await S.set("projectimg/"+c.id,img);
+      await storeRemote(id,sha,j); await remotePut(c.id,null,c); conflicts++;
+    }
+    for(const [id,d] of local){
+      if(remote.has(id)||d.demo) continue;
+      if(st[id]&&st[id].updated===(d.updated||"")){ /* auf einem anderen Rechner gelöscht */
+        if(id===openId) continue;
+        await S.del("projects/"+id); await S.del("projectimg/"+id); delete st[id]; got++;
+      } else await remotePut(id,null,d); /* neu hier, oder hier geändert nachdem es woanders gelöscht wurde */
+    }
+    SYNC.last=Date.now();
+    await refreshList(); if(VIEW==="home") renderHome();
+    if(got) toast(`${got} Projekt${got===1?"":"e"} von GitHub aktualisiert`);
+    if(conflicts) toast(`${conflicts} Projekt${conflicts===1?" wurde":"e wurden"} auf zwei Rechnern geändert. Deine Version liegt als „Konflikt“-Kopie daneben.`);
+  }catch(e){ SYNC.err=e.name==="TimeoutError"||e instanceof TypeError?"GitHub nicht erreichbar (offline?)":e.message; }
+  finally{ lsSet("pvplan-sync:state",st); SYNC.busy=false; syncUi(); if(SYNC.again){ SYNC.again=false; syncSoon(); } }
+}
+function syncSoon(ms){ if(!syncOn()) return; clearTimeout(SYNC.timer); SYNC.timer=setTimeout(syncRun,ms??2500); }
+function syncLineHtml(){
+  if(S.db) return "";
+  if(!syncOn()) return `Nur in diesem Browser gespeichert. <a href="#" data-pa="sync">Mit GitHub abgleichen …</a>`;
+  const s=SYNC.busy?"Gleiche ab …":SYNC.err?`<span class="bad">Abgleich fehlgeschlagen: ${esc(SYNC.err)}</span>`:SYNC.last?"Abgeglichen um "+new Date(SYNC.last).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"Noch nicht abgeglichen";
+  return `GitHub: ${esc(SYNC.cfg.repo)} · ${s} · <a href="#" data-pa="syncnow">Jetzt abgleichen</a> · <a href="#" data-pa="sync">Einstellungen</a>`;
+}
+function syncUi(){ const el=$("#syncLine"); if(el) el.innerHTML=syncLineHtml(); }
+function syncDialog(){
+  const c=SYNC.cfg||{};
+  const m=modal("Projekte über GitHub abgleichen",`
+    <div class="hint">Damit siehst du deine Projekte auf jedem Rechner. Sie liegen in einem <b>privaten</b> GitHub-Repo, beim Öffnen des Programms und nach jeder Änderung wird abgeglichen.</div>
+    <ol class="hint" style="margin:0;padding-left:18px">
+      <li>Auf github.com ein neues Repository anlegen, <b>Private</b> auswählen, z. B. „PV-Planer-Daten“.</li>
+      <li>Profilbild → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token. Bei „Repository access“ nur dieses Repo wählen, unter „Permissions“ <b>Contents: Read and write</b>.</li>
+      <li>Repo und Token hier eintragen. Auf jedem Rechner einmal.</li></ol>
+    <label class="f">Repository (Benutzer/Name)<input id="syRepo" type="text" value="${esc(c.repo||"")}" placeholder="jonas010203/PV-Planer-Daten"></label>
+    <label class="f">Token<input id="syTok" type="password" value="${esc(c.token||"")}" placeholder="github_pat_…" autocomplete="off"></label>
+    <div class="hint">Der Token bleibt nur in diesem Browser. Wer an diesen Rechner und Browser kommt, kommt damit auch an die Projekte.</div>
+    ${syncOn()?`<button type="button" data-sy="off" class="dng">Abgleich auf diesem Rechner ausschalten</button>`:""}`,"Speichern und abgleichen",async m=>{
+    const repo=gv(m,"syRepo").replace(/^https?:\/\/github\.com\//,"").replace(/\.git$/,"").replace(/\/+$/,""), token=gv(m,"syTok");
+    if(!/^[\w.-]+\/[\w.-]+$/.test(repo)||!token){ toast("Bitte Repository als Benutzer/Name und den Token eintragen"); return false; }
+    const old=SYNC.cfg; SYNC.cfg={repo,token};
+    try{
+      const r=await gh(""); if(!r) throw new Error("Repo nicht gefunden oder Token hat keinen Zugriff darauf");
+      if(!(await r.json()).private) throw new Error("Das Repo ist öffentlich. Kundendaten wären für alle sichtbar, bitte ein privates Repo nehmen");
+    }catch(e){ SYNC.cfg=old; toast(e.message); return false; }
+    if(!old||old.repo!==repo) SYNC.state={};
+    lsSet("pvplan-sync:cfg",SYNC.cfg); lsSet("pvplan-sync:state",SYNC.state);
+    syncRun();
+  });
+  m.addEventListener("click",e=>{ if(e.target.dataset.sy==="off"){ SYNC.cfg=null; SYNC.state={}; try{ localStorage.removeItem("pvplan-sync:cfg"); localStorage.removeItem("pvplan-sync:state"); }catch(x){} m.remove(); syncUi(); toast("Abgleich ausgeschaltet. Die Projekte bleiben in diesem Browser."); } });
+}
+/* zurück zum Programm (z. B. nach Arbeit am anderen Rechner): gleich nachsehen, ob es Neues gibt */
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&VIEW==="home") syncSoon(300); });
+</script>
+<script>
 /* ───────── Automatische Stringzuordnung ─────────
    Ordnet unzugeordnete Module dem gewählten Wechselrichter zu: je Dachfläche eigene, gleich lange Strings,
    so lang wie Spannung (Voc kalt, Vmpp im MPP-Fenster) und die Kapazität der MPP-Eingänge es erlauben. */
@@ -2466,6 +2611,12 @@ function runSelfTests(){
     return (11.5/inv.maxDc)<=MAXDC_OVER+1e-9 && (11.6/inv.maxDc)>MAXDC_OVER;
   });
   test("PDF-Bibliothek eingebettet (Luftbild aus PDF laden)",()=>typeof pdfjsLib!=="undefined"&&typeof PDF_WORKER_B64==="string"&&PDF_WORKER_B64.length>1000);
+  test("Gemischte Belegung: Reihen hochkant/quer mit eigener Modulhöhe",()=>{
+    const c={umin:0,umax:10,vmin:0,vmax:5,eE:0,eS:0,dims:o=>o==="l"?[1.7,1.1]:[1.1,1.7],fitAt:(u,v,mu,mv)=>u+mu<=10+1e-9&&v+mv<=5+1e-9};
+    const f={orient:"m",rowOri:["p","l"],rowDef:"p",gap:0,pack:"grid"}; let n=0;
+    const rows=layoutFace(c,f,(i,j,u,v,fit)=>{ if(fit) n++; });
+    return rows.map(r=>r.o).join("")==="plpp" && eq(rows[2].v,2.8,1e-9) && n===23;
+  });
   test("Spannungsfall-Formel (Kupfer, Hin- und Rückleiter)",()=>{
     const d=voltageDrop(6,10,20); // 6 mm², 10 A, 20 m einfache Länge
     return d.dropV>0 && eq(d.dropV,2*20*10*0.0225/6,0.0001);
@@ -2529,7 +2680,7 @@ function computeShading(){
       const minV=Math.min(...all.map(c=>c[1])), maxV=Math.max(...all.map(c=>c[1]));
       out.zones.push({minU,maxU,minV,maxV,name:ob.name});
       geo.cells.filter(c=>c.active).forEach(c=>{
-        const mu=geo.mu,mv=geo.mv;
+        const mu=c.mu,mv=c.mv;
         if(c.u<maxU&&c.u+mu>minU&&c.v<maxV&&c.v+mv>minV){ if(!res.shadedKeys.has(c.key)) res.shadedCount++; res.shadedKeys.add(c.key); }
       });
     });
@@ -2767,12 +2918,13 @@ $("#lib").addEventListener("click",async e=>{
   try{ const so=await S.get("lib/shop"); if(so&&so.items) SHOP_OVERRIDE=so; }catch(e){}
   buildArts();
   await refreshList();
+  if(syncOn()) await syncRun(); /* beim Start neue und geänderte Projekte von GitHub holen */
   if(!projList.length&&!SET.demoSeeded){
     await makeDemo(); SET.demoSeeded=true; saveSettings(); await saveProject();
     P=null; IMG=null; GEO=[]; MODS=[]; SUB=null;
   }
   showView("home"); autoCheckUpdate();
-  $("#saveState").textContent=S.db?"gespeichert":"nur in diesem Browser gespeichert";
+  $("#saveState").textContent=S.db?"gespeichert":syncOn()?"gespeichert, Abgleich mit GitHub":"nur in diesem Browser gespeichert";
 })();
 </script>
 <script>
