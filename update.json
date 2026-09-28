@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.09.28.1",
+    "version": "2026.09.28.2",
     "file": "Dachplaner-PV.html",
-    "notes": "Module hochkant und quer gemischt auf einer Dachfläche (Ausrichtung je Reihe). Projekte lassen sich über ein privates GitHub-Repo auf allen Rechnern abgleichen."
+    "notes": "Dachtiefe von oben (z. B. aus dem Bayernatlas) direkt eingeben, die Sparrenlänge wird über die Dachneigung berechnet. Dazu: Module hochkant und quer gemischt, Projektabgleich über privates GitHub-Repo."
   },
   "library": {
     "version": "2026.09.23",

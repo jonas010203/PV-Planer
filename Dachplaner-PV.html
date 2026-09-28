@@ -1490,6 +1490,8 @@ function renderSide(){
       <h2 style="margin-top:6px">Maße vorgeben</h2>
       <div class="hint">Kennst du Traufen- oder Sparrenlänge (Bauplan, Kataster, Aufmaß von unten), trag sie hier ein. Die Fläche wird dann auf dieses Maß gestreckt, unabhängig vom Bildmaßstab.</div>
       <div class="grid2">${num("fDimU","Traufe (m)",dimNow(f).eave.toFixed(2),'data-f="dimU" min="0.5"',0.01)}${num("fDimV","Sparrenlänge (m)",dimNow(f).raf.toFixed(2),'data-f="dimV" min="0.5"',0.01)}</div>
+      ${num("fDimH","Tiefe von oben, z. B. Bayernatlas (m)",(dimNow(f).raf*Math.cos(rad(f.pitch||0))).toFixed(2),'data-f="dimH" min="0.5"',0.01)}
+      <div class="hint">Karten wie der Bayernatlas messen waagerecht. Die Traufe kannst du direkt übernehmen, die Dachtiefe trägst du hier ein. Die Sparrenlänge rechnet das Programm über die Dachneigung selbst aus.</div>
       ${(f.kU||f.kV)?`<button data-act="resetDims" type="button">Maße auf Bildmaßstab zurücksetzen</button>`:""}
       <div class="row"><button data-act="rotEave" type="button">Andere Kante als Traufe</button><button data-act="delFace" class="dng" type="button">Fläche löschen</button></div>
       <div id="faceStat">${faceStatHtml()}</div></div>`;
@@ -1576,9 +1578,11 @@ side.addEventListener("input",e=>{
   const t=e.target; if(!P) return;
   if(t.dataset.q){ const src=Q_SRC[t.dataset.q]; if(src){ const [items,sel]=src(); $("#"+t.dataset.q).innerHTML=optHtml(items,sel,t.value); } return; }
   const val=t.type==="number"?(t.value===""?0:parseFloat(t.value)):t.value;
-  if(t.dataset.f==="dimU"||t.dataset.f==="dimV"){
+  if(t.dataset.f==="dimU"||t.dataset.f==="dimV"||t.dataset.f==="dimH"){
     const f=selFace(), v=parseFloat(t.value); if(!f||!(v>0.3)) return; const b=baseDims(f);
-    if(t.dataset.f==="dimU") f.kU=v/b.eave; else f.kV=v/b.raf; changed(); return; }
+    if(t.dataset.f==="dimU") f.kU=v/b.eave;
+    else f.kV=(t.dataset.f==="dimH"?v/Math.cos(rad(f.pitch||0)):v)/b.raf; /* waagerechte Tiefe → Sparrenlänge */
+    changed(); return; }
   if(t.dataset.f==="orient") return; /* wird im change-Ereignis behandelt */
   if(t.dataset.f){ const f=selFace(); if(!f) return; const k=t.dataset.f, b=FIELD_BOUNDS[k]; f[k]=b?clampNum(val,...b):val; changed(); }
   else if(t.dataset.o){ const o=selObst(); if(!o) return; o[t.dataset.o]=val; changed(); }
@@ -2305,7 +2309,7 @@ $("#homeBtn").onclick=()=>goHome();
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.28.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.23";
+const APP_VERSION="2026.09.28.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.23";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 const updUrl=()=>String(SET.updateUrl||UPDATE_URL||"").trim().replace(/\/+$/,"");
