@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.09.28.3",
+    "version": "2026.09.28.4",
     "file": "Dachplaner-PV.html",
-    "notes": "Dachtiefe von oben (z. B. aus dem Bayernatlas) direkt eingeben, die Sparrenlänge wird über die Dachneigung berechnet. Dazu: Module hochkant und quer gemischt, Projektabgleich über privates GitHub-Repo."
+    "notes": "Projektabgleich mit GitHub lädt jetzt höchstens alle 3 Minuten hoch (plus sofort beim Schließen des Projekts), statt nach jeder Änderung. Breitengrad für die Verschattung wird aus der PLZ der Anlagenadresse übernommen."
   },
   "library": {
     "version": "2026.09.28",

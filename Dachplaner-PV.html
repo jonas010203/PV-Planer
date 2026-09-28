@@ -801,6 +801,16 @@ const rad = d=>d*Math.PI/180;
 const clampNum=(v,min,max)=>Math.min(max,Math.max(min,Number.isFinite(v)?v:min));
 /* Grenzwerte gegen unsinnige oder beschädigte Projektdaten (z. B. aus einer importierten Datei) */
 const FIELD_BOUNDS={pitch:[0,80],gap:[0,0.3],edgeE:[0,3],edgeR:[0,3],edgeS:[0,3],edge:[0,3],offU:[-10,10],offV:[-10,10]};
+/* Ungefährer Breitengrad je PLZ-Leitregion (erste zwei Ziffern), genau genug für den Sonnenstand (±0,3°).
+   Läuft offline, die Adresse verlässt den Rechner nicht. */
+const PLZ_LAT={"01":51.05,"02":51.2,"03":51.75,"04":51.35,"06":51.5,"07":50.85,"08":50.6,"09":50.8,"10":52.5,"12":52.45,"13":52.57,"14":52.4,"15":52.35,"16":52.8,"17":53.6,"18":54.1,"19":53.6,
+ "20":53.55,"21":53.35,"22":53.6,"23":53.9,"24":54.3,"25":54.2,"26":53.3,"27":53.4,"28":53.08,"29":52.8,"30":52.37,"31":52.15,"32":52.05,"33":51.9,"34":51.3,"35":50.6,"36":50.6,"37":51.55,"38":52.25,"39":52.1,
+ "40":51.25,"41":51.2,"42":51.25,"44":51.5,"45":51.45,"46":51.6,"47":51.4,"48":52.0,"49":52.4,"50":50.9,"51":50.95,"52":50.8,"53":50.65,"54":49.8,"55":49.9,"56":50.4,"57":50.9,"58":51.35,"59":51.55,
+ "60":50.1,"61":50.3,"63":50.0,"64":49.8,"65":50.1,"66":49.3,"67":49.4,"68":49.45,"69":49.4,"70":48.78,"71":48.75,"72":48.45,"73":48.75,"74":49.15,"75":48.9,"76":49.0,"77":48.5,"78":47.9,"79":47.9,
+ "80":48.14,"81":48.12,"82":47.9,"83":47.85,"84":48.4,"85":48.6,"86":48.3,"87":47.75,"88":47.8,"89":48.4,"90":49.45,"91":49.5,"92":49.4,"93":49.0,"94":48.6,"95":50.0,"96":50.0,"97":49.8,"98":50.6,"99":51.0};
+function latFromAdr(adr){ const m=String(adr||"").match(/(?:^|\D)(\d{5})(?!\d)/); return m?(PLZ_LAT[m[1].slice(0,2)]||null):null; }
+/* Breitengrad aus der Anlagenadresse übernehmen, solange er nicht von Hand eingetragen wurde */
+function latAuto(){ if(!P||P.latManual) return false; const l=latFromAdr(P.adresse); if(l&&l!==P.lat){ P.lat=l; return true; } return false; }
 function clampFace(f){ for(const k in FIELD_BOUNDS){ if(f[k]!=null) f[k]=clampNum(f[k],...FIELD_BOUNDS[k]); } return f; }
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -980,7 +990,7 @@ async function saveProject(){
     if(imgDirty && IMG){ await S.set("projectimg/"+P.id,{data:IMG.src}); imgDirty=false; }
     const meta=metaOf(P), pi=projList.findIndex(p=>p.id===P.id); if(pi>=0) projList[pi]=meta; else projList.push(meta);
     fillProjSel();
-    $("#saveState").textContent="gespeichert"; if(typeof syncSoon==="function") syncSoon(8000);
+    $("#saveState").textContent="gespeichert"; if(typeof syncLater==="function") syncLater();
   }catch(e){ $("#saveState").textContent="Speichern fehlgeschlagen"; console.error(e); }
 }
 async function saveLib(kind){
@@ -996,7 +1006,7 @@ async function loadProject(id){
     if(!["p","l","m"].includes(f.orient)) f.orient="p";
     f.rowOri=Array.isArray(f.rowOri)?f.rowOri.map(o=>o==="l"?"l":o==="p"?"p":null):[]; });
   P.obst.forEach(o=>{ o.margin=Number.isFinite(o.margin)?o.margin:0.3; o.height=Number.isFinite(o.height)?o.height:0; });
-  if(!Number.isFinite(P.lat)) P.lat=51; if(!P.shade||typeof P.shade!=="object") P.shade={on:false,date:"ws"};
+  if(!Number.isFinite(P.lat)) P.lat=51; latAuto(); if(!P.shade||typeof P.shade!=="object") P.shade={on:false,date:"ws"};
   P.strings.forEach(s=>{ s.mods=Array.isArray(s.mods)?s.mods:[]; });
   if(!Number.isFinite(P.tmin)) P.tmin=-10; if(!Number.isFinite(P.tmax)) P.tmax=70;
   const im=await S.get("projectimg/"+id);
@@ -1587,7 +1597,7 @@ side.addEventListener("input",e=>{
   if(t.dataset.f==="orient") return; /* wird im change-Ereignis behandelt */
   if(t.dataset.f){ const f=selFace(); if(!f) return; const k=t.dataset.f, b=FIELD_BOUNDS[k]; f[k]=b?clampNum(val,...b):val; changed(); }
   else if(t.dataset.o){ const o=selObst(); if(!o) return; o[t.dataset.o]=val; changed(); }
-  else if(t.dataset.p&&t.dataset.p!=="modId"){ P[t.dataset.p]=val; if(t.dataset.p==="name"){ const it=projList.find(p=>p.id===P.id); if(it) it.name=val; fillProjSel(); } changed(); }
+  else if(t.dataset.p&&t.dataset.p!=="modId"){ P[t.dataset.p]=val; if(t.dataset.p==="lat") P.latManual=true; if(t.dataset.p==="adresse") latAuto(); if(t.dataset.p==="name"){ const it=projList.find(p=>p.id===P.id); if(it) it.name=val; fillProjSel(); } changed(); }
   else if(t.dataset.s){ const s=selStr(); if(!s||t.tagName==="SELECT") return; s[t.dataset.s]=val; $("#strList").innerHTML=stringListHtml(); scheduleSave(); }
   if(t.id==="scaleLen"){ UI.scaleLen=t.value; }
 });
@@ -2310,7 +2320,7 @@ $("#homeBtn").onclick=()=>goHome();
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.28.3", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.28";
+const APP_VERSION="2026.09.28.4", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.28";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 const updUrl=()=>String(SET.updateUrl||UPDATE_URL||"").trim().replace(/\/+$/,"");
@@ -2488,7 +2498,11 @@ async function syncRun(){
   }catch(e){ SYNC.err=e.name==="TimeoutError"||e instanceof TypeError?"GitHub nicht erreichbar (offline?)":e.message; }
   finally{ lsSet("pvplan-sync:state",st); SYNC.busy=false; syncUi(); if(SYNC.again){ SYNC.again=false; syncSoon(); } }
 }
-function syncSoon(ms){ if(!syncOn()) return; clearTimeout(SYNC.timer); SYNC.timer=setTimeout(syncRun,ms??2500); }
+function syncSoon(ms){ if(!syncOn()) return; clearTimeout(SYNC.timer); SYNC.timer=setTimeout(()=>{ SYNC.timer=null; syncRun(); },ms??2500); }
+/* Beim Arbeiten im Projekt höchstens alle 3 Minuten hochladen (jeder Upload ist ein Commit mit Bild),
+   dazu sofort beim Schließen des Projekts und wenn das Fenster in den Hintergrund geht */
+const SYNC_EVERY=180000;
+function syncLater(){ if(!syncOn()||SYNC.timer) return; SYNC.timer=setTimeout(()=>{ SYNC.timer=null; syncRun(); },SYNC_EVERY); }
 function syncLineHtml(){
   if(S.db) return "";
   if(!syncOn()) return `Nur in diesem Browser gespeichert. <a href="#" data-pa="sync">Mit GitHub abgleichen …</a>`;
@@ -2499,7 +2513,7 @@ function syncUi(){ const el=$("#syncLine"); if(el) el.innerHTML=syncLineHtml(); 
 function syncDialog(){
   const c=SYNC.cfg||{};
   const m=modal("Projekte über GitHub abgleichen",`
-    <div class="hint">Damit siehst du deine Projekte auf jedem Rechner. Sie liegen in einem <b>privaten</b> GitHub-Repo, beim Öffnen des Programms und nach jeder Änderung wird abgeglichen.</div>
+    <div class="hint">Damit siehst du deine Projekte auf jedem Rechner. Sie liegen in einem <b>privaten</b> GitHub-Repo, abgeglichen wird beim Öffnen des Programms, beim Schließen eines Projekts und während der Arbeit höchstens alle 3 Minuten.</div>
     <ol class="hint" style="margin:0;padding-left:18px">
       <li>Auf github.com ein neues Repository anlegen, <b>Private</b> auswählen, z. B. „PV-Planer-Daten“.</li>
       <li>Profilbild → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token. Bei „Repository access“ nur dieses Repo wählen, unter „Permissions“ <b>Contents: Read and write</b>.</li>
@@ -2522,7 +2536,10 @@ function syncDialog(){
   m.addEventListener("click",e=>{ if(e.target.dataset.sy==="off"){ SYNC.cfg=null; SYNC.state={}; try{ localStorage.removeItem("pvplan-sync:cfg"); localStorage.removeItem("pvplan-sync:state"); }catch(x){} m.remove(); syncUi(); toast("Abgleich ausgeschaltet. Die Projekte bleiben in diesem Browser."); } });
 }
 /* zurück zum Programm (z. B. nach Arbeit am anderen Rechner): gleich nachsehen, ob es Neues gibt */
-document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&VIEW==="home") syncSoon(300); });
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible"&&VIEW==="home") syncSoon(300);
+  else if(document.visibilityState==="hidden"&&SYNC.timer) syncSoon(0); /* ausstehende Änderungen nicht bis zum nächsten Start liegen lassen */
+});
 </script>
 <script>
 /* ───────── Automatische Stringzuordnung ─────────
@@ -2622,6 +2639,8 @@ function runSelfTests(){
     const rows=layoutFace(c,f,(i,j,u,v,fit)=>{ if(fit) n++; });
     return rows.map(r=>r.o).join("")==="plpp" && eq(rows[2].v,2.8,1e-9) && n===23;
   });
+  test("Breitengrad aus PLZ (Postbauer-Heng 92353 ≈ 49,4°, Kiel 24103 ≈ 54,3°, ohne PLZ nichts)",()=>
+    latFromAdr("Siedlerstraße 12, 92353 Postbauer-Heng")===49.4&&latFromAdr("Holstenstr. 1, 24103 Kiel")===54.3&&latFromAdr("Musterweg 1")===null&&latFromAdr("Tel 0911 1234567")===null);
   test("Spannungsfall-Formel (Kupfer, Hin- und Rückleiter)",()=>{
     const d=voltageDrop(6,10,20); // 6 mm², 10 A, 20 m einfache Länge
     return d.dropV>0 && eq(d.dropV,2*20*10*0.0225/6,0.0001);
@@ -2719,9 +2738,14 @@ function shadeSideHtml(){
   return `<div class="sec"><h2>Verschattung (Schätzung)</h2>
     <label class="row"><input id="shOn" type="checkbox" data-sh="on" ${S.on?"checked":""}> Verschattung durch Hindernisse anzeigen</label>
     <div class="grid2"><label class="f">Zeitpunkt<select id="shDate" data-sh="date">${Object.entries(SUN_DATES).map(([k,v])=>`<option value="${k}"${k===S.date?" selected":""}>${esc(v.label)}</option>`).join("")}</select></label>${num("pLat","Breitengrad (°N)",P.lat||51,'data-p="lat" min="30" max="70"',0.1)}</div>
+    <div class="hint">${P.latManual?`Breitengrad von Hand eingetragen. <a href="#" data-sh="latauto">Wieder aus der PLZ übernehmen</a>`:latFromAdr(P.adresse)?"Breitengrad aus der PLZ der Anlagenadresse.":"Keine PLZ in der Anlagenadresse, bitte Breitengrad prüfen."}</div>
     <div class="hint">Rechnet nur den Sonnenstand exakt zu Sonnenmittag am gewählten Tag, nicht den ganzen Tag oder das ganze Jahr. Hindernishöhe stellst du bei jedem Hindernis unter „Hindernis bearbeiten“ ein (0 m = keine Verschattung durch dieses Hindernis).</div>
     ${S.on?`<div class="stat" style="display:block">${res}</div>`:""}</div>`;
 }
+side.addEventListener("click",e=>{
+  if(e.target.dataset.sh!=="latauto"||!P) return; e.preventDefault();
+  P.latManual=false; if(!latAuto()) toast("Keine PLZ in der Anlagenadresse gefunden"); changed(); renderSide(); draw();
+});
 side.addEventListener("change",e=>{
   const t=e.target; if(!P||UI.tab!=="dach") return;
   if(t.dataset.sh==="on"){ P.shade.on=t.checked; changed(); renderSide(); draw(); }
