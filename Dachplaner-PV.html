@@ -761,32 +761,79 @@ SHOP_ARTICLES.push(...EXTRA_ARTICLES);
 "use strict";
 const STRING_COLORS = ["#e6194b","#3cb44b","#4363d8","#f58231","#911eb4","#00b8b8","#c9a400","#f032e6","#7a9a01","#e35d9e","#008080","#9a6324"];
 
-/* ───────── Speicher: db-Capability, sonst localStorage ───────── */
+/* ───────── Speicher: db-Capability, sonst IndexedDB (Fallback localStorage) ─────────
+   localStorage hat nur ~5 MB, auf iPhone/iPad reicht das für knapp 10 Projekte mit Luftbild.
+   IndexedDB hat deutlich mehr Platz. Alte Daten aus localStorage werden beim ersten Start übernommen. */
 const S = {
-  db:null,
-  async init(){ try{ this.db = await (window.claude?.use?.("db") ?? null); }catch(e){ this.db=null; } },
+  db:null, idb:null,
+  async init(){
+    try{ this.db = await (window.claude?.use?.("db") ?? null); }catch(e){ this.db=null; }
+    if(this.db) return;
+    try{ this.idb=await idbOpen(); await idbMigrate(this.idb); }catch(e){ console.warn("IndexedDB nicht verfügbar, nutze localStorage",e); this.idb=null; }
+    try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+  },
   async get(path){
     try{
       if(this.db){ const s=await this.db.doc(path).get(); return s.exists? s.data():null; }
+      if(this.idb){ const v=await idbReq(this.idb,"readonly",st=>st.get(path)); return v===undefined?null:v; }
       const v=localStorage.getItem("pvplan:"+path); return v?JSON.parse(v):null;
     }catch(e){ return null; }
   },
   async set(path,obj){
     if(this.db){ await this.db.doc(path).set(obj); return; }
+    if(this.idb){ await idbReq(this.idb,"readwrite",st=>st.put(JSON.parse(JSON.stringify(obj)),path)); return; }
     localStorage.setItem("pvplan:"+path,JSON.stringify(obj));
   },
   async del(path){
-    try{ if(this.db) await this.db.doc(path).delete(); else localStorage.removeItem("pvplan:"+path); }catch(e){}
+    try{
+      if(this.db) await this.db.doc(path).delete();
+      else if(this.idb) await idbReq(this.idb,"readwrite",st=>st.delete(path));
+      else localStorage.removeItem("pvplan:"+path);
+    }catch(e){}
   },
   async list(col){
     try{
       if(this.db){ const s=await this.db.collection(col).get(); return s.docs.map(d=>({id:d.id,data:d.data()})); }
-      const out=[]; const pre="pvplan:"+col+"/";
-      for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k.startsWith(pre)) out.push({id:k.slice(pre.length),data:JSON.parse(localStorage.getItem(k))}); }
+      const pre=col+"/";
+      if(this.idb){
+        const range=IDBKeyRange.bound(pre,pre+"\uffff");
+        const [keys,vals]=await Promise.all([idbReq(this.idb,"readonly",st=>st.getAllKeys(range)),idbReq(this.idb,"readonly",st=>st.getAll(range))]);
+        return keys.map((k,i)=>({id:k.slice(pre.length),data:vals[i]})).filter(x=>!x.id.includes("/"));
+      }
+      const out=[];
+      for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k.startsWith("pvplan:"+pre)) out.push({id:k.slice(("pvplan:"+pre).length),data:JSON.parse(localStorage.getItem(k))}); }
       return out;
     }catch(e){ return []; }
   }
 };
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    if(!window.indexedDB) return rej(new Error("kein IndexedDB"));
+    const r=indexedDB.open("dachplaner",1);
+    r.onupgradeneeded=()=>r.result.createObjectStore("kv");
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); r.onblocked=()=>rej(new Error("IndexedDB blockiert"));
+  });
+}
+function idbReq(db,mode,fn){
+  return new Promise((res,rej)=>{
+    const tx=db.transaction("kv",mode), rq=fn(tx.objectStore("kv")); let out;
+    rq.onsuccess=()=>{ out=rq.result; }; tx.oncomplete=()=>res(out); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error||new Error("abgebrochen"));
+  });
+}
+/* Einmalig: alles unter „pvplan:“ aus localStorage übernehmen. Gelöscht wird dort erst, wenn jeder Eintrag
+   in IndexedDB nachweislich gleich angekommen ist. */
+async function idbMigrate(db){
+  const keys=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith("pvplan:")) keys.push(k); }
+  if(!keys.length) return;
+  const items=keys.map(k=>{ try{ return [k.slice(7),JSON.parse(localStorage.getItem(k))]; }catch(e){ return null; } }).filter(Boolean);
+  await new Promise((res,rej)=>{ const tx=db.transaction("kv","readwrite"), st=tx.objectStore("kv");
+    items.forEach(([p,v])=>st.put(v,p)); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error); });
+  for(const [p,v] of items){
+    const back=await idbReq(db,"readonly",st=>st.get(p));
+    if(JSON.stringify(back)!==JSON.stringify(v)) throw new Error("Übernahme nicht bestätigt: "+p);
+  }
+  keys.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+}
 
 /* ───────── Zustand ───────── */
 const clone=o=>JSON.parse(JSON.stringify(o));
@@ -1227,22 +1274,39 @@ function updateHud(){
 /* ───────── Interaktion ───────── */
 const s2w=(sx,sy)=>[(sx-UI.view.x)/UI.view.k,(sy-UI.view.y)/UI.view.k];
 let drag=null;
+/* Touch (iPad/Handy): zwei Finger = zoomen und verschieben; Griffe und Eckpunkte mit größerer Tippfläche */
+const TOUCHES=new Map(); let pinch=null;
+const hitR=e=>e&&e.pointerType==="touch"?24:e&&e.pointerType==="pen"?14:10;
 function evPos(e){ const r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; }
+function pinchState(){ const [a,b]=[...TOUCHES.values()]; return {d:Math.hypot(a[0]-b[0],a[1]-b[1])||1,mx:(a[0]+b[0])/2,my:(a[1]+b[1])/2}; }
 cv.addEventListener("pointerdown",e=>{
-  if(!P) return; cv.setPointerCapture(e.pointerId);
-  const [sx,sy]=evPos(e); drag={sx,sy,vx:UI.view.x,vy:UI.view.y,moved:false,handle:null,obj:null};
+  if(!P) return; try{ cv.setPointerCapture(e.pointerId); }catch(x){}
+  const [sx,sy]=evPos(e);
+  if(e.pointerType==="touch"){
+    TOUCHES.set(e.pointerId,[sx,sy]);
+    if(TOUCHES.size===2){ /* zweiter Finger: laufende Aktion abbrechen, Griff zurücksetzen */
+      if(drag&&drag.handle!==null&&drag.moved){ drag.obj.pts[drag.handle]=drag.orig; recompute(); }
+      drag=null; const p=pinchState(); pinch={...p,k:UI.view.k,wx:(p.mx-UI.view.x)/UI.view.k,wy:(p.my-UI.view.y)/UI.view.k}; draw(); return; }
+    if(TOUCHES.size>2||pinch) return;
+  }
+  drag={sx,sy,vx:UI.view.x,vy:UI.view.y,moved:false,handle:null,obj:null,thr:e.pointerType==="touch"?10:7};
   if(UI.tab==="dach"&&UI.tool==="select"){
-    const near=(p)=>Math.hypot(UI.view.x+p[0]*UI.view.k-sx,UI.view.y+p[1]*UI.view.k-sy)<10;
+    const R=hitR(e), near=(p)=>Math.hypot(UI.view.x+p[0]*UI.view.k-sx,UI.view.y+p[1]*UI.view.k-sy)<R;
     const f=P.faces.find(f=>f.id===UI.selFace);
     if(f){ const i=f.pts.findIndex(near); if(i>=0){drag.handle=i;drag.obj=f;} }
     const ob=P.obst.find(o=>o.id===UI.selObst);
     if(ob&&drag.handle===null){ const i=ob.pts.findIndex(near); if(i>=0){drag.handle=i;drag.obj=ob;} }
+    if(drag.handle!==null) drag.orig=drag.obj.pts[drag.handle].slice();
   }
 });
 cv.addEventListener("pointermove",e=>{
+  if(e.pointerType==="touch"&&TOUCHES.has(e.pointerId)) TOUCHES.set(e.pointerId,evPos(e));
+  if(pinch){ if(TOUCHES.size<2) return;
+    const p=pinchState(), v=UI.view, k=Math.max(0.05,Math.min(40,pinch.k*p.d/pinch.d));
+    v.k=k; v.x=p.mx-pinch.wx*k; v.y=p.my-pinch.wy*k; draw(); return; }
   if(!drag) return;
   const [sx,sy]=evPos(e), dx=sx-drag.sx, dy=sy-drag.sy;
-  if(Math.hypot(dx,dy)>7) drag.moved=true;
+  if(Math.hypot(dx,dy)>drag.thr) drag.moved=true;
   if(!drag.moved) return;
   if(drag.handle!==null){
     const w=s2w(sx,sy); drag.obj.pts[drag.handle]=[Math.round(w[0]*10)/10,Math.round(w[1]*10)/10];
@@ -1251,6 +1315,7 @@ cv.addEventListener("pointermove",e=>{
   UI.view.x=drag.vx+dx; UI.view.y=drag.vy+dy; draw();
 });
 cv.addEventListener("pointerup",e=>{
+  if(e.pointerType==="touch"){ TOUCHES.delete(e.pointerId); if(pinch){ if(!TOUCHES.size) pinch=null; return; } }
   if(!drag) return; const d=drag; drag=null;
   if(d.handle!==null&&d.moved){ changed(true); return; }
   if(!d.moved){ const [sx,sy]=evPos(e); onClick(s2w(sx,sy),[sx,sy],e); }
@@ -1272,7 +1337,7 @@ cv.addEventListener("dblclick",e=>{
     finishFace();
   }
 });
-cv.addEventListener("pointercancel",()=>{ drag=null; });
+cv.addEventListener("pointercancel",e=>{ TOUCHES.delete(e.pointerId); if(!TOUCHES.size) pinch=null; drag=null; });
 window.addEventListener("keydown",e=>{
   if(!P||VIEW!=="project") return;
   if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName||"")) return;
@@ -1298,7 +1363,7 @@ function onClick(w,s,e){
   }
   if(UI.tab==="dach"){
     if(UI.tool==="face"){
-      if(UI.draft.length>=3){ const f0=UI.draft[0]; if(Math.hypot(UI.view.x+f0[0]*UI.view.k-s[0],UI.view.y+f0[1]*UI.view.k-s[1])<12){ finishFace(); return; } }
+      if(UI.draft.length>=3){ const f0=UI.draft[0]; if(Math.hypot(UI.view.x+f0[0]*UI.view.k-s[0],UI.view.y+f0[1]*UI.view.k-s[1])<hitR(e)+2){ finishFace(); return; } }
       UI.draft.push([Math.round(w[0]*10)/10,Math.round(w[1]*10)/10]); draw(); return;
     }
     if(UI.tool==="obst"){
@@ -1955,7 +2020,7 @@ async function offerPdf(){
     const n=doc.getNumberOfPages(); if(n>1) for(let p=1;p<=n;p++){ doc.setPage(p); doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(120); doc.text(`Seite ${p}/${n}`,R,290,{align:"right"}); doc.setTextColor(20); }
     const name=("Preisaufstellung_"+(P.name||"Projekt")).replace(/[^\wäöüÄÖÜß-]+/g,"_")+".pdf";
     const dl=await (window.claude?.use?.("downloads")??null);
-    if(dl){ await dl.save({filename:name,data:doc.output("blob")}); toast("PDF bereit"); } else doc.save(name);
+    if(dl){ await dl.save({filename:name,data:doc.output("blob")}); toast("PDF bereit"); } else await saveFile(name,doc.output("blob"));
   }catch(e){ if(e&&e.code==="declined") toast("Speichern abgebrochen"); else { toast("PDF fehlgeschlagen"); console.error(e); } }
   finally{ if(btn){ btn.disabled=false; btn.textContent="PDF erstellen"; } }
 }
@@ -2222,6 +2287,14 @@ async function deleteProjectById(id){
 async function saveFile(name,blob){
   const dl=await (window.claude?.use?.("downloads")??null);
   if(dl){ await dl.save({filename:name,data:blob}); return; }
+  /* iPad/iPhone: Teilen-Menü (In Dateien sichern, AirDrop, Mail), dort klappt ein normaler Download in der App nicht zuverlässig */
+  if(navigator.maxTouchPoints>1&&navigator.canShare){
+    const file=new File([blob],name,{type:blob.type||"application/octet-stream"});
+    if(navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file],title:name}); return; }
+      catch(e){ if(e&&e.name==="AbortError"){ const x=new Error("abgebrochen"); x.code="declined"; throw x; } }
+    }
+  }
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
 }
 async function exportProject(id){
@@ -2299,7 +2372,7 @@ function homeCards(){
 }
 function renderHome(){
   const el=$("#home");
-  el.innerHTML=`<div class="homewrap">${updateBannerHtml()}<div class="homehead"><div><h1>Projekte</h1><div class="hint">${projList.length} Projekt${projList.length===1?"":"e"} · zuletzt bearbeitete zuerst</div><div class="hint" id="syncLine">${syncLineHtml()}</div></div>
+  el.innerHTML=`<div class="homewrap">${updateBannerHtml()}${installHintHtml()}<div class="homehead"><div><h1>Projekte</h1><div class="hint">${projList.length} Projekt${projList.length===1?"":"e"} · zuletzt bearbeitete zuerst</div><div class="hint" id="syncLine">${syncLineHtml()}</div></div>
     <div class="row"><input id="hQ" type="text" placeholder="Suchen: Name, Kunde, Adresse" value="${esc(HOME.q)}" style="width:240px"><select id="hSt" style="width:auto"><option value="">Alle Status</option>${STATUSES.map(s=>`<option${s===HOME.st?" selected":""}>${s}</option>`).join("")}</select><button data-pa="import" type="button">Projekt importieren</button><input id="hImp" type="file" accept=".json,.dachplaner.json" hidden><button data-pa="test" type="button">Selbsttest</button><button class="pri" data-pa="new" type="button">Neues Projekt</button></div></div>
     <div class="pgrid" id="pgrid">${homeCards()}</div></div>`;
 }
@@ -2307,7 +2380,7 @@ $("#home").addEventListener("input",e=>{ if(e.target.id==="hQ"){ HOME.q=e.target
 $("#home").addEventListener("change",e=>{ if(e.target.id==="hImp"&&e.target.files[0]){ importProjectFile(e.target.files[0]); e.target.value=""; return; } if(e.target.id==="hSt"){ HOME.st=e.target.value; $("#pgrid").innerHTML=homeCards(); } });
 $("#home").addEventListener("click",e=>{
   const b=e.target.closest("[data-pa]");
-  if(b){ const a=b.dataset.pa, id=b.dataset.id; if(a==="sync"||a==="syncnow") e.preventDefault(); if(a==="sync") syncDialog(); else if(a==="syncnow") syncRun(); else if(a==="upd") updateDialog(); else if(a==="test") selfTestModal(); else if(a==="new") newDialog(); else if(a==="import") $("#hImp").click(); else if(a==="exp") exportProject(id); else if(a==="open") openProject(id); else if(a==="edit") editDialog(id); else if(a==="dup") duplicateProject(id); else if(a==="del") deleteDialog(id); return; }
+  if(b){ const a=b.dataset.pa, id=b.dataset.id; if(a==="sync"||a==="syncnow") e.preventDefault(); if(a==="sync") syncDialog(); else if(a==="syncnow") syncRun(); else if(a==="upd") updateDialog(); else if(a==="installhint"){ try{ localStorage.setItem("pvplan-installhint","aus"); }catch(x){} renderHome(); } else if(a==="test") selfTestModal(); else if(a==="new") newDialog(); else if(a==="import") $("#hImp").click(); else if(a==="exp") exportProject(id); else if(a==="open") openProject(id); else if(a==="edit") editDialog(id); else if(a==="dup") duplicateProject(id); else if(a==="del") deleteDialog(id); return; }
   const c=e.target.closest("[data-open]"); if(c) openProject(c.dataset.open);
 });
 $("#home").addEventListener("keydown",e=>{ if(e.key==="Enter"&&e.target.dataset&&e.target.dataset.open) openProject(e.target.dataset.open); });
@@ -2320,9 +2393,15 @@ $("#homeBtn").onclick=()=>goHome();
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.28.4", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.28";
+const APP_VERSION="2026.09.28.5", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.28";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
+/* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
+   ein Klick auf „Neu laden“ holt sie sofort. Kein Datei-Download nötig. */
+const IS_PWA="0"==="1";
+if(IS_PWA&&"serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){
+  navigator.serviceWorker.register("sw.js").catch(e=>console.warn("Service Worker",e));
+}
 const updUrl=()=>String(SET.updateUrl||UPDATE_URL||"").trim().replace(/\/+$/,"");
 function verCmp(a,b){
   const x=String(a).split("."), y=String(b).split(".");
@@ -2369,6 +2448,11 @@ async function applyLibraryUpdate(){
 }
 async function downloadAppUpdate(){
   const u=UPD.info, base=updUrl(); if(!u||!u.app) return;
+  if(IS_PWA){
+    if(P) await saveProject();
+    try{ const r=await navigator.serviceWorker?.getRegistration(); if(r) await r.update(); }catch(e){}
+    location.reload(); return;
+  }
   try{
     const r=await fetch(base+"/"+(u.app.file||"Dachplaner-PV.html")+"?t="+Date.now(),{cache:"no-store"}); if(!r.ok) throw new Error("HTTP "+r.status);
     const txt=await r.text(); if(!/Dachplaner/.test(txt)||txt.length<200000) throw new Error("Datei unvollständig");
@@ -2391,6 +2475,18 @@ function updateBannerHtml(){
   if(UPD.appNew) parts.push("neue Programmversion ("+esc(u.app.version)+")");
   return `<div class="banner" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span style="flex:1">Update verfügbar: ${parts.join(" und ")}.</span><button type="button" data-pa="upd">Ansehen</button></div>`;
 }
+/* Hinweis zum Installieren, solange die Web-App im normalen Browserfenster läuft */
+function installHintHtml(){
+  if(!IS_PWA) return "";
+  const standalone=window.matchMedia&&matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  let off=false; try{ off=localStorage.getItem("pvplan-installhint")==="aus"; }catch(e){}
+  if(standalone||off) return "";
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  const how=ios?"In Safari auf <b>Teilen</b> tippen, dann <b>Zum Home-Bildschirm</b>."
+    :/Chrome|Edg\//.test(navigator.userAgent)?"In der Adressleiste rechts auf das <b>Installieren</b>-Symbol klicken."
+    :"In Safari: <b>Ablage → Zum Dock hinzufügen</b>.";
+  return `<div class="banner" style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-color:var(--accent);color:var(--ink)"><span style="flex:1">Als App installieren: ${how} Danach startet der Dachplaner mit eigenem Symbol und läuft auch offline.</span><button type="button" data-pa="installhint">Ausblenden</button></div>`;
+}
 function updateDialog(){
   const base=updUrl(), u=UPD.info;
   const body=()=>`
@@ -2402,7 +2498,7 @@ function updateDialog(){
     const uu=UPD.info; if(!uu) return `<div class="hint">Noch nicht nach Updates gesucht.</div>`;
     let h="";
     if(UPD.libNew) h+=`<div class="sec" style="border:1px solid var(--line);border-radius:6px;padding:10px"><b>Neue Bibliothek ${esc(uu.library.version)}</b><div class="hint">${esc(uu.library.notes||"")}</div><button class="pri" data-um="lib" type="button">Bibliothek aktualisieren</button></div>`;
-    if(UPD.appNew) h+=`<div class="sec" style="border:1px solid var(--line);border-radius:6px;padding:10px"><b>Neue Programmversion ${esc(uu.app.version)}</b><div class="hint">${esc(uu.app.notes||"")}</div><button class="pri" data-um="app" type="button">Herunterladen</button><div class="hint">Nach dem Download die neue Datei öffnen. Deine Projekte bleiben im selben Browser erhalten.</div></div>`;
+    if(UPD.appNew) h+=`<div class="sec" style="border:1px solid var(--line);border-radius:6px;padding:10px"><b>Neue Programmversion ${esc(uu.app.version)}</b><div class="hint">${esc(uu.app.notes||"")}</div><button class="pri" data-um="app" type="button">${IS_PWA?"Neu laden":"Herunterladen"}</button><div class="hint">${IS_PWA?"Lädt das Programm neu, dein offenes Projekt wird vorher gespeichert.":"Nach dem Download die neue Datei öffnen. Deine Projekte bleiben im selben Browser erhalten."}</div></div>`;
     if(!UPD.libNew&&!UPD.appNew) h+=`<div class="pill ok" style="align-self:flex-start">Alles aktuell</div>`;
     return h;
   };
@@ -3098,7 +3194,7 @@ async function exportPdf(){
     const name=(P.name||"Projekt").replace(/[^\wäöüÄÖÜß-]+/g,"_")+"_Belegung_Strings.pdf";
     const dl=await (window.claude?.use?.("downloads")??null);
     if(dl){ await dl.save({filename:name,data:doc.output("blob")}); toast("PDF bereit"); }
-    else { doc.save(name); }
+    else { await saveFile(name,doc.output("blob")); }
   }catch(e){
     if(e&&e.code==="declined") toast("Speichern abgebrochen"); else { toast("PDF-Export fehlgeschlagen"); console.error(e); }
   }finally{ if(btn){ btn.disabled=false; btn.textContent="PDF erstellen"; } }

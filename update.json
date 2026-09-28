@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.09.28.4",
+    "version": "2026.09.28.5",
     "file": "Dachplaner-PV.html",
-    "notes": "Projektabgleich mit GitHub lädt jetzt höchstens alle 3 Minuten hoch (plus sofort beim Schließen des Projekts), statt nach jeder Änderung. Breitengrad für die Verschattung wird aus der PLZ der Anlagenadresse übernommen."
+    "notes": "Dachplaner läuft jetzt als App auf Mac, iPad und iPhone (jonas010203.github.io/PV-Planer öffnen und installieren), auch offline. Zwei-Finger-Zoom und größere Tippflächen für Touch. Mehr Speicherplatz für Projekte (IndexedDB statt 5-MB-Browserspeicher). PDFs lassen sich auf iPad/iPhone über das Teilen-Menü sichern."
   },
   "library": {
     "version": "2026.09.28",
