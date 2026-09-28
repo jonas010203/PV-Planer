@@ -1,12 +1,12 @@
 {
   "app": {
-    "version": "2026.09.28.2",
+    "version": "2026.09.28.3",
     "file": "Dachplaner-PV.html",
     "notes": "Dachtiefe von oben (z. B. aus dem Bayernatlas) direkt eingeben, die Sparrenlänge wird über die Dachneigung berechnet. Dazu: Module hochkant und quer gemischt, Projektabgleich über privates GitHub-Repo."
   },
   "library": {
-    "version": "2026.09.23",
+    "version": "2026.09.28",
     "file": "library.json",
-    "notes": "Max. PV-Generatorleistung für ~40 Wechselrichter aus den Datenblättern ergänzt."
+    "notes": "Neu: DMEGC DMxxxG12RT-B48HBT Glas-Glas bifazial, 455–475 Wp (1762 × 1134 mm)."
   }
 }

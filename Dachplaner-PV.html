@@ -655,7 +655,8 @@ const MOD_FAMILIES = [
   {brand:"Jinko",name:"Tiger Neo 60TR (JKM-N-6TL3)",w:1029,h:1692,tc:-0.28,cls:[[355,34.04,10.43,41.01,11.13],[360,34.19,10.53,41.16,11.23],[365,34.34,10.63,41.31,11.33],[370,34.49,10.73,41.46,11.43],[375,34.63,10.83,41.60,11.53]]},
   {brand:"LONGi",name:"Hi-MO 6 LR5-54HTH-M",w:1134,h:1722,tc:-0.23,cls:[[420,32.44,12.95,38.73,14.00],[425,32.64,13.03,38.93,14.07],[430,32.84,13.10,39.13,14.15],[435,33.04,13.17,39.33,14.22],[440,33.24,13.24,39.53,14.30]]},
   {brand:"Luxor",name:"Eco Line Half Cell M108",w:1134,h:1722,tc:-0.285,cls:[[400,31.14,12.85,37.08,13.57],[405,31.36,12.92,37.34,13.64],[410,31.58,12.99,37.60,13.72],[415,31.80,13.06,37.86,13.79],[420,32.02,13.13,38.12,13.86]]},
-  {brand:"Luxor",name:"Eco Line M108 Glas-Glas N-Type",w:1134,h:1722,tc:-0.25,cls:[[440,32.27,13.65,39.07,14.40],[445,32.46,13.72,39.30,14.47],[450,32.65,13.79,39.53,14.55],[455,32.85,13.86,39.77,14.62],[460,33.05,13.93,40.01,14.69]]}
+  {brand:"Luxor",name:"Eco Line M108 Glas-Glas N-Type",w:1134,h:1722,tc:-0.25,cls:[[440,32.27,13.65,39.07,14.40],[445,32.46,13.72,39.30,14.47],[450,32.65,13.79,39.53,14.55],[455,32.85,13.86,39.77,14.62],[460,33.05,13.93,40.01,14.69]]},
+  {brand:"DMEGC",name:"G12RT-B48HBT Glas-Glas bifazial",w:1134,h:1762,tc:-0.25,cls:[[455,30.69,14.83,36.18,15.78],[460,30.95,14.87,36.32,15.83],[465,31.21,14.91,36.46,15.88],[470,31.47,14.95,36.6,15.93],[475,31.68,14.99,36.74,15.98]]}
 ];
 function buildModules(){
   const out=[];
@@ -2309,7 +2310,7 @@ $("#homeBtn").onclick=()=>goHome();
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.28.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.23";
+const APP_VERSION="2026.09.28.3", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.28";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 const updUrl=()=>String(SET.updateUrl||UPDATE_URL||"").trim().replace(/\/+$/,"");
