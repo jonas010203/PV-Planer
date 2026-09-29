@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.09.29.2",
+    "version": "2026.09.29.3",
     "file": "Dachplaner-PV.html",
-    "notes": "Kabelkanäle PROTEC.class PLF in allen gängigen Größen (15×15 bis 60×150), mehrere Größen je Projekt. Netzwerk-Switch und Patchkabel je Gerät. Energiezähler/Home Manager passend zum Wechselrichter. Wallbox optional, passend zum System (Sungrow, SMA, Fronius, GoodWe) mit berechneter Zuleitung, LS und FI."
+    "notes": "Bibliothek (eigene Module, Artikelpreise, Standardliste, Einstellungen) wird jetzt mit GitHub abgeglichen – überall dieselben Preise. Rückgängig/Wiederholen (Knöpfe oben, ⌘Z / ⇧⌘Z). Versionsliste je Projekt mit Wiederherstellen. Projekte nur ansehen erzeugt keine neue Version mehr. Dazu: alle PLF-Kanalgrößen, Switch, Zähler und Wallbox passend zum System."
   },
   "library": {
     "version": "2026.09.29.2",

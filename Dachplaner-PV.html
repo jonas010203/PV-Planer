@@ -547,6 +547,7 @@ button.sm{padding:2px 8px;font-size:12px}
     <div class="brand">Dachplaner<small>PV</small></div>
     <button id="homeBtn" type="button" hidden>← Projekte</button>
     <span class="ptitle" id="projTitle"></span>
+    <span class="row" id="undoBar" hidden style="gap:4px"><button id="undoBtn" type="button" class="sm" title="Rückgängig (⌘Z / Strg+Z)" aria-label="Rückgängig" disabled>↶</button><button id="redoBtn" type="button" class="sm" title="Wiederholen (⇧⌘Z / Strg+Y)" aria-label="Wiederholen" disabled>↷</button></span>
     <span class="hint" id="saveState"></span>
     <button id="updBtn" type="button" hidden>Update</button>
     <nav id="tabs" role="tablist" aria-label="Arbeitsschritte">
@@ -1066,7 +1067,29 @@ function checkString(s){
 
 /* ───────── Projekt speichern / laden ───────── */
 let saveTimer=null, imgDirty=false;
+/* ───────── Rückgängig / Wiederholen ─────────
+   Jede Änderung läuft über scheduleSave(); dort wird der vorige Stand gemerkt. Änderungen in kurzer Folge
+   (Tippen, mehrere Klicks) werden zu einem Schritt zusammengefasst. Das Luftbild gehört nicht dazu. */
+const UNDO={back:[],fwd:[],cur:null,pid:null,t:0,lock:false};
+const UNDO_MAX=80, UNDO_GROUP_MS=800;
+function undoReset(){ UNDO.back=[]; UNDO.fwd=[]; UNDO.cur=P?JSON.stringify(P):null; UNDO.pid=P?P.id:null; UNDO.t=0; undoUi(); }
+function undoTrack(){
+  if(UNDO.lock||!P) return;
+  if(UNDO.pid!==P.id){ undoReset(); return; }
+  const now=JSON.stringify(P); if(now===UNDO.cur) return;
+  if(Date.now()-UNDO.t>UNDO_GROUP_MS||!UNDO.back.length){ if(UNDO.cur) UNDO.back.push(UNDO.cur); if(UNDO.back.length>UNDO_MAX) UNDO.back.shift(); }
+  UNDO.cur=now; UNDO.t=Date.now(); UNDO.fwd=[]; undoUi();
+}
+function undoStep(back){
+  const from=back?UNDO.back:UNDO.fwd, to=back?UNDO.fwd:UNDO.back; if(!P||!from.length) return;
+  to.push(UNDO.cur); UNDO.cur=from.pop(); const id=P.id;
+  UNDO.lock=true; try{ P=JSON.parse(UNDO.cur); P.id=id; recompute(); renderSide(); draw(); scheduleSave(); } finally{ UNDO.lock=false; }
+  UNDO.t=0; undoUi(); toast(back?"Rückgängig":"Wiederholt");
+}
+function undoUi(){ const u=$("#undoBtn"), r=$("#redoBtn"); if(u) u.disabled=!UNDO.back.length; if(r) r.disabled=!UNDO.fwd.length; }
+let SAVE_DIRTY=false; /* ungespeicherte Änderung vorhanden – nur dann beim Schließen speichern (sonst entsteht bei jedem Ansehen eine neue Version) */
 function scheduleSave(){
+  undoTrack(); SAVE_DIRTY=true;
   $("#saveState").textContent="ungespeichert …";
   clearTimeout(saveTimer); saveTimer=setTimeout(saveProject,900);
 }
@@ -1080,12 +1103,12 @@ async function saveProject(){
     if(imgDirty && IMG){ await S.set("projectimg/"+P.id,{data:IMG.src}); imgDirty=false; }
     const meta=metaOf(P), pi=projList.findIndex(p=>p.id===P.id); if(pi>=0) projList[pi]=meta; else projList.push(meta);
     fillProjSel();
-    $("#saveState").textContent="gespeichert"; if(typeof syncLater==="function") syncLater();
+    SAVE_DIRTY=false; $("#saveState").textContent="gespeichert"; if(typeof syncLater==="function") syncLater();
   }catch(e){ $("#saveState").textContent="Speichern fehlgeschlagen"; console.error(e); }
 }
 async function saveLib(kind){
   if(kind==="articles"){ await saveArticles(); return; }
-  try{ await S.set("lib/"+kind,{ver:LIB_VER,items:LIB[kind]}); }catch(e){ toast("Bibliothek konnte nicht gespeichert werden"); }
+  try{ await S.set("lib/"+kind,{ver:LIB_VER,items:LIB[kind]}); if(typeof libTouched==="function") libTouched(); }catch(e){ toast("Bibliothek konnte nicht gespeichert werden"); }
 }
 async function loadProject(id){
   const d=await S.get("projects/"+id); if(!d){ toast("Projekt konnte nicht geladen werden"); return; }
@@ -1384,6 +1407,9 @@ cv.addEventListener("pointercancel",e=>{ TOUCHES.delete(e.pointerId); if(!TOUCHE
 window.addEventListener("keydown",e=>{
   if(!P||VIEW!=="project") return;
   if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName||"")) return;
+  const mod=e.metaKey||e.ctrlKey, k=(e.key||"").toLowerCase();
+  if(mod&&k==="z"){ e.preventDefault(); undoStep(!e.shiftKey); return; }
+  if(mod&&k==="y"){ e.preventDefault(); undoStep(false); return; }
   if(e.key==="Enter"&&UI.tool==="face"&&UI.draft.length>=3) finishFace();
   else if(e.key==="Escape"){ UI.draft=[]; UI.scalePts=[]; draw(); renderSide(); }
   else if(e.key==="Backspace"&&UI.draft.length){ UI.draft.pop(); draw(); e.preventDefault(); }
@@ -1808,7 +1834,7 @@ async function saveArticles(){
     if(a.custom) st.custom.push({id:a.id,name:a.name,brand:a.brand,cat:a.cat,price:a.price,unit:a.unit,sku:a.sku||""});
     else{ const o=shop.get(a.id); if(o&&(a.price!==o.p||a.name!==o.n||a.unit!==(o.e||"Stk"))) st.ov[a.id]={price:a.price,name:a.name,unit:a.unit}; }
   });
-  ART_STORE=st; try{ await S.set("lib/articles",Object.assign({ver:1},st)); }catch(e){ toast("Artikel konnten nicht gespeichert werden"); }
+  ART_STORE=st; try{ await S.set("lib/articles",Object.assign({ver:1},st)); if(typeof libTouched==="function") libTouched(); }catch(e){ toast("Artikel konnten nicht gespeichert werden"); }
 }
 function artPrice(a,qty,oi){
   if(a.tiers){ let p=a.tiers[0][1]; a.tiers.forEach(([m,pr])=>{ if(qty>=m) p=pr; }); return p; }
@@ -1827,7 +1853,7 @@ let SET={pref:"Eaton",firma:{name:"",adr:"",kontakt:"",steuer:"",bank:""},margin
   notes:"Umsatzsteuerfrei nach § 12 Abs. 3 UStG (Nullsteuersatz) für Lieferung und Installation der Photovoltaikanlage.",
   terms:"Zahlung: 30 % bei Auftragserteilung, 60 % bei Materiallieferung, 10 % nach Fertigstellung. Materialpreise gelten vorbehaltlich Tagespreis."};
 let setTimer=null;
-function saveSettings(){ clearTimeout(setTimer); setTimer=setTimeout(()=>{ S.set("lib/settings",SET).catch(()=>{}); },800); }
+function saveSettings(){ clearTimeout(setTimer); setTimer=setTimeout(()=>{ S.set("lib/settings",SET).catch(()=>{}); if(typeof libTouched==="function") libTouched(); },800); }
 
 /* ───────── Angebot: Datenmodell ───────── */
 function ensureOffer(){
@@ -2282,7 +2308,7 @@ async function refreshList(){ projList=(await S.list("projects")).map(x=>metaOf(
 
 function showView(v){
   VIEW=v; const inP=v==="project";
-  $(".work").hidden=!inP; $("#home").hidden=inP; $("#tabs").hidden=!inP; $("#homeBtn").hidden=!inP;
+  $(".work").hidden=!inP; $("#home").hidden=inP; $("#tabs").hidden=!inP; $("#homeBtn").hidden=!inP; $("#undoBar").hidden=!inP;
   fillProjSel();
   if(!inP) renderHome();
 }
@@ -2290,13 +2316,14 @@ function fillProjSel(){ const t=$("#projTitle"); if(t) t.textContent=(VIEW==="pr
 
 async function goHome(){
   clearTimeout(saveTimer);
-  if(P){ await saveProject(); }
+  if(P&&SAVE_DIRTY){ await saveProject(); }
   P=null; IMG=null; GEO=[]; MODS=[]; SUB=null;
   showView("home"); syncSoon(300);
 }
 async function openProject(id){
   showView("project");
   await loadProject(id); if(!P){ showView("home"); return; }
+  undoReset(); SAVE_DIRTY=false;
   fillProjSel(); setTab(P.faces.length?"dach":"karte"); fitView(); draw();
 }
 async function createProject(f){
@@ -2405,7 +2432,7 @@ function homeCards(){
     <div class="pfacts"><span><b class="mono">${p.mods}</b> Module</span><span><b class="mono">${fmt(p.kwp,2)}</b> kWp</span>${p.offer?`<span><b class="mono">${eur(p.offer)}</b> netto</span>`:""}${p.termin?`<span>Termin <b class="mono">${fmtDate(p.termin)}</b></span>`:""}</div>
     ${p.note?`<div class="pnote">${esc(p.note)}</div>`:""}
     <div class="hint mono">Erstellt ${fmtDate(p.created)} · Bearbeitet ${fmtDate(p.updated)}</div>
-    <div class="row pact"><button class="pri" data-pa="open" data-id="${esc(p.id)}" type="button">Öffnen</button><button data-pa="edit" data-id="${esc(p.id)}" type="button">Bearbeiten</button><button data-pa="dup" data-id="${esc(p.id)}" type="button">Duplizieren</button><button data-pa="exp" data-id="${esc(p.id)}" type="button">Exportieren</button><button class="dng" data-pa="del" data-id="${esc(p.id)}" type="button">Löschen</button></div></article>`).join("");
+    <div class="row pact"><button class="pri" data-pa="open" data-id="${esc(p.id)}" type="button">Öffnen</button><button data-pa="edit" data-id="${esc(p.id)}" type="button">Bearbeiten</button><button data-pa="dup" data-id="${esc(p.id)}" type="button">Duplizieren</button>${syncOn()?`<button data-pa="ver" data-id="${esc(p.id)}" type="button">Versionen</button>`:""}<button data-pa="exp" data-id="${esc(p.id)}" type="button">Exportieren</button><button class="dng" data-pa="del" data-id="${esc(p.id)}" type="button">Löschen</button></div></article>`).join("");
 }
 function renderHome(){
   const el=$("#home");
@@ -2417,11 +2444,12 @@ $("#home").addEventListener("input",e=>{ if(e.target.id==="hQ"){ HOME.q=e.target
 $("#home").addEventListener("change",e=>{ if(e.target.id==="hImp"&&e.target.files[0]){ importProjectFile(e.target.files[0]); e.target.value=""; return; } if(e.target.id==="hSt"){ HOME.st=e.target.value; $("#pgrid").innerHTML=homeCards(); } });
 $("#home").addEventListener("click",e=>{
   const b=e.target.closest("[data-pa]");
-  if(b){ const a=b.dataset.pa, id=b.dataset.id; if(a==="sync"||a==="syncnow") e.preventDefault(); if(a==="sync") syncDialog(); else if(a==="syncnow") syncRun(); else if(a==="upd") updateDialog(); else if(a==="installhint"){ try{ localStorage.setItem("pvplan-installhint","aus"); }catch(x){} renderHome(); } else if(a==="test") selfTestModal(); else if(a==="new") newDialog(); else if(a==="import") $("#hImp").click(); else if(a==="exp") exportProject(id); else if(a==="open") openProject(id); else if(a==="edit") editDialog(id); else if(a==="dup") duplicateProject(id); else if(a==="del") deleteDialog(id); return; }
+  if(b){ const a=b.dataset.pa, id=b.dataset.id; if(a==="sync"||a==="syncnow") e.preventDefault(); if(a==="sync") syncDialog(); else if(a==="syncnow") syncRun(); else if(a==="upd") updateDialog(); else if(a==="ver") versionsDialog(id); else if(a==="installhint"){ try{ localStorage.setItem("pvplan-installhint","aus"); }catch(x){} renderHome(); } else if(a==="test") selfTestModal(); else if(a==="new") newDialog(); else if(a==="import") $("#hImp").click(); else if(a==="exp") exportProject(id); else if(a==="open") openProject(id); else if(a==="edit") editDialog(id); else if(a==="dup") duplicateProject(id); else if(a==="del") deleteDialog(id); return; }
   const c=e.target.closest("[data-open]"); if(c) openProject(c.dataset.open);
 });
 $("#home").addEventListener("keydown",e=>{ if(e.key==="Enter"&&e.target.dataset&&e.target.dataset.open) openProject(e.target.dataset.open); });
 $("#homeBtn").onclick=()=>goHome();
+$("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(false);
 </script>
 <script>
 /* ───────── Updates (nur in der eigenständigen Datei) ─────────
@@ -2430,7 +2458,7 @@ $("#homeBtn").onclick=()=>goHome();
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.29.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.29.2";
+const APP_VERSION="2026.09.29.3", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.29.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -2591,6 +2619,90 @@ async function storeRemote(id,sha,j){
   if(j.image) await S.set("projectimg/"+id,{data:j.image}); else await S.del("projectimg/"+id);
   SYNC.state[id]={sha,updated:j.project.updated||""};
 }
+/* ───────── Bibliothek abgleichen (library.json im selben Repo) ─────────
+   Enthält eigene/geänderte Module, Wechselrichter, Speicher, Artikel (eigene, Preisänderungen, ausgeblendete),
+   Standardliste und Einstellungen – nicht aber gerätebezogene Werte (Update-Adresse, letzte Prüfung).
+   Zusammenführen: Einträge beider Seiten bleiben erhalten (nach id vereint), bei gleicher id und bei den
+   Einstellungen gewinnt die zuletzt geänderte Seite. Gelöschte Einträge können deshalb wieder auftauchen. */
+const LIB_DEVICE_KEYS=["lastCheck","updateUrl","demoSeeded","libVersion"];
+function libPayload(){
+  const set=clone(SET); LIB_DEVICE_KEYS.forEach(k=>delete set[k]);
+  return {modules:LIB.modules,inverters:LIB.inverters,batteries:LIB.batteries,articles:ART_STORE,settings:set};
+}
+function strHash(s){ let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))|0; return (h>>>0).toString(36)+":"+s.length; }
+function libTouched(){ lsSet("pvplan-sync:libTouched",new Date().toISOString()); if(typeof syncLater==="function") syncLater(); }
+function libMerge(rem,remNewer){
+  const byId=(loc,r)=>{ const m=new Map((loc||[]).map(x=>[x.id,x])); (r||[]).forEach(x=>{ if(x&&x.id&&(!m.has(x.id)||remNewer)) m.set(x.id,x); }); return [...m.values()]; };
+  ["modules","inverters","batteries"].forEach(k=>{ if(Array.isArray(rem[k])) LIB[k]=byId(LIB[k],rem[k]); });
+  const ra=rem.articles||{}, la=ART_STORE||{custom:[],ov:{},hidden:[]};
+  ART_STORE={custom:byId(la.custom,ra.custom),ov:remNewer?{...(la.ov||{}),...(ra.ov||{})}:{...(ra.ov||{}),...(la.ov||{})},hidden:[...new Set([...(la.hidden||[]),...(ra.hidden||[])])]};
+  if(remNewer&&rem.settings&&typeof rem.settings==="object"){ const keep={}; LIB_DEVICE_KEYS.forEach(k=>{ if(k in SET) keep[k]=SET[k]; }); SET=Object.assign(SET,rem.settings,keep); }
+}
+async function libPersist(){
+  for(const k of ["modules","inverters","batteries"]) await S.set("lib/"+k,{ver:LIB_VER,items:LIB[k]});
+  await S.set("lib/articles",Object.assign({ver:1},ART_STORE)); await S.set("lib/settings",SET);
+  buildArts();
+}
+async function libSync(){
+  const st=SYNC.state.__lib||{};
+  const r=await gh("/contents/library.json");
+  let rem=null, sha=null;
+  if(r){ const j=await r.json(); sha=j.sha; try{ rem=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(String(j.content||"").replace(/\n/g,"")),c=>c.charCodeAt(0)))); }catch(e){ rem=null; } }
+  const remData=rem&&rem.type==="dachplaner-bibliothek"?rem.data:null;
+  const hashNow=()=>strHash(JSON.stringify(libPayload()));
+  const localCh=hashNow()!==st.hash, remoteCh=!!sha&&sha!==st.sha;
+  let got=false;
+  if(remData&&remoteCh){
+    const touched=lsGet("pvplan-sync:libTouched","");
+    /* erstes Mal auf diesem Gerät: GitHub-Stand gilt (sonst würden Standardwerte eines neuen Geräts die echte Bibliothek überschreiben) */
+    libMerge(remData,!st.sha||!localCh||!touched||String(rem.updated||"")>=String(touched));
+    await libPersist(); got=true;
+  }
+  const h=hashNow();
+  if(!remData||h!==strHash(JSON.stringify(remData))){
+    const body={message:"Bibliothek",content:b64utf8(JSON.stringify({type:"dachplaner-bibliothek",ver:1,updated:new Date().toISOString(),data:libPayload()}))};
+    if(sha) body.sha=sha;
+    const w=await gh("/contents/library.json",{method:"PUT",body:JSON.stringify(body)}); if(!w) throw new Error("Repo nicht gefunden");
+    sha=(await w.json()).content.sha;
+  }
+  SYNC.state.__lib={sha,hash:h};
+  return got;
+}
+/* ───────── Versionen eines Projekts (jede hochgeladene Fassung ist ein Commit im Daten-Repo) ───────── */
+async function projectVersions(id){
+  const r=await gh("/commits?path="+encodeURIComponent("projects/"+id+".json")+"&per_page=50");
+  return r?(await r.json()).map(c=>({sha:c.sha,date:c.commit&&c.commit.author&&c.commit.author.date})):[];
+}
+async function versionGet(id,sha){ const r=await gh("/contents/projects/"+id+".json?ref="+sha,{headers:{Accept:"application/vnd.github.raw+json"}}); return r?r.json():null; }
+async function versionsDialog(id){
+  if(!syncOn()){ toast("Versionen gibt es nur mit GitHub-Abgleich"); return; }
+  const meta=projList.find(p=>p.id===id);
+  const m=modal("Versionen: "+(meta?meta.name:"Projekt"),`<div class="hint">Jede hochgeladene Fassung wird auf GitHub aufbewahrt. Eine alte Version kannst du als Kopie öffnen oder den aktuellen Stand damit ersetzen. Auch das Ersetzen lässt sich wieder rückgängig machen, weil der jetzige Stand ebenfalls als Version erhalten bleibt.</div><div class="list" id="verList" style="max-height:50vh;overflow:auto"><div class="hint" style="padding:8px">Lade …</div></div>`,"Schließen",()=>true);
+  m.querySelector('[data-m="cancel"]').remove();
+  let list=[];
+  try{ list=await projectVersions(id); }catch(e){ m.querySelector("#verList").innerHTML=`<div class="hint" style="padding:8px">${esc(e.message)}</div>`; return; }
+  const fmtD=s=>{ const d=new Date(s); return isNaN(d)?"–":d.toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}); };
+  m.querySelector("#verList").innerHTML=list.map((v,i)=>`<div data-ver="${v.sha}"><span class="grow">${fmtD(v.date)}${i===0?" · aktuell":""}</span>${i===0?"":`<button type="button" class="sm" data-va="copy" data-sha="${v.sha}">Als Kopie</button><button type="button" class="sm" data-va="replace" data-sha="${v.sha}">Ersetzen</button>`}</div>`).join("")||`<div class="hint" style="padding:8px">Noch keine Versionen auf GitHub.</div>`;
+  m.addEventListener("click",async e=>{
+    const b=e.target.closest("[data-va]"); if(!b) return; b.disabled=true;
+    try{
+      const j=await versionGet(id,b.dataset.sha); if(!j||!j.project) throw new Error("Version nicht lesbar");
+      const when=fmtD(list.find(v=>v.sha===b.dataset.sha)?.date);
+      if(b.dataset.va==="copy"){
+        const nid=uid("p"), d=Object.assign(j.project,{id:nid,name:(j.project.name||"Projekt")+" (Version "+when+")",updated:new Date().toISOString()});
+        await S.set("projects/"+nid,d); if(j.image) await S.set("projectimg/"+nid,{data:j.image});
+        toast("Als Kopie angelegt");
+      } else {
+        if(!confirm("Aktuellen Stand durch die Version vom "+when+" ersetzen?")) { b.disabled=false; return; }
+        const d=Object.assign(j.project,{id,updated:new Date().toISOString()});
+        await S.set("projects/"+id,d); if(j.image) await S.set("projectimg/"+id,{data:j.image});
+        if(P&&P.id===id){ await openProject(id); }
+        toast("Version wiederhergestellt");
+      }
+      await refreshList(); if(VIEW==="home") renderHome(); syncSoon(500); m.remove();
+    }catch(err){ toast(err.message); b.disabled=false; }
+  });
+}
 async function syncRun(){
   if(!syncOn()) return;
   if(SYNC.busy){ SYNC.again=true; return; }
@@ -2624,6 +2736,8 @@ async function syncRun(){
         await S.del("projects/"+id); await S.del("projectimg/"+id); delete st[id]; got++;
       } else await remotePut(id,null,d); /* neu hier, oder hier geändert nachdem es woanders gelöscht wurde */
     }
+    const libGot=await libSync();
+    if(libGot){ if(UI.tab==="lib"&&typeof renderLib==="function") renderLib(); if(P){ recompute(); renderSide(); draw(); } }
     SYNC.last=Date.now();
     await refreshList(); if(VIEW==="home") renderHome();
     if(got) toast(`${got} Projekt${got===1?"":"e"} von GitHub aktualisiert`);
@@ -2646,7 +2760,7 @@ function syncUi(){ const el=$("#syncLine"); if(el) el.innerHTML=syncLineHtml(); 
 function syncDialog(){
   const c=SYNC.cfg||{};
   const m=modal("Projekte über GitHub abgleichen",`
-    <div class="hint">Damit siehst du deine Projekte auf jedem Rechner. Sie liegen in einem <b>privaten</b> GitHub-Repo, abgeglichen wird beim Öffnen des Programms, beim Schließen eines Projekts und während der Arbeit höchstens alle 3 Minuten.</div>
+    <div class="hint">Damit siehst du deine Projekte und deine Bibliothek (eigene Module, Artikelpreise, Standardliste, Einstellungen) auf jedem Gerät. Sie liegen in einem <b>privaten</b> GitHub-Repo, abgeglichen wird beim Öffnen des Programms, beim Schließen eines Projekts und während der Arbeit höchstens alle 3 Minuten.</div>
     <ol class="hint" style="margin:0;padding-left:18px">
       <li>Auf github.com ein neues Repository anlegen, <b>Private</b> auswählen, z. B. „PV-Planer-Daten“.</li>
       <li>Profilbild → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token. Bei „Repository access“ nur dieses Repo wählen, unter „Permissions“ <b>Contents: Read and write</b>.</li>
