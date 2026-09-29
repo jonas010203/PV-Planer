@@ -1,12 +1,12 @@
 {
   "app": {
-    "version": "2026.09.28.5",
+    "version": "2026.09.29.1",
     "file": "Dachplaner-PV.html",
-    "notes": "Dachplaner läuft jetzt als App auf Mac, iPad und iPhone (jonas010203.github.io/PV-Planer öffnen und installieren), auch offline. Zwei-Finger-Zoom und größere Tippflächen für Touch. Mehr Speicherplatz für Projekte (IndexedDB statt 5-MB-Browserspeicher). PDFs lassen sich auf iPad/iPhone über das Teilen-Menü sichern."
+    "notes": "Standard-Materialliste (Erdung, Potentialausgleich, Kabelkanal 60×60, Wellrohr, Stecker, Kleinmaterial) mit Mengenregeln, bearbeitbar in der Bibliothek. WR-Zuleitung ÖLFLEX mit berechnetem Querschnitt, LS und FI je Wechselrichter. Leitungswege aufmessen im Schritt Kabel. Pauschale PV-Anmeldung und Inbetriebnahme. Neue Packliste zum Abhaken."
   },
   "library": {
-    "version": "2026.09.28",
+    "version": "2026.09.29",
     "file": "library.json",
-    "notes": "Neu: DMEGC DMxxxG12RT-B48HBT Glas-Glas bifazial, 455–475 Wp (1762 × 1134 mm)."
+    "notes": "18 neue Artikel mit Online-Richtpreisen: ÖLFLEX CLASSIC 110 3G/5G, PROTEC.class PLF 6060, DEHN PA-Schiene K12, Erdungskabel 6/16 mm², Ringkabelschuhe, Lochband, Dünnblechschrauben, Wellrohr UV, LAN Cat7."
   }
 }
