@@ -1,12 +1,12 @@
 {
   "app": {
-    "version": "2026.09.29.1",
+    "version": "2026.09.29.2",
     "file": "Dachplaner-PV.html",
-    "notes": "Standard-Materialliste (Erdung, Potentialausgleich, Kabelkanal 60×60, Wellrohr, Stecker, Kleinmaterial) mit Mengenregeln, bearbeitbar in der Bibliothek. WR-Zuleitung ÖLFLEX mit berechnetem Querschnitt, LS und FI je Wechselrichter. Leitungswege aufmessen im Schritt Kabel. Pauschale PV-Anmeldung und Inbetriebnahme. Neue Packliste zum Abhaken."
+    "notes": "Kabelkanäle PROTEC.class PLF in allen gängigen Größen (15×15 bis 60×150), mehrere Größen je Projekt. Netzwerk-Switch und Patchkabel je Gerät. Energiezähler/Home Manager passend zum Wechselrichter. Wallbox optional, passend zum System (Sungrow, SMA, Fronius, GoodWe) mit berechneter Zuleitung, LS und FI."
   },
   "library": {
-    "version": "2026.09.29",
+    "version": "2026.09.29.2",
     "file": "library.json",
-    "notes": "18 neue Artikel mit Online-Richtpreisen: ÖLFLEX CLASSIC 110 3G/5G, PROTEC.class PLF 6060, DEHN PA-Schiene K12, Erdungskabel 6/16 mm², Ringkabelschuhe, Lochband, Dünnblechschrauben, Wellrohr UV, LAN Cat7."
+    "notes": "Neu: PROTEC.class PLF 15×15 bis 60×150, Sungrow AC011E-01, Fronius Wattpilot Home 11 J, TP-Link TL-SG105. Dazu die 18 Artikel der Standard-Materialliste."
   }
 }

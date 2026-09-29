@@ -556,7 +556,7 @@ button.sm{padding:2px 8px;font-size:12px}
       <button role="tab" data-tab="unterbau" type="button">4 Unterbau</button>
       <button role="tab" data-tab="strings" type="button">5 Strings</button>
       <button role="tab" data-tab="kabel" type="button">6 Kabel</button>
-      <button role="tab" data-tab="speicher" type="button">7 Speicher</button>
+      <button role="tab" data-tab="speicher" type="button">7 Speicher &amp; Wallbox</button>
       <button role="tab" data-tab="angebot" type="button">8 Angebot</button>
       <button role="tab" data-tab="export" type="button">9 Export</button>
       <button role="tab" data-tab="lib" type="button">Bibliothek</button>
@@ -781,6 +781,23 @@ SHOP_ARTICLES.push(...[
 {"i": "lochband-alu-27-10m", "n": "Erdungslochband Alu 27 × 1,5 mm zur Potentialverbindung, 10 m", "v": "Diverse", "c": "Erdung", "s": "", "p": 33.25, "e": "Rolle", "r": 1, "q": "enercab.at", "u": "https://www.enercab.at/diverse/5462-lochband-alu-zur-potentialverbindung-erdung-10m-4262355110834.html"},
 {"i": "duennblech-4-2x13-100", "n": "Dünnblech-/Bohrschrauben 4,2 × 13 verzinkt, 100 Stück", "v": "Diverse", "c": "Befestigung", "s": "", "p": 5.0, "e": "Pack", "r": 1, "q": "isoliershophuber.de", "u": "https://isoliershophuber.de/products/1-beutel-100-stuck-verzinkte-schrauben-4-2-x-13-mm"},
 {"i": "wellrohr-uv-m25-25m", "n": "Wellrohr UV-beständig M25 schwarz, 25 m", "v": "Diverse", "c": "Installationsmaterial", "s": "", "p": 27.87, "e": "Rolle", "r": 1, "q": "kaufland.de", "u": "https://www.kaufland.de/product/453595271/"}
+]);
+
+/* Kanalgrößen PROTEC.class PLF, Wallboxen, Switch: Online-Richtpreise netto, Stand 29.09.2026 */
+SHOP_ARTICLES.push(...[
+{"i": "protec-plf-1515-rw-2m", "n": "PROTEC.class PLF 1515 RW PVC-Kanal 15×15 reinweiß, 2 m", "v": "PROTEC.class", "c": "Installationsmaterial", "s": "PLF 1515 RW", "p": 1.08, "e": "Stange", "r": 1, "q": "elektromax24.de", "u": "https://www.elektromax24.de/installationsmaterial/kabelkanal/leitungsfuehrungskanal/protec.class/"},
+{"i": "protec-plf-2020-rw-2m", "n": "PROTEC.class PLF 2020 RW PVC-Kanal 20×20 reinweiß, 2 m", "v": "PROTEC.class", "c": "Installationsmaterial", "s": "PLF 2020 RW", "p": 1.29, "e": "Stange", "r": 1, "q": "elektromax24.de", "u": "https://www.elektromax24.de/installationsmaterial/kabelkanal/leitungsfuehrungskanal/protec.class/"},
+{"i": "protec-plf-2540-rw-2m", "n": "PROTEC.class PLF 2540 RW PVC-Kanal 25×40 reinweiß, 2 m", "v": "PROTEC.class", "c": "Installationsmaterial", "s": "PLF 2540 RW", "p": 3.87, "e": "Stange", "r": 1, "q": "elektromax24.de", "u": "https://www.elektromax24.de/installationsmaterial/kabelkanal/leitungsfuehrungskanal/protec.class/"},
+{"i": "protec-plf-3030-rw-2m", "n": "PROTEC.class PLF 3030 RW PVC-Kanal 30×30 reinweiß, 2 m", "v": "PROTEC.class", "c": "Installationsmaterial", "s": "PLF 3030 RW", "p": 4.22, "e": "Stange", "r": 1, "q": "elektromax24.de", "u": "https://www.elektromax24.de/installationsmaterial/kabelkanal/leitungsfuehrungskanal/protec.class/"},
+{"i": "protec-plf-4040-rw-2m", "n": "PROTEC.class PLF 4040 RW PVC-Kanal 40×40 reinweiß, 2 m", "v": "PROTEC.class", "c": "Installationsmaterial", "s": "PLF 4040 RW", "p": 4.52, "e": "Stange", "r": 1, "q": "elektromax24.de", "u": "https://www.elektromax24.de/installationsmaterial/kabelkanal/leitungsfuehrungskanal/protec.class/"},
+{"i": "protec-plf-4060-rw-2m", "n": "PROTEC.class PLF 4060 RW PVC-Kanal 40×60 reinweiß, 2 m", "v": "PROTEC.class", "c": "Installationsmaterial", "s": "PLF 4060 RW", "p": 5.12, "e": "Stange", "r": 1, "q": "elektromax24.de", "u": "https://www.elektromax24.de/installationsmaterial/kabelkanal/leitungsfuehrungskanal/protec.class/"},
+{"i": "protec-plf-4090-rw-2m", "n": "PROTEC.class PLF 4090 RW PVC-Kanal 40×90 reinweiß, 2 m", "v": "PROTEC.class", "c": "Installationsmaterial", "s": "PLF 4090 RW", "p": 9.5, "e": "Stange", "r": 1, "q": "elektromax24.de", "u": "https://www.elektromax24.de/installationsmaterial/kabelkanal/leitungsfuehrungskanal/protec.class/"},
+{"i": "protec-plf-6090-rw-2m", "n": "PROTEC.class PLF 6090 RW PVC-Kanal 60×90 reinweiß, 2 m", "v": "PROTEC.class", "c": "Installationsmaterial", "s": "PLF 6090 RW", "p": 14.04, "e": "Stange", "r": 1, "q": "elektromax24.de", "u": "https://www.elektromax24.de/installationsmaterial/kabelkanal/leitungsfuehrungskanal/protec.class/"},
+{"i": "protec-plf-60110-rw-2m", "n": "PROTEC.class PLF 60110 RW PVC-Kanal 60×110 reinweiß, 2 m", "v": "PROTEC.class", "c": "Installationsmaterial", "s": "PLF 60110 RW", "p": 12.92, "e": "Stange", "r": 1, "q": "elektromax24.de", "u": "https://www.elektromax24.de/installationsmaterial/kabelkanal/leitungsfuehrungskanal/protec.class/"},
+{"i": "protec-plf-60150-rw-2m", "n": "PROTEC.class PLF 60150 RW PVC-Kanal 60×150 reinweiß, 2 m", "v": "PROTEC.class", "c": "Installationsmaterial", "s": "PLF 60150 RW", "p": 20.55, "e": "Stange", "r": 1, "q": "elektromax24.de", "u": "https://www.elektromax24.de/installationsmaterial/kabelkanal/leitungsfuehrungskanal/protec.class/"},
+{"i": "sungrow-ac011e-01-11kw", "n": "Sungrow EV Charger 11 kW Wallbox AC011E-01", "v": "Sungrow", "c": "Zubehör", "s": "AC011E-01", "p": 419.33, "r": 1, "q": "einfacheauto.de", "u": "https://einfacheauto.de/wallboxen/sungrow/sungrow-ac011e-01"},
+{"i": "fronius-wattpilot-home-11-j-2-0", "n": "Fronius Wattpilot Home 11 J 2.0 Wallbox", "v": "Fronius", "c": "Zubehör", "s": "4,240,404", "p": 621.81, "r": 1, "q": "geizhals.de", "u": "https://geizhals.de/fronius-wattpilot-home-11-j-2-0-a2848989.html"},
+{"i": "tp-link-tl-sg105", "n": "TP-Link TL-SG105 5-Port Gigabit Switch", "v": "TP-Link", "c": "Installationsmaterial", "s": "TL-SG105", "p": 12.34, "r": 1, "q": "geizhals.de", "u": "https://geizhals.de/tp-link-tl-sg100-desktop-gigabit-switch-tl-sg105-a882492.html"}
 ]);
 </script>
 <script>
@@ -1652,7 +1669,7 @@ function renderSide(){
       <select id="batAdd" size="7" aria-label="Speicher wählen">${optHtml(LIB.batteries,null)}</select>
       <button data-act="addBat" class="pri" type="button" ${P.wrs.length?"":"disabled"}>Zum Projekt hinzufügen</button>
       ${P.wrs.length?"":`<div class="hint">Erst unter „4 Strings“ einen Wechselrichter anlegen.</div>`}
-      <div class="hint">Geprüft wird die Batteriespannung gegen den Batterieeingang des Hybrid-Wechselrichters. Die Kompatibilitätslisten der Hersteller bleiben maßgeblich.</div></div>`;
+      <div class="hint">Geprüft wird die Batteriespannung gegen den Batterieeingang des Hybrid-Wechselrichters. Die Kompatibilitätslisten der Hersteller bleiben maßgeblich.</div></div>`+wbSideHtml();
   }
   else if(UI.tab==="unterbau"){ h=subSideHtml(); }
   else if(UI.tab==="angebot"){ h=offerSideHtml(); }
@@ -1776,7 +1793,7 @@ document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>setTab(b.data
 let ARTS=[]; let ART_STORE={custom:[],ov:{},hidden:[]};
 let SHOP_OVERRIDE=null;
 const dnum=s=>parseInt(String(s||"").replace(/\D/g,"").slice(0,8),10)||0;
-const shopList=()=>(SHOP_OVERRIDE&&Array.isArray(SHOP_OVERRIDE.items)&&dnum(SHOP_OVERRIDE.date)>=dnum(SHOP_DATE))?SHOP_OVERRIDE.items:SHOP_ARTICLES;
+const shopList=()=>(SHOP_OVERRIDE&&Array.isArray(SHOP_OVERRIDE.items)&&dnum(SHOP_OVERRIDE.date)>dnum(SHOP_DATE))?SHOP_OVERRIDE.items:SHOP_ARTICLES;
 function buildArts(){
   const hid=new Set(ART_STORE.hidden||[]), ov=ART_STORE.ov||{};
   ARTS=shopList().filter(a=>!hid.has(a.i)).map(a=>{
@@ -2413,7 +2430,7 @@ $("#homeBtn").onclick=()=>goHome();
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.29.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.29";
+const APP_VERSION="2026.09.29.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.29.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -2763,6 +2780,9 @@ function runSelfTests(){
     const d=acCalc(4.6,1,20,1); return d.ls===25&&d.A===10&&d.cores===3&&eq(d.dU,0.783,0.002)&&/Spannungsfall/.test(d.why); });
   test("AC-Zuleitung 3 kW 1-phasig, 5 m: LS 16 A, 3G2,5 (0,51 %)",()=>{
     const d=acCalc(3,1,5,1); return d.ls===16&&d.A===2.5&&eq(d.dU,0.510,0.002); });
+  test("Wallbox 22 kW, 25 m: LS 32 A, 5G10 (0,78 %) · 11 kW, 25 m: LS 16 A, 5G4 (0,97 %)",()=>{
+    const a=acCalc(22,3,25,1,true), b=acCalc(11,3,25,1,true); return a.ls===32&&a.A===10&&eq(a.dU,0.778,0.003)&&b.ls===16&&b.A===4&&eq(b.dU,0.972,0.003); });
+  test("Kleiner WR 5 kW 3-phasig: mindestens LS 16 A, 5G2,5",()=>{ const d=acCalc(5,3,10,1); return d.ls===16&&d.A===2.5; });
   test("Phasen: Sunny Boy/Primo 1-phasig, Tripower/Symo/Sungrow 3-phasig",()=>
     invPhases({name:"SMA Sunny Boy 5.0"})===1&&invPhases({name:"Fronius Primo 8.2-1"})===1&&invPhases({name:"SMA Sunny Tripower X 15"})===3&&invPhases({name:"Sungrow SH10RT"})===3);
   test("Spannungsfall-Formel (Kupfer, Hin- und Rückleiter)",()=>{
@@ -2962,9 +2982,12 @@ side.addEventListener("click",e=>{
    Mengenregel (fest, je Modul, je String, je Dachfläche, je Wechselrichter, je Meter Leitungsweg).
    Sie landet bei „Aus Plan übernehmen“ im Angebot und in der Packliste. Bearbeitbar in der Bibliothek. */
 const STD_VER=1;
-const STD_GROUPS=["Komponenten","Unterbau","DC","Erdung","AC","Befestigung","Sonstiges","Leistung"];
+const STD_GROUPS=["Komponenten","Unterbau","DC","Erdung","AC","Netzwerk","Wallbox","Befestigung","Sonstiges","Leistung"];
 const STD_RULES={fix:"fest",mod:"je Modul",str:"je String",face:"je Dachfläche",wr:"je Wechselrichter",wrbat:"je WR + Speicher",run:"je Meter Leitungsweg",
-  accable:"AC-Zuleitung (berechnet)",acls:"LS je WR (berechnet)",acfi:"FI je WR (berechnet)"};
+  lan:"je Netzwerkgerät",wb:"je Wallbox",
+  accable:"AC-Zuleitung (berechnet)",acls:"LS je WR (berechnet)",acfi:"FI je WR (berechnet)",kanal:"Kanal je Größe (Aufmaß)",meter:"Zähler passend zum System",
+  wbox:"Wallbox (Auswahl im Projekt)",wbems:"Energiemanager Wallbox",wbcable:"Wallbox-Zuleitung (berechnet)",wbls:"LS Wallbox (berechnet)",wbfi:"FI Wallbox (berechnet)"};
+const STD_CALC=new Set(["accable","acls","acfi","kanal","meter","wbox","wbems","wbcable","wbls","wbfi"]);
 const STD_DEFAULT=[
   {id:"s-mc4",grp:"DC",name:"Solarstecker Set (6 Paar)",art:"solar-stecker-set",rule:{k:"str",f:2,add:2,pack:6},unit:"Set",note:"2 Paar je String + 2 Reserve"},
   {id:"s-binder",grp:"DC",name:"Kabelbinder mit Clip, UV-beständig (100 Stück)",art:"kabelbinder-mit-clip-200-mm-100-st",rule:{k:"mod",f:3,pack:100},unit:"Pack"},
@@ -2982,8 +3005,17 @@ const STD_DEFAULT=[
   {id:"s-ls",grp:"AC",name:"Leitungsschutzschalter Wechselrichter",rule:{k:"acls"},unit:"Stk"},
   {id:"s-fi",grp:"AC",name:"FI-Schutzschalter Typ A 30 mA",rule:{k:"acfi"},unit:"Stk"},
   {id:"s-spd",grp:"AC",name:"Überspannungsableiter Typ 1+2 (AC)",tok:["kombiableiter"],rule:{k:"fix",f:1},unit:"Stk"},
-  {id:"s-kanal",grp:"AC",name:"Kabelkanal PROTEC.class PLF 6060 (60×60), 2 m",art:"protec-plf-6060-rw-2m",rule:{k:"run",run:"kanal",pack:2},unit:"Stange"},
-  {id:"s-lan",grp:"AC",name:"LAN-Kabel Cat7 (Wechselrichter / Smart Meter)",art:"cat7-lan-m",rule:{k:"run",run:"lan"},unit:"m"},
+  {id:"s-kanal",grp:"AC",name:"Kabelkanal PROTEC.class PLF (Größen im Schritt „Kabel“)",rule:{k:"kanal"},unit:"Stange"},
+  {id:"s-meter",grp:"AC",name:"Energiezähler / Home Manager passend zum System",rule:{k:"meter"},unit:"Stk",note:"entfällt, wenn beim Wechselrichter dabei"},
+  {id:"s-lan",grp:"Netzwerk",name:"LAN-Kabel Cat7 (Wechselrichter / Smart Meter)",art:"cat7-lan-m",rule:{k:"run",run:"lan"},unit:"m"},
+  {id:"s-switch",grp:"Netzwerk",name:"Netzwerk-Switch 5 Port",art:"tp-link-tl-sg105",rule:{k:"fix",f:1},unit:"Stk",note:"für WR, Speicher, Home Manager, Wallbox"},
+  {id:"s-patch",grp:"Netzwerk",name:"Patchkabel Cat7 1 m",art:"patchkabel-rj45-nyy-j-1x16-0mm-cat7-1m",rule:{k:"lan",f:1},unit:"Stk"},
+  {id:"s-wb",grp:"Wallbox",name:"Wallbox",rule:{k:"wbox"},unit:"Stk"},
+  {id:"s-wbems",grp:"Wallbox",name:"Energiemanager für PV-Überschussladen",rule:{k:"wbems"},unit:"Stk"},
+  {id:"s-wbcable",grp:"Wallbox",name:"Wallbox-Zuleitung ÖLFLEX CLASSIC 110",rule:{k:"wbcable"},unit:"m"},
+  {id:"s-wbls",grp:"Wallbox",name:"Leitungsschutzschalter Wallbox",rule:{k:"wbls"},unit:"Stk"},
+  {id:"s-wbfi",grp:"Wallbox",name:"FI-Schutzschalter Wallbox Typ A 30 mA",rule:{k:"wbfi"},unit:"Stk",note:"Typ A genügt nur, wenn die Wallbox eine DC-Fehlerstromerkennung 6 mA hat (Sungrow, SMA, Fronius: ja), sonst Typ B"},
+  {id:"s-wblabor",grp:"Leistung",name:"Installation Wallbox inkl. Zuleitung und Anmeldung beim Netzbetreiber",labor:true,rule:{k:"wb",f:3},unit:"h"},
   {id:"s-zs",grp:"AC",name:"Zählerschrank-Kleinmaterial (Klemmen, Aderendhülsen, Hutschiene)",ek:30,rule:{k:"fix",f:1},unit:"Pausch.",note:"Richtwert"},
   {id:"s-bef",grp:"Befestigung",name:"Befestigungsmaterial (Dübel, Schrauben, Schellen)",ek:20,rule:{k:"fix",f:1},unit:"Pausch.",note:"Richtwert"},
   {id:"s-anm",grp:"Leistung",name:"PV-Anmeldung und Inbetriebnahme (Netzbetreiber, Marktstammdatenregister, Inbetriebnahmeprotokoll)",labor:true,vk:500,rule:{k:"fix",f:1},unit:"Pausch."}
@@ -2992,7 +3024,6 @@ const STD_DEFAULT=[
 const RUN_DEF={
   pa:{l:"Potentialausgleich 16 mm² (Dach → PA-Schiene)",d:()=>15},
   erd6:{l:"Erdung 6 mm² (WR/Speicher → PA-Schiene)",d:()=>3*(P.wrs.length+P.bats.length)},
-  kanal:{l:"Kabelkanal 60×60",d:()=>4},
   lan:{l:"LAN (WR → Router / Smart Meter)",d:()=>10},
   rohr:{l:"Schutzrohr (außen / Dachboden)",d:()=>5}
 };
@@ -3001,6 +3032,7 @@ function stdList(){
   if(!Array.isArray(SET.std)) return STD_DEFAULT;
   /* neue Standardpositionen aus späteren Versionen ergänzen, gelöschte bleiben gelöscht */
   const have=new Set(SET.std.map(x=>x.id)), gone=new Set(SET.stdGone||[]);
+  SET.std.forEach(x=>{ if(x.id==="s-kanal"&&x.rule&&x.rule.k==="run"){ x.rule={k:"kanal"}; delete x.art; x.name="Kabelkanal PROTEC.class PLF (Größen im Schritt „Kabel“)"; } });
   return SET.std.concat(STD_DEFAULT.filter(x=>!have.has(x.id)&&!gone.has(x.id)).map(clone));
 }
 function runLen(k){
@@ -3014,7 +3046,7 @@ function runLen(k){
    Datenblatt-Maximalwerten). LS: nächste Normstufe ≥ I_max. Querschnitt: kleinster mit I_z ≥ I_n(LS)
    und Spannungsfall ≤ Grenze (Standard 1 %). I_z nach DIN VDE 0298-4 Tab. 11, flexible Leitung,
    Verlegeart B2 (Kanal/Rohr auf der Wand), 30 °C, ohne Häufung. */
-const AC_LS=[10,13,16,20,25,32,40,50,63];
+const AC_LS=[16,20,25,32,40,50,63]; /* unter 16 A wird in der Praxis nicht abgesichert */
 const AC_AREAS=[2.5,4,6,10,16];
 const AC_IZ={3:{2.5:21,4:28,6:36,10:50,16:66},2:{2.5:23,4:30,6:38,10:52,16:69}};
 function invPhases(inv){ if(!inv) return 3; if(inv.ph===1||inv.ph===3) return inv.ph; return /sunny boy|primo/i.test(inv.name)?1:3; }
@@ -3024,9 +3056,10 @@ function acDesign(w){
   const meas=Number(w.acLen)>0, L=meas?Number(w.acLen):AC_LEN_DEFAULT, lim=Number(SET.acDrop)>0?Number(SET.acDrop):1;
   return Object.assign(acCalc(inv.pac,invPhases(inv),L,lim),{inv,meas});
 }
-/* reine Rechnung (auch für den Selbsttest): pac in kW, ph 1 oder 3, L einfache Länge in m, lim in % */
-function acCalc(pac,ph,L,lim){
-  const inom=pac*1000/(ph*230), imax=pac*1000/(ph*220);
+/* reine Rechnung (auch für den Selbsttest): pac in kW, ph 1 oder 3, L einfache Länge in m, lim in %.
+   fixed = Strom ist vom Gerät fest begrenzt (Wallbox 16/32 A), dann zählt der Nennstrom. */
+function acCalc(pac,ph,L,lim,fixed){
+  const inom=pac*1000/(ph*230), imax=fixed?inom:pac*1000/(ph*220);
   const ls=AC_LS.find(x=>x>=imax-1e-9)||null;
   const iz=AC_IZ[ph===3?3:2];
   let A=null, why="";
@@ -3038,10 +3071,62 @@ function acCalc(pac,ph,L,lim){
 const areaTxt=a=>String(a).replace(".",",");
 function acCableArtId(d){ return "lapp-oelflex-110-"+d.cores+"g"+String(d.A).replace(".","-"); }
 
+/* ───────── Kabelkanal: mehrere Größen je Projekt (P.kanal = [{size,m}]) ───────── */
+const KANAL_SIZES=["1515","2020","2540","3030","4040","4060","4090","6060","6090","60110","60150"];
+const kanalLabel=s=>s.length===4?s.slice(0,2)+"×"+s.slice(2):s.slice(0,2)+"×"+s.slice(2);
+const kanalArtId=s=>"protec-plf-"+s+"-rw-2m";
+function kanalRows(){
+  if(!Array.isArray(P.kanal)){ P.kanal=[]; if(P.runs&&Number(P.runs.kanal)>0){ P.kanal.push({size:"6060",m:Number(P.runs.kanal)}); delete P.runs.kanal; } }
+  const rows=P.kanal.filter(k=>KANAL_SIZES.includes(k.size)&&Number(k.m)>0).map(k=>({size:k.size,m:Number(k.m),est:false}));
+  return rows.length?rows:[{size:"6060",m:4,est:true}];
+}
+/* ───────── Energiezähler / Home Manager passend zum Wechselrichter ───────── */
+const METER_MATCH={SMA:{id:"sma-sunny-home-manager-2-0",lan:true},Fronius:{id:"fronius-ts65-3-smart-meter"},Sungrow:{id:"sungrow-smart-meter-dtsu666-20-3-phasig"},Huawei:{id:"huawei-smart-meter-dtsu666-h-100a"}};
+function sysBrand(){ const inv=P.wrs.map(w=>invOf(w.invId)).find(Boolean); return inv?inv.brand:null; }
+function meterPick(){
+  const b=sysBrand(), m=b&&METER_MATCH[b]; if(!m) return {art:null,lan:false};
+  const wrArt=P.wrs.map(w=>invOf(w.invId)).filter(Boolean).map(inv=>findArt("Wechselrichter",[inv.brand,...modelTokens(inv)])).find(Boolean);
+  if(wrArt&&/smart ?meter/i.test(wrArt.name)) return {art:null,lan:false,incl:true};
+  return {art:artOf(m.id),lan:!!m.lan,note:b==="SMA"?"nötig für Eigenverbrauchsanzeige, Überschussladen und Einspeiseregelung":"Netzanschlusszähler für Eigenverbrauch und Einspeiseregelung"};
+}
+/* ───────── Wallbox (P.wb = {on, kw, art:"auto"|id, len, ems}) ───────── */
+const WB_MATCH={Sungrow:{11:"sungrow-ac011e-01-11kw",22:"sungrow-wallbox-22kw-ac022e-01"},SMA:{11:"sma-ev-charger-evc22-3ac-10-22-kw-wallbox",22:"sma-ev-charger-evc22-3ac-10-22-kw-wallbox"},
+  Fronius:{11:"fronius-wattpilot-home-11-j-2-0",22:"fronius-wattpilot-go-22kw-j2-0"},GoodWe:{11:"goodwe-hca-g2-ev-charger-wallbox-11kw",22:"goodwe-ev-charger-gw22k-hca-20-22-kw-wallbox-mit-pv-lademodus"}};
+const WB_LEN_DEFAULT=15;
+const wbArts=()=>ARTS.filter(a=>/wallbox|ev charger|ladestation|wattpilot/i.test(a.name)&&!/rfid/i.test(a.name));
+function wbAutoArt(){ const b=sysBrand(), id=b&&WB_MATCH[b]&&WB_MATCH[b][P.wb&&P.wb.kw===22?22:11]; return id?artOf(id):null; }
+function wbPick(){ const w=P.wb; if(!w||!w.on) return null; return w.art&&w.art!=="auto"?artOf(w.art):wbAutoArt(); }
+function wbLen(){ const v=P.wb&&Number(P.wb.len); return v>0?{m:v,est:false}:{m:WB_LEN_DEFAULT,est:true}; }
+/* Sungrow braucht für Überschussladen den iHomeManager (Zähler integriert); SMA und Fronius regeln über den Zähler aus der Standardliste */
+function wbEmsPick(){ const a=wbPick(); if(!a||!(P.wb&&P.wb.ems!==false)) return null; return /sungrow/i.test(a.name)?artOf("sungrow-ihomemanager"):null; }
+function wbSideHtml(){
+  const w=P.wb||{}, b=sysBrand(), auto=wbAutoArt();
+  if(!w.on) return `<div class="sec"><h2>Wallbox (optional)</h2><label class="row"><input type="checkbox" data-wb="on"> Wallbox mit einplanen</label>
+    <div class="hint">Vorschlag passend zum Wechselrichter (${esc(b||"noch kein WR")}), frei änderbar, z. B. wenn der Kunde eine andere möchte.</div></div>`;
+  const d=acCalc(w.kw===22?22:11,3,wbLen().m,Number(SET.acDrop)>0?Number(SET.acDrop):1,true), a=wbPick(), ems=wbEmsPick();
+  const opts=wbArts().sort((x,y)=>x.brand.localeCompare(y.brand)||x.price-y.price).map(x=>`<option value="${esc(x.id)}"${w.art===x.id?" selected":""}>${esc(x.name)} · ${eur(x.price)}</option>`).join("");
+  return `<div class="sec"><h2>Wallbox (optional)</h2><label class="row"><input type="checkbox" data-wb="on" checked> Wallbox mit einplanen</label>
+    <div class="grid2"><label class="f">Ladeleistung<select data-wb="kw"><option value="11"${w.kw!==22?" selected":""}>11 kW (anzeigepflichtig)</option><option value="22"${w.kw===22?" selected":""}>22 kW (genehmigungspflichtig)</option></select></label>
+      ${num("wbLen","Zuleitung Zählerschrank → Wallbox (m)",w.len||"",'data-wb="len" min="0" placeholder="'+WB_LEN_DEFAULT+' (Schätzung)"',0.5)}</div>
+    <label class="f">Modell<select data-wb="art"><option value="auto"${!w.art||w.art==="auto"?" selected":""}>Passend zum System: ${auto?esc(auto.name):"keine "+esc(b||"")+"-Wallbox in der Liste"}</option>${opts}</select></label>
+    ${a&&/sungrow/i.test(a.name)?`<label class="row"><input type="checkbox" data-wb="ems" ${w.ems!==false?"checked":""}> Sungrow iHomeManager für PV-Überschussladen mitnehmen</label>`:""}
+    <div class="stat"><span>Wallbox</span><b>${a?esc(a.brand):"–"}</b><span>Strom</span><b>${fmt(d.inom,1)} A</b><span>Leitungsschutz</span><b>C ${d.ls} A, 3-polig</b><span>Zuleitung</span><b>ÖLFLEX 5G${areaTxt(d.A)}</b><span>Spannungsfall</span><b>${fmt(d.dU,2)} %</b></div>
+    <div class="hint">${!a?"":b&&!new RegExp(b,"i").test(a.brand)?"Andere Marke als der Wechselrichter: Für PV-Überschussladen braucht es meist einen eigenen Energiemanager der Wallbox-Marke oder eine Fremdanbindung, bitte Kompatibilität prüfen."
+      :/sma/i.test(a.brand)?"Überschussladen läuft über den Sunny Home Manager 2.0 aus der Standardliste.":/fronius/i.test(a.brand)?"Überschussladen läuft über den Fronius Smart Meter.":ems?"Überschussladen läuft über den iHomeManager.":""}</div></div>`;
+}
+side.addEventListener("change",e=>{
+  const t=e.target, k=t.dataset.wb; if(!P||!k) return; P.wb=P.wb||{on:false,kw:11,art:"auto"};
+  if(k==="on") P.wb.on=t.checked; else if(k==="kw") P.wb.kw=+t.value===22?22:11; else if(k==="art") P.wb.art=t.value; else if(k==="ems") P.wb.ems=t.checked;
+  else if(k==="len"){ const v=parseFloat(t.value); if(v>0) P.wb.len=Math.min(v,500); else delete P.wb.len; }
+  scheduleSave(); renderSide();
+});
+
 /* ───────── Positionen für das Angebot ───────── */
 function stdCounts(){
   const faces=new Set(MODS.map(m=>m.fi)).size;
-  return {mod:MODS.length,str:P.strings.filter(s=>s.mods.length).length,face:faces,wr:P.wrs.length,wrbat:P.wrs.length+P.bats.length};
+  const wb=P.wb&&P.wb.on?1:0;
+  return {mod:MODS.length,str:P.strings.filter(s=>s.mods.length).length,face:faces,wr:P.wrs.length,wrbat:P.wrs.length+P.bats.length,wb,
+    lan:P.wrs.length+(meterPick().lan?1:0)+wb+(wb&&wbEmsPick()?1:0)+1};
 }
 function stdOfferItems(o){
   const out=[], C=stdCounts(), eaton=SET.pref==="Eaton";
@@ -3049,6 +3134,22 @@ function stdOfferItems(o){
     ekFix:a?null:(e.ek!=null?e.ek:null),note:e.note||""},extra||{}));
   stdList().forEach(e=>{
     if(e.off) return; const r=e.rule||{k:"fix",f:1};
+    if(r.k==="kanal"){
+      kanalRows().forEach(k=>{ const a=artOf(kanalArtId(k.size)), n=Math.ceil(k.m/2);
+        if(n>0) out.push(artItem(e,a,n,{name:a?a.name:"Kabelkanal PROTEC.class PLF "+k.size,unit:"Stange",note:`${fmt(k.m,1).replace(",0","")} m`+(k.est?" geschätzt, im Schritt „Kabel“ aufmessen":" aufgemessen")})); });
+      return;
+    }
+    if(r.k==="meter"){ const m=meterPick(); if(m.art) out.push(artItem(e,m.art,1,{name:m.art.name,note:m.note})); return; }
+    if(r.k==="wbox"||r.k==="wbems"||r.k==="wbcable"||r.k==="wbls"||r.k==="wbfi"){
+      if(!(P.wb&&P.wb.on)) return;
+      const d=acCalc(P.wb.kw===22?22:11,3,wbLen().m,Number(SET.acDrop)>0?Number(SET.acDrop):1,true);
+      if(r.k==="wbox"){ const a=wbPick(); out.push(artItem(e,a,1,{name:a?a.name:`Wallbox ${P.wb.kw===22?22:11} kW`,note:[a?"":"Keine passende Wallbox gefunden – Artikel wählen",P.wb.kw===22?"22 kW: beim Netzbetreiber genehmigungspflichtig":"11 kW: beim Netzbetreiber anzeigepflichtig"].filter(Boolean).join(" · ")})); }
+      else if(r.k==="wbems"){ const a=wbEmsPick(); if(a) out.push(artItem(e,a,1,{name:a.name})); }
+      else if(r.k==="wbcable"){ const a=artOf(acCableArtId(d)); out.push(artItem(e,a,Math.ceil(d.L),{name:a?a.name:"ÖLFLEX CLASSIC 110 5G"+areaTxt(d.A),note:`${P.wb.kw===22?22:11} kW, I ${fmt(d.inom,1)} A, LS ${d.ls} A, Spannungsfall ${fmt(d.dU,2)} % bei ${fmt(d.L,0)} m`+(wbLen().est?" (Länge geschätzt)":"")})); }
+      else if(r.k==="wbls"){ let a=eaton?findArt(null,["pxl-c"+d.ls+"/3"]):null; if(!a) a=findArt(null,["leitungsschutzschalter","3-polig",d.ls+"a","c-charakteristik"]); out.push(artItem(e,a,1,{name:a?a.name:`Leitungsschutzschalter 3-polig C ${d.ls} A`})); }
+      else { const fiIn=[25,40,63].find(x=>x>=d.ls)||63; let a=eaton?findArt(null,["pxf-"+fiIn+"/4/003-a"]):null; if(!a) a=findArt(null,["fi-schutzschalter",fiIn+"a","4-pol","30ma"]); out.push(artItem(e,a,1,{name:a?a.name:`FI-Schutzschalter 4-polig ${fiIn} A 30 mA Typ A`})); }
+      return;
+    }
     if(r.k==="accable"||r.k==="acls"||r.k==="acfi"){
       P.wrs.forEach(w=>{ const d=acDesign(w); if(!d) return; const tag=P.wrs.length>1?" ("+w.name+")":"";
         if(r.k==="accable"){
@@ -3096,7 +3197,12 @@ function runsSideHtml(){
     ${acRows||`<div class="hint">Noch kein Wechselrichter im Projekt.</div>`}</div>
   <div class="sec"><h2>Aufgemessene Leitungswege</h2>
     <div class="hint">Einfache Länge in Metern, so wie vor Ort gemessen. Leer = Schätzung (grau). Die Mengen in Angebot und Packliste rechnen damit.</div>
-    <div class="grid2">${Object.entries(RUN_DEF).map(([k,v])=>num("run"+k,v.l,r[k]||"",'data-run="'+k+'" min="0" placeholder="'+Math.round(v.d())+'"',0.5)).join("")}</div></div>`;
+    <div class="grid2">${Object.entries(RUN_DEF).map(([k,v])=>num("run"+k,v.l,r[k]||"",'data-run="'+k+'" min="0" placeholder="'+Math.round(v.d())+'"',0.5)).join("")}</div></div>
+  <div class="sec"><h2>Kabelkanal PROTEC.class PLF</h2>
+    <div class="hint">Eine Zeile je Größe, Länge in Metern. Gerechnet wird auf ganze 2-m-Stangen. Ohne Eintrag: 4 m 60×60 geschätzt.</div>
+    ${(kanalRows(),P.kanal).map((k,i)=>`<div class="row"><select data-kan="size" data-i="${i}" aria-label="Kanalgröße">${KANAL_SIZES.map(s=>`<option value="${s}"${s===k.size?" selected":""}>${kanalLabel(s)} mm</option>`).join("")}</select>
+      <input type="number" step="0.5" min="0" data-kan="m" data-i="${i}" value="${k.m||""}" placeholder="m" aria-label="Länge" style="width:90px"><span class="hint">${Number(k.m)>0?Math.ceil(k.m/2)+" Stangen":""}</span><button type="button" class="sm dng" data-kan="del" data-i="${i}" aria-label="Zeile löschen">×</button></div>`).join("")}
+    <button type="button" data-kan="add">Kanalgröße hinzufügen</button></div>`;
 }
 side.addEventListener("input",e=>{
   const t=e.target; if(!P||UI.tab!=="kabel"||!t.dataset.run) return;
@@ -3105,7 +3211,20 @@ side.addEventListener("input",e=>{
   else{ P.runs=P.runs||{}; if(val) P.runs[t.dataset.run]=val; else delete P.runs[t.dataset.run]; }
   scheduleSave();
 });
-side.addEventListener("change",e=>{ if(P&&UI.tab==="kabel"&&e.target.dataset.run) renderSide(); });
+side.addEventListener("change",e=>{
+  const t=e.target; if(!P||UI.tab!=="kabel") return;
+  if(t.dataset.run) renderSide();
+  else if(t.dataset.kan){ kanalRows(); const k=P.kanal[+t.dataset.i]; if(!k) return;
+    if(t.dataset.kan==="size"&&KANAL_SIZES.includes(t.value)) k.size=t.value;
+    else if(t.dataset.kan==="m"){ const v=parseFloat(t.value); k.m=v>0?Math.min(v,1000):0; }
+    scheduleSave(); renderSide(); }
+});
+side.addEventListener("click",e=>{
+  const b=e.target.closest("[data-kan]"); if(!b||b.tagName!=="BUTTON"||!P||UI.tab!=="kabel") return; kanalRows();
+  if(b.dataset.kan==="add") P.kanal.push({size:P.kanal.length?"4040":"6060",m:0});
+  else if(b.dataset.kan==="del") P.kanal.splice(+b.dataset.i,1);
+  scheduleSave(); renderSide();
+});
 
 /* ───────── Packliste (PDF zum Abhaken) ───────── */
 function itemGroup(it){
@@ -3165,10 +3284,10 @@ async function exportPackList(){
 
 /* ───────── Bibliothek: Standardliste bearbeiten ───────── */
 function stdLibHtml(){
-  const L=stdList(), ruleSel=(e,i)=>{ const k=(e.rule||{}).k||"fix", calc=k.startsWith("ac");
-    return calc?`<span class="hint">${esc(STD_RULES[k])}</span>`:`<select data-std="k" data-i="${i}" aria-label="Mengenregel">${Object.entries(STD_RULES).filter(([x])=>!x.startsWith("ac")).map(([x,l])=>`<option value="${x}"${x===k?" selected":""}>${l}</option>`).join("")}</select>`; };
-  const rows=L.map((e,i)=>{ const r=e.rule||{}, calc=(r.k||"").startsWith("ac"), a=e.art?artOf(e.art):e.tok?findArt(null,e.tok):null;
-    const price=e.labor?`VK ${eur(e.vk??0)}`:a?`${eur(a.price)} (Artikel)`:e.ek!=null?`${eur(e.ek)} (fest)`:calc?"aus Artikel":"–";
+  const L=stdList(), ruleSel=(e,i)=>{ const k=(e.rule||{}).k||"fix", calc=STD_CALC.has(k);
+    return calc?`<span class="hint">${esc(STD_RULES[k])}</span>`:`<select data-std="k" data-i="${i}" aria-label="Mengenregel">${Object.entries(STD_RULES).filter(([x])=>!STD_CALC.has(x)).map(([x,l])=>`<option value="${x}"${x===k?" selected":""}>${l}</option>`).join("")}</select>`; };
+  const rows=L.map((e,i)=>{ const r=e.rule||{}, calc=STD_CALC.has(r.k||""), a=e.art?artOf(e.art):e.tok?findArt(null,e.tok):null;
+    const price=e.labor?(e.vk!=null?`VK ${eur(e.vk)}`:"Stundensatz"):a?`${eur(a.price)} (Artikel)`:e.ek!=null?`${eur(e.ek)} (fest)`:calc?"aus Artikel":"–";
     return `<tr data-i="${i}" style="${e.off?"opacity:.5":""}"><td><input type="checkbox" data-std="on" data-i="${i}" ${e.off?"":"checked"} aria-label="aktiv"></td>
       <td><select data-std="grp" data-i="${i}" aria-label="Gruppe">${STD_GROUPS.map(g=>`<option${g===e.grp?" selected":""}>${g}</option>`).join("")}</select></td>
       <td><input type="text" data-std="name" data-i="${i}" value="${esc(e.name)}" aria-label="Bezeichnung">${a?`<div class="hint">${esc(a.name)}${a.ref?" · Richtpreis "+esc(a.src||""):""}</div>`:""}</td>
@@ -3177,7 +3296,7 @@ function stdLibHtml(){
       <td>${calc||r.k==="fix"?"":`<input type="number" step="any" data-std="add" data-i="${i}" value="${r.add||0}" aria-label="Zuschlag" style="width:56px">`}</td>
       <td>${calc?"":`<input type="number" step="1" min="0" data-std="pack" data-i="${i}" value="${r.pack||""}" placeholder="–" aria-label="Packung" style="width:56px">`}</td>
       <td><input type="text" data-std="unit" data-i="${i}" value="${esc(e.unit||"")}" aria-label="Einheit" style="width:64px"></td>
-      <td>${e.labor?`<input type="number" step="0.01" data-std="vk" data-i="${i}" value="${e.vk??""}" aria-label="Verkaufspreis" style="width:80px">`:a||calc?`<span class="hint">${price}</span>`:`<input type="number" step="0.01" data-std="ek" data-i="${i}" value="${e.ek??""}" aria-label="Einkauf" style="width:80px">`}</td>
+      <td>${e.labor?`<input type="number" step="0.01" data-std="vk" data-i="${i}" value="${e.vk??""}" placeholder="Stundensatz" aria-label="Verkaufspreis" style="width:80px">`:a||calc?`<span class="hint">${price}</span>`:`<input type="number" step="0.01" data-std="ek" data-i="${i}" value="${e.ek??""}" aria-label="Einkauf" style="width:80px">`}</td>
       <td><button type="button" class="sm dng" data-std="del" data-i="${i}" aria-label="Löschen">×</button></td></tr>`; }).join("");
   return `<div class="card" style="grid-column:1/-1"><h3>Standard-Materialliste</h3>
     <div class="hint" style="margin-bottom:8px">Diese Positionen kommen bei „Aus Plan übernehmen“ in jedes Angebot und in die Packliste. Menge = Faktor × Anzahl + Zuschlag, bei „Packung“ auf ganze Packungen aufgerundet (z. B. 2 = Kanal-Stangen à 2 m, 6 = Stecker-Set à 6 Paar). Preise der verknüpften Artikel änderst du unter „Artikel“.</div>
@@ -3199,7 +3318,7 @@ $("#lib").addEventListener("change",e=>{
     else if(k==="f"||k==="add"){ const v=parseFloat(t.value); e.rule[k]=Number.isFinite(v)?Math.max(0,Math.min(v,10000)):(k==="f"?1:0); }
     else if(k==="pack"){ const v=parseInt(t.value); if(v>1) e.rule.pack=Math.min(v,10000); else delete e.rule.pack; }
     else if(k==="ek"){ const v=parseFloat(t.value); e.ek=Number.isFinite(v)?Math.max(0,v):null; }
-    else if(k==="vk"){ const v=parseFloat(t.value); e.vk=Number.isFinite(v)?Math.max(0,v):0; }
+    else if(k==="vk"){ const v=parseFloat(t.value); if(Number.isFinite(v)) e.vk=Math.max(0,v); else delete e.vk; }
   });
   renderLib();
 });
