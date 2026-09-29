@@ -1,12 +1,12 @@
 {
   "app": {
-    "version": "2026.09.30.1",
+    "version": "2026.09.30.2",
     "file": "Dachplaner-PV.html",
-    "notes": "Netzanmeldung: Anlagendaten für Netzbetreiber und Marktstammdatenregister (N-ERGIE, Bayernwerk, Stadtwerke Neumarkt), automatischer Übersichtsschaltplan, Prüfprotokoll DC nach DIN EN 62446. Planungscheck mit allen Hinweisen und Kundenblatt fürs Beratungsgespräch. Ertragsprognose mit EEG-Vergütung und Abregelung nach Solarspitzengesetz. Neue Geräte: Fronius Primo 3.0–4.6, Symo Advanced 17.5/20, Verto 25–33.3 (mit/ohne Plus), SMA STP 3.0–6.0, Huawei SUN2000-3…10KTL-M1 mit LUNA2000, BYD HVB, SMA Home Storage, Jinko 54HL4R-V/-B, LONGi LR4-72HPH."
+    "notes": "Netzanmeldung: Anlagendaten für Netzbetreiber und Marktstammdatenregister (N-ERGIE, Bayernwerk, Stadtwerke Neumarkt), automatischer Übersichtsschaltplan, Prüfprotokoll DC nach DIN EN 62446. Planungscheck mit allen Hinweisen und Kundenblatt fürs Beratungsgespräch. Ertragsprognose mit EEG-Vergütung und Abregelung nach Solarspitzengesetz. Neue Geräte: Fronius Primo 3.0–4.6, Symo Advanced 17.5/20, Verto 25–33.3 (mit/ohne Plus), SMA STP 3.0–6.0, Huawei SUN2000-3…10KTL-M1 mit LUNA2000, BYD HVB, SMA Home Storage, Jinko 54HL4R-V/-B, LONGi LR4-72HPH. Preise: geprüfte Zuordnung zu Shop-Artikeln und Online-Richtpreise für alle Module, Wechselrichter und Speicher – keine 0-€-Positionen mehr im Angebot."
   },
   "library": {
-    "version": "2026.09.30",
+    "version": "2026.09.30.2",
     "file": "library.json",
-    "notes": "20 Wechselrichter, 19 Speicher und 18 Modulgrößen neu aus Datenblättern; Huawei-Näherungswerte durch Datenblattwerte ersetzt."
+    "notes": "147 Richtpreise (Module, Wechselrichter, Speicher) und 20 Wechselrichter, 19 Speicher, 18 Modulgrößen neu aus Datenblättern."
   }
 }
