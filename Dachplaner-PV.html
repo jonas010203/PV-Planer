@@ -750,6 +750,9 @@ const MOD_FAMILIES = [
   {brand:"LONGi",name:"Hi-MO 6 LR5-54HTH-M",w:1134,h:1722,tc:-0.23,cls:[[420,32.44,12.95,38.73,14.00],[425,32.64,13.03,38.93,14.07],[430,32.84,13.10,39.13,14.15],[435,33.04,13.17,39.33,14.22],[440,33.24,13.24,39.53,14.30]]},
   {brand:"Luxor",name:"Eco Line Half Cell M108",w:1134,h:1722,tc:-0.285,cls:[[400,31.14,12.85,37.08,13.57],[405,31.36,12.92,37.34,13.64],[410,31.58,12.99,37.60,13.72],[415,31.80,13.06,37.86,13.79],[420,32.02,13.13,38.12,13.86]]},
   {brand:"Luxor",name:"Eco Line M108 Glas-Glas N-Type",w:1134,h:1722,tc:-0.25,cls:[[440,32.27,13.65,39.07,14.40],[445,32.46,13.72,39.30,14.47],[450,32.65,13.79,39.53,14.55],[455,32.85,13.86,39.77,14.62],[460,33.05,13.93,40.01,14.69]]},
+  {brand:"Jinko",name:"Tiger Neo 54HL4R-V (JKM-N-54HL4R-V)",w:1134,h:1762,tc:-0.25,cls:[[425,32.18,13.21,38.75,13.66],[430,32.38,13.28,38.95,13.73],[435,32.59,13.35,39.16,13.80],[440,32.81,13.41,39.38,13.86],[445,33.02,13.48,39.59,13.93],[450,33.21,13.55,39.78,14.00]]},
+  {brand:"Jinko",name:"Tiger Neo 54HL4R-B All Black (JKM-N-54HL4R-B)",w:1134,h:1762,tc:-0.25,cls:[[425,32.37,13.13,38.95,13.58],[430,32.58,13.20,39.16,13.65],[435,32.78,13.27,39.36,13.72],[440,32.99,13.34,39.57,13.80],[445,33.19,13.41,39.77,13.87]]},
+  {brand:"LONGi",name:"LR4-72HPH-M (144 Zellen)",w:1038,h:2094,tc:-0.27,cls:[[425,40.5,10.50,48.3,11.23],[430,40.7,10.57,48.5,11.31],[435,40.9,10.64,48.7,11.39],[440,41.1,10.71,48.9,11.46],[445,41.3,10.78,49.1,11.53],[450,41.5,10.85,49.3,11.60],[455,41.7,10.92,49.5,11.66]]},
   {brand:"DMEGC",name:"G12RT-B48HBT Glas-Glas bifazial",w:1134,h:1762,tc:-0.25,cls:[[455,30.69,14.83,36.18,15.78],[460,30.95,14.87,36.32,15.83],[465,31.21,14.91,36.46,15.88],[470,31.47,14.95,36.6,15.93],[475,31.68,14.99,36.74,15.98]]}
 ];
 function buildModules(){
@@ -775,6 +778,10 @@ function buildInverters(){
   [[3.6,3.6],[4.0,4],[5.0,5],[6.0,6]].forEach(([n,p])=>L.push(inv("inv-sma-sbse"+n,"SMA","Sunny Boy Smart Energy "+n.toFixed(1),p,600,60,480,[M2(15,30,1),M2(15,30,1),M2(15,30,1)],HYB(90,500,30))));
   // SMA Sunny Tripower X
   [[12,210],[15,260],[20,345],[25,430]].forEach(([p,mn])=>L.push(inv("inv-sma-stpx"+p,"SMA","Sunny Tripower X "+p,p,1000,mn,800,[M2(24,37.5,2),M2(24,37.5,2),M2(24,37.5,2)])));
+  // Fronius Primo 3.0–4.6 (Datenblatt Primo 3.0-1 – 4.6-1)
+  [[3.0,3],[3.5,3.5],[3.6,3.68],[4.0,4],[4.6,4.6]].forEach(([n,p])=>L.push(inv("inv-fro-primo"+n.toFixed(1).replace(".",""),"Fronius","Primo "+n.toFixed(1)+"-1",p,1000,80,800,[M2(12,24,2),M2(12,24,2)])));
+  // SMA Sunny Tripower 3.0–6.0 (STP-3AV-40)
+  [[3,140],[4,175],[5,215],[6,260]].forEach(([p,mn])=>L.push(inv("inv-sma-stp3av"+p,"SMA","Sunny Tripower "+p+".0 (3AV-40)",p,850,mn,800,[M2(12,18,1),M2(12,18,1)])));
   // Fronius Primo
   L.push(inv("inv-fro-primo50","Fronius","Primo 5.0-1",5,1000,80,800,[M2(12,24,2),M2(12,24,2)]));
   L.push(inv("inv-fro-primo60","Fronius","Primo 6.0-1",6,1000,80,800,[M2(18,36,2),M2(18,36,2)]));
@@ -799,13 +806,16 @@ function buildInverters(){
   // Fronius Symo Advanced
   [[10,10,270,[M2(27,55.7,3),M2(16.5,34,3)]],[12.5,12.5,320,[M2(27,55.7,3),M2(16.5,34,3)]],[15,15,320,[M2(33,68,3),M2(27,55.7,3)]]]
     .forEach(([n,p,mn,m])=>L.push(inv("inv-fro-symoadv"+n,"Fronius","Symo Advanced "+n.toFixed(1)+"-3-M",p,1000,200,800,m)));
+  // Fronius Symo Advanced 17.5 / 20.0 (MPPT1 33 A / 68 A, MPPT2 27 A / 55,7 A, je 3 Eingänge)
+  [[17.5,17.5],[20,20]].forEach(([n,p])=>L.push(inv("inv-fro-symoadv"+n,"Fronius","Symo Advanced "+n.toFixed(1)+"-3-M",p,1000,200,800,[M2(33,68,3),M2(27,55.7,3)])));
+  // Fronius Verto 25.0–33.3 ohne Batterie (4 MPPT je 28 A / 50 A)
+  [[25,25],[27,27],[30,29.99],[33.3,33.3]].forEach(([n,p])=>L.push(inv("inv-fro-vertonb"+n,"Fronius","Verto "+n.toFixed(1),p,1000,150,870,[M2(28,50,2),M2(28,50,2),M2(28,50,2),M2(28,50,2)])));
   // Fronius Verto Plus (Hybrid)
-  [[15,15],[17.5,17.5],[20,20],[25,25],[30,29.99]].forEach(([n,p])=>L.push(inv("inv-fro-verto"+n,"Fronius","Verto "+n.toFixed(1)+" Plus",p,1000,150,870,[M2(28,50,2),M2(28,50,2),M2(28,50,2)],HYB(150,700,50))));
+  [[15,15],[17.5,17.5],[20,20],[25,25],[30,29.99],[33.3,33.3]].forEach(([n,p])=>L.push(inv("inv-fro-verto"+n,"Fronius","Verto "+n.toFixed(1)+" Plus",p,1000,150,870,[M2(28,50,2),M2(28,50,2),M2(28,50,2)],HYB(150,700,50))));
   // Sungrow SH T (Hybrid, 3 MPPT)
   [15,20,25].forEach(p=>L.push(inv("inv-sun-sh"+p+"t","Sungrow","SH"+p+"T",p,1000,150,950,[M2(32,40,2),M2(32,40,2),M2(16,20,1)],HYB(100,700,50))));
-  // Huawei: noch kein Datenblatt in der Sammlung – Näherungswerte
-  L.push(inv("i-hua-6ktl","Huawei","SUN2000-6KTL-M1",6,1100,140,980,[M2(22,30,1),M2(22,30,1)],{ok:false,src:"Näherung"}));
-  L.push(inv("i-hua-10ktl","Huawei","SUN2000-10KTL-M1",10,1100,200,1000,[M2(22,30,2),M2(22,30,2)],{ok:false,src:"Näherung"}));
+  // Huawei SUN2000-3…10KTL-M1 (Datenblatt solar.huawei.com): 1100 V, MPPT 140–980 V, 2 MPPT je 13,5 A / 19,5 A, LUNA2000 600–980 V
+  [[3,"i-hua-3ktl"],[4,"i-hua-4ktl"],[5,"i-hua-5ktl"],[6,"i-hua-6ktl"],[8,"i-hua-8ktl"],[10,"i-hua-10ktl"]].forEach(([p,id])=>L.push(inv(id,"Huawei","SUN2000-"+p+"KTL-M1",p,1100,140,980,[M2(13.5,19.5,1),M2(13.5,19.5,1)],Object.assign(HYB(600,980,25),{src:"Datenblatt (solar.huawei.com)"}))));
   return L;
 }
 function bat(id,brand,name,kwh,vmin,vmax,imax,extra){ return Object.assign({id,brand,name:`${brand} ${name}`,kwh,vmin,vmax,imax,ok:true,src:"Datenblatt"},extra||{}); }
@@ -816,6 +826,13 @@ function buildBatteries(){
   [[8.28,"8.3",120,173],[11.04,"11.0",160,230],[13.8,"13.8",200,288],[16.56,"16.6",240,345],[19.32,"19.3",280,403],[22.08,"22.1",320,460]].forEach(([k,n,a,b])=>L.push(bat("bat-byd-hvm"+n,"BYD","Battery-Box Premium HVM "+n,k,a,b,50)));
   [[9.6,"096",150,219],[12.8,"128",200,292],[16,"160",250,365],[19.2,"192",300,438],[22.4,"224",350,511],[25.6,"256",400,584]].forEach(([k,n,a,b])=>L.push(bat("bat-sun-sbr"+n,"Sungrow","SBR"+n,k,a,b,30)));
   [[10,"100",118.8,160.6],[15,"150",178.2,240.9],[20,"200",237.6,321.2],[25,"250",297,401.5],[30,"300",356.4,481.8],[35,"350",415.8,562.1],[40,"400",475.2,642.4]].forEach(([k,n,a,b])=>L.push(bat("bat-sun-sbh"+n,"Sungrow","SBH"+n,k,a,b,50)));
+  // BYD Battery-Box HVB (2–10 Module à 2,97 kWh, 50 A)
+  [[2,"5.9",5.94,80,115.2],[3,"8.9",8.91,120,172.8],[4,"11.8",11.88,160,230.4],[5,"14.8",14.85,200,288],[6,"17.8",17.82,240,345.6],[7,"20.7",20.79,280,403.2],[8,"23.7",23.76,320,460.8],[9,"26.7",26.72,360,518.4],[10,"29.6",29.69,400,576]]
+    .forEach(([m,n,k,a,b])=>L.push(bat("bat-byd-hvb"+m,"BYD","Battery-Box HVB "+n,k,a,b,50)));
+  // SMA Home Storage (2–5 Module à 3,28 kWh, 36 A)
+  [[2,"6.5",6.56,180,216],[3,"9.8",9.84,270,324],[4,"13.1",13.12,360,432],[5,"16.4",16.4,450,540]].forEach(([m,n,k,a,b])=>L.push(bat("bat-sma-hs"+m,"SMA","Home Storage "+n,k,a,b,36,{src:"Datenblatt (sma.de)"})));
+  // Huawei LUNA2000 (dreiphasig 600–980 V)
+  [["5-s0",5,4.2],["10-s0",10,8.4],["15-s0",15,8.4],["7-s1",6.9,5.9],["14-s1",13.8,11.7],["21-s1",20.7,17.5]].forEach(([n,k,i])=>L.push(bat("bat-hua-luna"+n,"Huawei","LUNA2000-"+n.toUpperCase(),k,600,980,i,{src:"Datenblatt (solar.huawei.com)"})));
   return L;
 }
 /* Max. PV-Generatorleistung (kWp) aus den Datenblättern, siehe Planungssitzung. Wo nicht bekannt: kein Eintrag (Feld bleibt leer). */
@@ -831,7 +848,13 @@ const MAXDC={
   "inv-sma-stptl15":27.0,"inv-sma-stptl20":36.0,"inv-sma-stptl25":45.0,
   "inv-fro-symoadv10":15.0,"inv-fro-symoadv12.5":18.8,"inv-fro-symoadv15":22.5,
   "inv-fro-verto15":22.5,"inv-fro-verto17.5":26.25,"inv-fro-verto20":30.0,"inv-fro-verto25":37.5,"inv-fro-verto30":45.0,
-  "inv-sun-sh15t":30.0,"inv-sun-sh20t":40.0,"inv-sun-sh25t":50.0
+  "inv-sun-sh15t":30.0,"inv-sun-sh20t":40.0,"inv-sun-sh25t":50.0,
+  "inv-fro-primo30":4.5,"inv-fro-primo35":5.3,"inv-fro-primo36":5.5,"inv-fro-primo40":6.0,"inv-fro-primo46":6.9,
+  "inv-sma-stp3av3":6.0,"inv-sma-stp3av4":8.0,"inv-sma-stp3av5":9.0,"inv-sma-stp3av6":9.0,
+  "inv-fro-symoadv17.5":26.3,"inv-fro-symoadv20":30.0,"inv-fro-verto33.3":50.0,
+  "inv-fro-vertonb25":37.5,"inv-fro-vertonb27":40.5,"inv-fro-vertonb30":45.0,"inv-fro-vertonb33.3":50.0,
+  "inv-sma-stpse5":7.5,"inv-sma-stpse6":9.0,"inv-sma-stpse8":12.0,"inv-sma-stpse10":15.0,
+  "i-hua-3ktl":4.5,"i-hua-4ktl":6.0,"i-hua-5ktl":7.5,"i-hua-6ktl":9.0,"i-hua-8ktl":12.0,"i-hua-10ktl":15.0
 };
 /* Bis zu wie viel Prozent der Max.-PV-Generatorleistung als unbedenklich gilt (Überdimensionierung) */
 const MAXDC_OVER=1.15;
@@ -1842,7 +1865,7 @@ function renderSide(){
   else if(UI.tab==="lib"){
     h=`<div class="sec"><h2>Bibliothek</h2><div class="hint">Module und Wechselrichter werden gespeichert und stehen in allen Projekten zur Verfügung. Die vorgegebenen Werte sind Näherungen. Vor dem Einsatz jeden Eintrag mit dem aktuellen Datenblatt vergleichen und dann „Datenblatt geprüft“ setzen.</div></div>`;
   }
-  if(UI.tab==="export") h+=yieldSideHtml();
+  if(UI.tab==="export") h=checkSideHtml()+h+yieldSideHtml()+netzSideHtml();
   $("#sideBody").innerHTML=h; if(UI.tab==="vorort") voLoadThumbs(); renderNav();
 }
 
@@ -1924,6 +1947,10 @@ side.addEventListener("click",e=>{
     case "delStr": { P.strings=P.strings.filter(s=>s.id!==UI.selString); UI.selString=P.strings[0]?.id||null; changed(); renderSide(); break; }
     case "pdf": exportPdf(); break;
     case "packlist": exportPackList(); break;
+    case "netzPdf": exportNetzPdf(); break;
+    case "slpPdf": exportSlpPdf(); break;
+    case "dcPdf": exportDcPdf(); break;
+    case "custPdf": exportCustPdf(); break;
     case "home": goHome(); break;
   }
 });
@@ -2602,7 +2629,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.29.4", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.29.2";
+const APP_VERSION="2026.09.30.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.30";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -3046,6 +3073,11 @@ function runSelfTests(){
     const s=(a,b,c)=>pvgisMonthly(a,b,c).reduce((x,y)=>x+y,0); return Math.round(s(49.5,30,0))===1082&&s(49.5,30,180)<s(49.5,30,-90)&&s(49.5,30,-90)<s(49.5,30,0); });
   test("Autarkie plausibel (HTW-Richtwerte): 10 kWp/4500 kWh ohne Speicher 30–37 %, mit 10 kWh 64–74 %",()=>{
     const f=[{asp:0,monthly:pvgisMonthly(49.5,35,0).map(v=>v*10)}], a=simulate(f,4500,0,49.5).aut, b=simulate(f,4500,10,49.5).aut; return a>0.30&&a<0.37&&b>0.64&&b<0.74; });
+  test("Abregelung 60 % (Solarspitzengesetz): 10 kWp Süd ohne Speicher 2–6 %, Ost/West < 2 %",()=>{
+    const s=[{asp:0,monthly:pvgisMonthly(49.5,35,0).map(v=>v*10)}], ow=[{asp:-90,monthly:pvgisMonthly(49.5,30,-90).map(v=>v*5)},{asp:90,monthly:pvgisMonthly(49.5,30,90).map(v=>v*5)}];
+    const a=simulate(s,4500,0,49.5,6), b=simulate(ow,4500,0,49.5,6); return a.lost/a.pv>0.02&&a.lost/a.pv<0.06&&b.lost/b.pv<0.02; });
+  test("EEG-Vergütung 08/2026: 8 kWp 7,70 ct, 21,4 kWp anteilig 7,15 ct",()=>eegRate(8,"ueberschuss","2026-10-01").ct===7.7&&eegRate(21.385,"ueberschuss","2026-10-01").ct===7.15);
+  test("Bibliothek: alle Geräte plausibel (MPP ≤ Umax, Isc ≥ Imax, Vmpp·Impp ≈ Wp)",()=>DEF_INVERTERS.every(i=>i.mppMin<i.mppMax&&i.mppMax<=i.vmax&&i.mppts.every(m=>m.isc>=m.imax))&&DEF_MODULES.every(m=>m.voc>m.vmpp&&m.isc>m.impp&&Math.abs(m.vmpp*m.impp-m.wp)/m.wp<0.02));
   test("Phasen: Sunny Boy/Primo 1-phasig, Tripower/Symo/Sungrow 3-phasig",()=>
     invPhases({name:"SMA Sunny Boy 5.0"})===1&&invPhases({name:"Fronius Primo 8.2-1"})===1&&invPhases({name:"SMA Sunny Tripower X 15"})===3&&invPhases({name:"Sungrow SH10RT"})===3);
   test("Spannungsfall-Formel (Kupfer, Hin- und Rückleiter)",()=>{
@@ -3659,34 +3691,58 @@ function yieldFaces(){
 }
 function batUsable(){ return (P.bats||[]).reduce((a,b)=>{ const B=LIB.batteries.find(x=>x.id===b.batId); return a+(B?(+B.kwh||0)*(+b.qty||1):0); },0); }
 /* Jahressimulation; cons in kWh/Jahr, cap in kWh */
-function simulate(faces,cons,cap,lat){
-  let pvT=0,self=0,feed=0,grid=0,soc=0; const eta=SIM_ETA, pmax=Math.max(0.5,cap*0.5);
+/* Zwei Parametersätze: AUT = auf HTW-Autarkiewerte kalibriert; PHYS = physikalisch begrenzte Tage (max. ~7,2 kWh/kWp·Tag,
+   Spitze < 0,9 kW/kWp) für die Abregelung durch die Einspeisegrenze – mit AUT würde sie wegen zu steiler Sommertage überschätzt. */
+const SIM_AUT={winter:DAYS_WINTER,summer:DAYS_SUMMER,kd:SIM_KDIRECT,stby:SIM_STANDBY,eta:SIM_ETA};
+const SIM_PHYS={winter:[[0.1,0.35],[0.6,0.3],[1.6,0.35]],summer:[[0.1,0.15],[0.45,0.2],[0.95,0.2],[1.3,0.25],[1.5,0.2]],kd:0.75,stby:1.0,eta:0.92};
+function simCore(faces,cons,cap,lat,feedCap,S){
+  let pvT=0,self=0,feed=0,grid=0,soc=0,lost=0; const eta=S.eta, pmax=Math.max(0.5,cap*0.5), fc=feedCap>0?feedCap:Infinity;
   const loadSum=LOAD_H.reduce((a,b)=>a+b,0), mSum=LOAD_M.reduce((a,f,i)=>a+f*MDAYS[i],0);
   for(let m=0;m<12;m++){
     const lh=LOAD_H.map(v=>cons*LOAD_M[m]/mSum*v/loadSum);        /* kWh je Stunde an einem Tag dieses Monats */
     const pvH=new Array(24).fill(0);
-    faces.forEach(fc=>{ const sh=pvDayShape(lat,m,fc.asp), d=fc.monthly[m]/MDAYS[m]; for(let h=0;h<24;h++) pvH[h]+=d*sh[h]; });
+    faces.forEach(fc0=>{ const sh=pvDayShape(lat,m,fc0.asp), d=fc0.monthly[m]/MDAYS[m]; for(let h=0;h<24;h++) pvH[h]+=d*sh[h]; });
     /* Tage in fester, gemischter Reihenfolge – der Speicher läuft über die Tage hinweg durch */
-    const seq=[]; (m<=1||m>=9?DAYS_WINTER:DAYS_SUMMER).forEach(([f,w])=>{ const n=Math.round(w*MDAYS[m]); for(let k=0;k<n;k++) seq.push(f); });
+    const seq=[]; (m<=1||m>=9?S.winter:S.summer).forEach(([f,w])=>{ const n=Math.round(w*MDAYS[m]); for(let k=0;k<n;k++) seq.push(f); });
     seq.sort((a,b)=>((a*7919)%1)-((b*7919)%1)); const norm=seq.reduce((a,b)=>a+b,0)/seq.length, dayW=MDAYS[m]/seq.length;
     for(const f0 of seq){ const fac=f0/norm;
       for(let h=0;h<24;h++){
-        const pv=pvH[h]*fac, l=lh[h], direct=Math.min(pv,l)*SIM_KDIRECT; let sur=pv-direct, def=l-direct, fromBat=0;
+        const pv=pvH[h]*fac, l=lh[h], direct=Math.min(pv,l)*S.kd; let sur=pv-direct, def=l-direct, fromBat=0;
         if(cap>0){ if(sur>0){ const ch=Math.min(sur,pmax,(cap-soc)/eta); soc+=ch*eta; sur-=ch; }
-          if(def>0){ fromBat=Math.min(def,pmax,soc*eta); soc-=fromBat/eta; def-=fromBat; } soc=Math.max(0,soc-SIM_STANDBY/24); }
+          if(def>0){ fromBat=Math.min(def,pmax,soc*eta); soc-=fromBat/eta; def-=fromBat; } soc=Math.max(0,soc-S.stby/24); }
+        const fed=Math.min(sur,fc); lost+=(sur-fed)*dayW; sur=fed;
         pvT+=pv*dayW; self+=(direct+fromBat)*dayW; feed+=sur*dayW; grid+=def*dayW;
       }
     }
   }
-  return {pv:pvT,self,feed,grid,cons,evq:pvT?self/pvT:0,aut:cons?self/cons:0};
+  return {pv:pvT,self,feed,grid,cons,lost,evq:pvT?self/pvT:0,aut:cons?self/cons:0};
 }
-function yieldCfg(){ const c=P.yieldCfg=P.yieldCfg||{}; if(!(c.cons>0)){ const v=P.vo&&P.vo.val&&+P.vo.val.verbrauch; c.cons=v>100?v:4500; } if(!(c.price>0)) c.price=0.32; if(!(c.feed>=0)) c.feed=0.078; return c; }
+function simulate(faces,cons,cap,lat,feedCap){
+  const r=simCore(faces,cons,cap,lat,0,SIM_AUT);
+  if(feedCap>0){ const p=simCore(faces,cons,cap,lat,feedCap,SIM_PHYS), q=p.pv?p.lost/p.pv:0; r.lost=r.pv*q; r.feed=Math.max(0,r.feed-r.lost); }
+  else r.lost=0;
+  return r;
+}
+/* EEG-Einspeisevergütung für Neuanlagen (ct/kWh), anteilig nach Leistungsstufen bis 10 kWp / bis 40 kWp.
+   1.8.2026–31.1.2027 laut Bundesnetzagentur-Veröffentlichung; danach −1 % je Halbjahr (Fortschreibung, bitte prüfen). */
+const EEG_RATES={from:"2026-08-01",teil:[7.70,6.66],voll:[12.22,10.25]};
+function eegRate(kwp,art,dateStr){
+  const r=EEG_RATES[art==="voll"?"voll":"teil"], k=Math.max(0.01,kwp);
+  let ct=(Math.min(k,10)*r[0]+Math.max(0,Math.min(k,40)-10)*r[1])/Math.min(k,40);
+  const d=dateStr?new Date(dateStr):new Date(), f=new Date(EEG_RATES.from);
+  const halves=Math.floor(((d.getFullYear()-f.getFullYear())*12+(d.getMonth()-f.getMonth()))/6);
+  if(halves>0) ct*=Math.pow(0.99,halves);
+  return {ct:Math.round(ct*100)/100,projected:halves>0};
+}
+function yieldCfg(){ const c=P.yieldCfg=P.yieldCfg||{}; if(!(c.cons>0)){ const v=P.vo&&P.vo.val&&+P.vo.val.verbrauch; c.cons=v>100?v:4500; } if(!(c.price>0)) c.price=0.32; if(c.feedManual!==true){ const kwp=(modOf()?MODS.length*modOf().wp/1000:0), n=P.netz||{}; c.feed=eegRate(kwp,n.art,n.ibn).ct/100; } return c; }
 function yieldResult(){
   const faces=yieldFaces(); if(!faces.length) return null;
-  const c=yieldCfg(), cap=batUsable(), sim=simulate(faces,c.cons,cap,P.lat||51), sim0=cap>0?simulate(faces,c.cons,0,P.lat||51):null;
-  const kwp=faces.reduce((a,f)=>a+f.kwp,0), monthly=new Array(12).fill(0); faces.forEach(f=>f.monthly.forEach((v,i)=>monthly[i]+=v));
+  const kwp=faces.reduce((a,f)=>a+f.kwp,0), lim=(P.netz&&P.netz.limit)||"60", feedCap=lim==="60"?kwp*0.6:lim==="0"?0.0001:0;
+  const c=yieldCfg(), cap=batUsable(), sim=simulate(faces,c.cons,cap,P.lat||51,feedCap), sim0=cap>0?simulate(faces,c.cons,0,P.lat||51,feedCap):null; monthly=new Array(12).fill(0); faces.forEach(f=>f.monthly.forEach((v,i)=>monthly[i]+=v));
   const save=sim.self*c.price+sim.feed*c.feed, net=P.offer&&typeof offerTotals==="function"?offerTotals().net:0;
-  return {faces,kwp,monthly,year:monthly.reduce((a,b)=>a+b,0),cap,sim,sim0,save,net,payback:net&&save?net/save:null,cfg:c};
+  /* Amortisation nur mit vollständigem Angebot – eine Position ohne Preis (z. B. Module) würde sie schönrechnen */
+  const incomplete=!!(P.offer&&P.offer.items.some(it=>it.t!=="labor"&&(+it.qty||0)>0&&!(effEk(it)>0)&&!(it.vkFix>0)));
+  return {faces,kwp,monthly,year:monthly.reduce((a,b)=>a+b,0),cap,sim,sim0,save,net,payback:net&&save&&!incomplete?net/save:null,incomplete,cfg:c,lim,feedCap};
 }
 function yieldSideHtml(){
   const r=yieldResult();
@@ -3700,15 +3756,17 @@ function yieldSideHtml(){
     <div class="hint">PVGIS-Daten der EU (2005–2023) für ${fmt(P.lat||51,1)}° N, 14 % Systemverluste. Verschattung durch Gauben, Kamine oder Bäume ist nicht eingerechnet.</div></div>
   <div class="sec"><h2>Eigenverbrauch &amp; Autarkie</h2>
     <div class="grid2">${num("yCons","Jahresverbrauch (kWh)",c.cons,'data-y="cons" min="500"',100)}${num("yPrice","Strompreis (€/kWh)",c.price,'data-y="price" min="0"',0.01)}</div>
-    ${num("yFeed","Einspeisevergütung (€/kWh)",c.feed,'data-y="feed" min="0"',0.001)}
+    ${num("yFeed","Einspeisevergütung (€/kWh)",c.feed,'data-y="feed" min="0"',0.0001)}
+    <div class="hint">${c.feedManual?`Eigener Wert. <a href="#" data-y="eeg">EEG-Satz übernehmen</a>`:`EEG-Satz für ${fmt(r.kwp,2)} kWp ${(P.netz&&P.netz.art)==="voll"?"Volleinspeisung":"Teileinspeisung"}${eegRate(r.kwp,(P.netz||{}).art,(P.netz||{}).ibn).projected?" (fortgeschrieben, bitte prüfen)":" (08/2026–01/2027)"}`}. In Stunden mit negativem Börsenpreis gibt es für Neuanlagen keine Vergütung.</div>
     <div class="kpis" style="grid-template-columns:1fr 1fr;margin:0"><div class="kpi"><b>${pct(r.sim.aut)}</b><span>Autarkie${r.cap?" mit "+fmt(r.cap,1)+" kWh Speicher":""}</span></div><div class="kpi"><b>${pct(r.sim.evq)}</b><span>Eigenverbrauch</span></div></div>
     <div class="stat"><span>Selbst genutzt</span><b>${kwh(r.sim.self)}</b><span>Eingespeist</span><b>${kwh(r.sim.feed)}</b><span>Netzbezug</span><b>${kwh(r.sim.grid)}</b>
-      ${r.sim0?`<span>Autarkie ohne Speicher</span><b>${pct(r.sim0.aut)}</b>`:""}<span>Ersparnis pro Jahr</span><b>${eur(r.save)}</b>${r.payback?`<span>Amortisation (Angebot netto)</span><b>${fmt(r.payback,1)} Jahre</b>`:""}</div>
+      ${r.sim0?`<span>Autarkie ohne Speicher</span><b>${pct(r.sim0.aut)}</b>`:""}${r.feedCap?`<span>Abregelung ${r.lim==="60"?"60 % ("+fmt(r.feedCap,1)+" kW)":"Nulleinspeisung"}</span><b>${kwh(r.sim.lost)} (${fmt(r.sim.pv?r.sim.lost/r.sim.pv*100:0,1)} %)</b>`:""}<span>Ersparnis pro Jahr</span><b>${eur(r.save)}</b>${r.payback?`<span>Amortisation (Angebot netto)</span><b>${fmt(r.payback,1)} Jahre</b>`:r.incomplete?`<span>Amortisation</span><b>Angebot unvollständig</b>`:""}</div>
     <div class="hint">Schätzung mit einem typischen Haushaltsprofil, ohne Wärmepumpe und E-Auto. Der tatsächliche Wert hängt stark vom Verbrauchsverhalten ab.</div></div>`;
 }
+side.addEventListener("click",e=>{ const a=e.target.closest('[data-y="eeg"]'); if(!a||!P) return; e.preventDefault(); const c=yieldCfg(); delete c.feedManual; scheduleSave(); renderSide(); });
 side.addEventListener("change",e=>{
   const t=e.target; if(!P||!t.dataset.y) return; const c=yieldCfg(), v=parseFloat(t.value);
-  if(t.dataset.y==="cons"&&v>100) c.cons=Math.min(v,200000); else if(t.dataset.y==="price"&&v>=0) c.price=Math.min(v,2); else if(t.dataset.y==="feed"&&v>=0) c.feed=Math.min(v,1);
+  if(t.dataset.y==="cons"&&v>100) c.cons=Math.min(v,200000); else if(t.dataset.y==="price"&&v>=0) c.price=Math.min(v,2); else if(t.dataset.y==="feed"&&v>=0){ c.feed=Math.min(v,1); c.feedManual=true; }
   scheduleSave(); renderSide();
 });
 </script>
@@ -3839,6 +3897,338 @@ async function photoSync(){
 }
 </script>
 <script>
+/* ───────── Netzanmeldung, Übersichtsschaltplan, Prüfprotokoll DC ─────────
+   Grundlage: VDE-AR-N 4105 (Erzeugungsanlagen am Niederspannungsnetz), Ablaufblätter der Netzbetreiber
+   (N-ERGIE Netz „PV bis 99 kWp“, Stand 12/2025; Bayernwerk Netzanschluss-Portal; Stadtwerke Neumarkt
+   Installateurportal), Solarspitzengesetz (EnWG/EEG-Novelle 02/2025), DIN EN 62446-1 (Prüfung PV-Systeme).
+   Projektdaten in P.netz. Die Angaben sind eine Arbeitshilfe – maßgeblich bleiben die Formulare des Netzbetreibers. */
+const NB={
+  nergie:{name:"N-ERGIE Netz GmbH",kurz:"N-ERGIE Netz",portal:"n-ergie-netz.de → Erzeugungsanlagen → Anschlussanfrage (Online-Service)",mail:"kundenservice@n-ergie-netz.de",
+    steps:["Anschlussanfrage online: aktueller Lageplan mit Anlagenstandort (max. 5 MB), vorhandener Stromanschluss, Leistung vorhandener Erzeugungsanlagen",
+      "Anschlusszusage per Mail (Netzprüfung ca. 5–8 Wochen), 12 Wochen gültig, einmalig um 2 Wochen verlängerbar",
+      "Formulare „Bestellung Messstellenbetrieb“ (ggf. Volleinspeiser-Mitteilung) an kundenservice@n-ergie-netz.de",
+      "Nach Fertigstellung: Inbetriebsetzungsantrag über Online-Service „Installateur Inbetriebsetzung“ (Vorgangsnummer + PIN aus der Zusage, Eintrag im Installateurverzeichnis nötig)",
+      "Zählermontage (Vorlauf 3–4 Wochen), erst dann Inbetriebnahme – ohne Zweirichtungszähler kein Betrieb",
+      "Marktstammdatenregister: Leistung auf 2 Nachkommastellen, Inbetriebnahmedatum und Betreiber exakt wie im Inbetriebsetzungsprotokoll",
+      "Für die Vergütung: Abrechnungsangaben, Erklärung „Unternehmen in Schwierigkeiten“, MaStR-Registrierungsbestätigung"],
+    extra:"> 25 kW bis 99 kW: Funkrundsteuerempfänger erforderlich."},
+  bayernwerk:{name:"Bayernwerk Netz GmbH",kurz:"Bayernwerk Netz",portal:"bayernwerk-netz.de → Energie einspeisen → Netzanschluss-Portal",mail:"",
+    steps:["Anmeldung der Erzeugungsanlage im Netzanschluss-Portal, am besten 4–6 Wochen vor Montage",
+      "Angaben: Standort (Adresse, Flurstück), geplante AC-Leistung, Wechselrichter Hersteller/Typ, Anzahl und Typ der Module, geplante Inbetriebnahme, Speicher, Eigenverbrauch/Einspeisung",
+      "Technische Unterlagen nur als PDF hochladen – wichtigstes Dokument: Übersichtsschaltplan ab Wechselrichter",
+      "Inbetriebsetzung und Zählerwechsel über das Portal anstoßen",
+      "Marktstammdatenregister innerhalb eines Monats nach Inbetriebnahme"],extra:""},
+  swn:{name:"Stadtwerke Neumarkt i.d.OPf. Energie GmbH",kurz:"Stadtwerke Neumarkt",portal:"Installateurportal ip.swneumarkt.de",mail:"netzanschluss@swneumarkt.de",
+    steps:["Anmeldung der Erzeugungsanlage (Niederspannung) über das Installateurportal ip.swneumarkt.de",
+      "Anschrift: Ingolstädter Straße 18, 92318 Neumarkt i.d.OPf.",
+      "Es gilt VDE-AR-N 4105; Formulare mit Originalunterschrift, wo gefordert",
+      "Nach Fertigstellung Inbetriebsetzung melden, Zählerwechsel abstimmen",
+      "Marktstammdatenregister innerhalb eines Monats nach Inbetriebnahme"],extra:""},
+  other:{name:"anderer Netzbetreiber",kurz:"Netzbetreiber",portal:"",mail:"",steps:["Formulare und Portal des zuständigen Netzbetreibers verwenden (VDE-AR-N 4105)","Marktstammdatenregister innerhalb eines Monats nach Inbetriebnahme"],extra:""}
+};
+function netzCfg(){
+  const n=P.netz=P.netz||{}, plz=(String(P.adresse||"").match(/\b(\d{5})\b/)||[])[1]||"";
+  if(!n.nb) n.nb=plz==="92318"?"swn":"nergie";
+  if(!n.art) n.art="ueberschuss"; if(!n.limit) n.limit="60"; if(!n.betreiber) n.betreiber=P.kunde||"";
+  if(!n.netzform){ const v=P.vo&&P.vo.val&&P.vo.val.netz; n.netzform=v&&v!=="unklar"?v:"TN-C-S"; }
+  if(!n.zaehler&&P.vo&&P.vo.val&&P.vo.val.zaehler) n.zaehler=P.vo.val.zaehler;
+  return n;
+}
+/* Kennzahlen der Anlage für Anmeldung und MaStR */
+function netzData(){
+  const M=modOf(), wrs=P.wrs.map(w=>({w,inv:invOf(w.invId)})).filter(x=>x.inv);
+  const kwp=M?MODS.length*M.wp/1000:0, sAC=wrs.reduce((a,x)=>a+x.inv.pac,0);
+  const bats=P.bats.map(b=>{ const B=LIB.batteries.find(x=>x.id===b.batId), w=P.wrs.find(x=>x.id===b.wr), inv=w&&invOf(w.invId);
+    if(!B) return null; const kwh=(+B.kwh||0)*(+b.qty||1), vavg=((+B.vmin||0)+(+B.vmax||0))/2, pBat=(+B.imax||0)*(+b.qty||1)*vavg/1000;
+    const pInv=inv&&inv.hybrid?(+inv.batI||0)*Math.min(vavg,inv.batVmax||vavg)/1000:0, p=Math.min(pBat||99,inv?inv.pac:99,pInv||99);
+    return {B,b,inv,kwh,p:Math.round(p*10)/10,dc:!!(inv&&inv.hybrid)}; }).filter(Boolean);
+  const faces=P.faces.map((f,fi)=>({f,n:MODS.filter(m=>m.fi===fi).length,az:azimuthOf(f)})).filter(x=>x.n);
+  const main=faces.slice().sort((a,b)=>b.n-a.n)[0];
+  const checks=[];
+  const one=wrs.filter(x=>invPhases(x.inv)===1), sOne=one.reduce((a,x)=>a+x.inv.pac,0);
+  if(one.length){ if(one.some(x=>x.inv.pac>4.6)) checks.push(["bad","Einphasiger Wechselrichter über 4,6 kVA – nach VDE-AR-N 4105 max. 4,6 kVA je Außenleiter (Schieflast)"]);
+    else if(sOne>4.6) checks.push(["warn",`Einphasige Wechselrichter zusammen ${fmt(sOne,2)} kVA – auf verschiedene Außenleiter verteilen (max. 4,6 kVA je Außenleiter)`]);
+    else checks.push(["ok","Schieflast: einphasig ≤ 4,6 kVA je Außenleiter"]); }
+  if(sAC>30) checks.push(["warn","Summe über 30 kVA: zentraler NA-Schutz nach VDE-AR-N 4105 erforderlich"]);
+  else if(sAC>0) checks.push(["ok","NA-Schutz im Wechselrichter integriert zulässig (Summe ≤ 30 kVA)"]);
+  if(kwp>25) checks.push(["warn","Über 25 kW: Steuerungseinrichtung nach § 9 EEG nötig"+(netzCfg().nb==="nergie"?" (N-ERGIE: Funkrundsteuerempfänger)":"")]);
+  const cfg=netzCfg();
+  if(cfg.limit==="60") checks.push(["ok","Solarspitzengesetz: ohne Steuerbox/Smart-Meter-Gateway Einspeisung auf 60 % der Modulleistung begrenzt = "+fmt(kwp*0.6,2)+" kW"]);
+  if(sAC&&kwp/sAC>1.5) checks.push(["warn",`DC/AC-Verhältnis ${fmt(kwp/sAC,2)} – Wechselrichter-Datenblatt prüfen`]);
+  return {M,wrs,kwp,sAC,bats,faces,main,checks,cfg};
+}
+function netzSideHtml(){
+  const c=netzCfg(), d=netzData();
+  const sel=(k,opts,v)=>`<select data-nz="${k}">${opts.map(([a,b])=>`<option value="${a}"${a===v?" selected":""}>${esc(b)}</option>`).join("")}</select>`;
+  return `<div class="sec"><h2>Netzanmeldung &amp; Schaltplan</h2>
+    <label class="f">Netzbetreiber${sel("nb",[["nergie","N-ERGIE Netz"],["bayernwerk","Bayernwerk Netz"],["swn","Stadtwerke Neumarkt i.d.OPf."],["other","anderer"]],c.nb)}</label>
+    <div class="grid2">${txt("nzBet","Anlagenbetreiber",c.betreiber,'data-nz="betreiber"')}${txt("nzFlur","Gemarkung / Flurstück",c.flur||"",'data-nz="flur"')}</div>
+    <div class="grid2">${txt("nzZ","Zählernummer",c.zaehler||"",'data-nz="zaehler"')}<label class="f">Netzform${sel("netzform",[["TN-C-S","TN-C-S"],["TN-S","TN-S"],["TT","TT"]],c.netzform)}</label></div>
+    <div class="grid2"><label class="f">Einspeiseart${sel("art",[["ueberschuss","Überschusseinspeisung"],["voll","Volleinspeisung"]],c.art)}</label>
+      <label class="f">Einspeisebegrenzung${sel("limit",[["60","60 % (ohne Steuerbox)"],["smgw","keine – mit Smart-Meter-Gateway + Steuerbox"],["0","Nulleinspeisung"]],c.limit)}</label></div>
+    <div class="grid2"><label class="f">Geplante Inbetriebnahme<input type="date" data-nz="ibn" value="${esc(c.ibn||"")}"></label>${num("nzBest","Vorhandene Erzeugung (kW)",c.bestand||0,'data-nz="bestand" min="0"',0.01)}</div>
+    <div class="stat"><span>Modulleistung (MaStR brutto)</span><b>${fmt(d.kwp,2)} kWp</b><span>Wechselrichter (netto)</span><b>${fmt(d.sAC,2)} kVA</b>${d.bats.length?`<span>Speicher</span><b>${fmt(d.bats.reduce((a,x)=>a+x.kwh,0),2)} kWh</b>`:""}</div>
+    <div class="chk">${d.checks.map(([l,t])=>`<span class="${l}">${esc(t)}</span><span class="${l}">${l==="ok"?"✓":l==="warn"?"!":"✗"}</span>`).join("")}</div>
+    <div class="row"><button type="button" class="pri" data-act="netzPdf">Anlagendaten (PDF)</button><button type="button" data-act="slpPdf">Übersichtsschaltplan (PDF)</button><button type="button" data-act="dcPdf">Prüfprotokoll DC</button></div>
+    <div class="hint">Arbeitshilfe zum Übertragen ins Portal des Netzbetreibers und ins Marktstammdatenregister. Maßgeblich bleiben dessen Formulare.</div></div>`;
+}
+side.addEventListener("change",e=>{ const t=e.target; if(!P||!t.dataset.nz) return; const c=netzCfg(), k=t.dataset.nz;
+  c[k]=k==="bestand"?Math.max(0,parseFloat(t.value)||0):t.value; scheduleSave(); renderSide(); });
+
+/* ───────── PDF 1: Anlagendaten für Netzanmeldung und Marktstammdatenregister ───────── */
+async function exportNetzPdf(){
+  const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
+  const d=netzData(), c=d.cfg, nb=NB[c.nb]||NB.other, doc=new J({orientation:"portrait",unit:"mm",format:"a4"}), L=16, R=194;
+  let y=18, page=1;
+  const T=pdfTxt, need=h=>{ if(y+h>282){ doc.addPage(); page++; y=18; } };
+  const H=t=>{ need(14); y+=3; doc.setFillColor(11,110,128); doc.rect(L,y-4.2,2,5.2,"F"); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(20); doc.text(T(t),L+4,y); y+=5; };
+  const KV=(k,v,bold)=>{ const lines=doc.splitTextToSize(T(v==null||v===""?"–":String(v)),R-L-72); need(lines.length*4.6+1.5);
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(95); doc.text(T(k),L+2,y);
+    doc.setFont("helvetica",bold?"bold":"normal"); doc.setTextColor(20); doc.text(lines,L+72,y); y+=lines.length*4.6+1.2;
+    doc.setDrawColor(228); doc.setLineWidth(0.1); doc.line(L+2,y-3.4,R,y-3.4); };
+  doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.setTextColor(20); doc.text(T("Anlagendaten Netzanmeldung / Marktstammdatenregister"),L,y);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(95); y+=6; doc.text(T(`${P.name||"Projekt"} · Stand ${new Date().toLocaleDateString("de-DE")} · Netzbetreiber: ${nb.name}`),L,y); y+=4;
+  H("Betreiber und Standort");
+  KV("Anlagenbetreiber",c.betreiber||P.kunde,true); KV("Anlagenanschrift",P.adresse); KV("Gemarkung / Flurstück",c.flur); KV("Kontakt",P.kontakt);
+  KV("Zählernummer",c.zaehler); KV("Netzform",c.netzform); KV("Vorhandene Erzeugungsanlagen",c.bestand?fmt(+c.bestand,2)+" kW":"keine");
+  KV("Geplante Inbetriebnahme",c.ibn?new Date(c.ibn).toLocaleDateString("de-DE"):"");
+  H("PV-Module");
+  if(d.M){ KV("Hersteller / Typ",d.M.name,true); KV("Anzahl",MODS.length+" Stück"); KV("Modulleistung",d.M.wp+" Wp");
+    KV("Installierte Leistung (Bruttoleistung MaStR)",fmt(d.kwp,2)+" kWp",true);
+    d.faces.forEach(x=>KV(x.f.name,`${x.n} Module · Ausrichtung ${compass(x.az)} (${fmt(x.az,0)}°) · Neigung ${fmt(x.f.pitch||0,0)}°`));
+    if(d.main) KV("Hauptausrichtung / Neigung (MaStR)",`${compass(d.main.az)} · ${fmt(d.main.f.pitch||0,0)}°`); }
+  H("Wechselrichter");
+  d.wrs.forEach(({w,inv},i)=>{ KV(`Wechselrichter ${i+1}`,inv.name,true); KV("  Bemessungsleistung P_Amax / S_Amax",`${fmt(inv.pac,2)} kW / ${fmt(inv.pac,2)} kVA · ${invPhases(inv)===3?"dreiphasig":"einphasig"}`);
+    KV("  NA-Schutz / Einheitenzertifikat","integriert · Einheitenzertifikat und NA-Schutz-Zertifikat nach VDE-AR-N 4105 beilegen"); });
+  KV("Summe Wechselrichter (Nettonennleistung MaStR)",fmt(d.sAC,2)+" kVA",true);
+  if(d.bats.length){ H("Stromspeicher");
+    d.bats.forEach(x=>{ KV(x.B.name+(x.b.qty>1?" × "+x.b.qty:""),`${fmt(x.kwh,2)} kWh nutzbar · ca. ${fmt(x.p,1)} kW Lade-/Entladeleistung`,true);
+      KV("  Kopplung",x.dc?"DC-gekoppelt am Hybrid-Wechselrichter "+(x.inv?x.inv.name:""):"AC-gekoppelt"); KV("  Betrieb","nur Speicherung von PV-Strom (kein Netzbezug zum Laden)"); }); }
+  H("Einspeisung und Netzsicherheit");
+  KV("Einspeiseart",c.art==="voll"?"Volleinspeisung":"Überschusseinspeisung (Eigenverbrauch)");
+  KV("Wirkleistungsbegrenzung",c.limit==="60"?`60 % der Modulleistung = ${fmt(d.kwp*0.6,2)} kW (Solarspitzengesetz, ohne Steuerbox)`:c.limit==="0"?"Nulleinspeisung":"keine – Smart-Meter-Gateway mit Steuerbox");
+  KV("Blindleistung","nach VDE-AR-N 4105, Kennlinie/Vorgabe des Netzbetreibers am Wechselrichter einstellen");
+  d.checks.forEach(([l,t])=>KV(l==="ok"?"Prüfung ✓":l==="warn"?"Prüfung – bitte beachten":"Prüfung – FEHLER",t));
+  H("Anhänge (als PDF)");
+  ["Lageplan mit gekennzeichnetem Anlagenstandort (Belegungsplan aus dem Export genügt meist)","Übersichtsschaltplan (aus diesem Programm)",
+   "Datenblätter Module, Wechselrichter"+(d.bats.length?", Speicher":""),"Einheitenzertifikat und NA-Schutz-Zertifikat je Wechselrichter",
+   ...(d.bats.length?["Speicher: Konformitätserklärung / Sicherheitsnachweis (VDE-AR-E 2510-50)"]:[]),"Foto Zählerschrank (siehe Vor-Ort-Fotos)"].forEach(t=>{ need(6); doc.setDrawColor(90); doc.rect(L+2,y-3,3.2,3.2); doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(20); doc.text(doc.splitTextToSize(T(t),R-L-12),L+8,y); y+=5.2; });
+  H("Ablauf bei "+nb.kurz);
+  if(nb.portal) KV("Portal",nb.portal); if(nb.mail) KV("E-Mail",nb.mail); if(nb.extra) KV("Hinweis",nb.extra);
+  nb.steps.forEach((s,i)=>{ const lines=doc.splitTextToSize(T(s),R-L-12); need(lines.length*4.4+1.5); doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(11,110,128); doc.text(String(i+1),L+3,y);
+    doc.setFont("helvetica","normal"); doc.setTextColor(20); doc.text(lines,L+9,y); y+=lines.length*4.4+1.4; });
+  need(10); doc.setFont("helvetica","italic"); doc.setFontSize(7.5); doc.setTextColor(120);
+  doc.text(doc.splitTextToSize(T("Arbeitshilfe aus dem Dachplaner PV. Maßgeblich sind die Formulare und Vorgaben des Netzbetreibers sowie VDE-AR-N 4105. Leistungsangaben im MaStR müssen mit dem Inbetriebsetzungsprotokoll übereinstimmen (2 Nachkommastellen)."),R-L),L,y+4);
+  const n=doc.getNumberOfPages(); for(let p=1;p<=n;p++){ doc.setPage(p); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(140); doc.text(`Seite ${p}/${n}`,R,290,{align:"right"}); }
+  await netzSave(doc,"Anlagendaten_Netzanmeldung_");
+}
+async function netzSave(doc,prefix){
+  const name=(prefix+(P.name||"Projekt")).replace(/[^\wäöüÄÖÜß-]+/g,"_")+".pdf";
+  try{ const dl=await (window.claude?.use?.("downloads")??null); if(dl){ await dl.save({filename:name,data:doc.output("blob")}); toast("PDF bereit"); } else await saveFile(name,doc.output("blob")); }
+  catch(e){ if(e&&e.code==="declined") toast("Speichern abgebrochen"); else { toast("PDF fehlgeschlagen"); console.error(e); } }
+}
+
+/* ───────── PDF 2: Übersichtsschaltplan (einpolig) ───────── */
+function slpSymbols(doc){
+  const lw=w=>doc.setLineWidth(w), txt=(t,x,y,o)=>doc.text(pdfTxt(t),x,y,o);
+  return {
+    line:(x1,y1,x2,y2,w)=>{ lw(w||0.35); doc.line(x1,y1,x2,y2); },
+    dashed:(x1,y1,x2,y2)=>{ lw(0.25); doc.setLineDashPattern([1.2,1],0); doc.line(x1,y1,x2,y2); doc.setLineDashPattern([],0); },
+    label:(t,x,y,sz,o,bold)=>{ doc.setFont("helvetica",bold?"bold":"normal"); doc.setFontSize(sz||7); doc.setTextColor(20); txt(t,x,y,o); },
+    pv:(x,y,w,h)=>{ lw(0.35); doc.rect(x,y,w,h); doc.line(x,y+h,x+w,y); lw(0.2); for(let i=1;i<4;i++) doc.line(x+w*i/4,y,x+w*i/4,y+h);
+      doc.line(x+w+1.5,y-3,x+w-1.5,y); doc.line(x+w+3.5,y-3,x+w+0.5,y); },
+    inv:(x,y,s)=>{ lw(0.45); doc.rect(x,y,s,s); doc.line(x,y+s,x+s,y); doc.setFont("helvetica","bold"); doc.setFontSize(10); txt("=",x+s*0.25,y+s*0.36,{align:"center"}); txt("~",x+s*0.75,y+s*0.82,{align:"center"}); },
+    bat:(x,y,w,h)=>{ lw(0.4); doc.rect(x,y,w,h); lw(0.6); doc.line(x+w*0.3,y+h*0.25,x+w*0.3,y+h*0.75); lw(0.35); doc.line(x+w*0.45,y+h*0.35,x+w*0.45,y+h*0.65);
+      doc.line(x+w*0.6,y+h*0.25,x+w*0.6,y+h*0.75); doc.line(x+w*0.75,y+h*0.35,x+w*0.75,y+h*0.65); },
+    ls:(x,y)=>{ lw(0.4); doc.rect(x-3,y-4.5,6,9); doc.line(x-3,y+4.5,x+3,y-4.5); },
+    fi:(x,y)=>{ lw(0.4); doc.rect(x-3.5,y-4.5,7,9); doc.setFont("helvetica","bold"); doc.setFontSize(6.5); txt("FI",x,y+1.3,{align:"center"}); },
+    spd:(x,y)=>{ lw(0.4); doc.rect(x-2.5,y,5,6); doc.line(x,y+1.2,x,y+4.2); doc.line(x-1,y+3.3,x,y+4.5); doc.line(x+1,y+3.3,x,y+4.5); },
+    earth:(x,y)=>{ lw(0.4); doc.line(x,y,x,y+2.5); doc.line(x-3,y+2.5,x+3,y+2.5); doc.line(x-2,y+3.5,x+2,y+3.5); doc.line(x-1,y+4.5,x+1,y+4.5); },
+    meter:(x,y,r)=>{ lw(0.45); doc.circle(x,y,r); doc.setFont("helvetica","bold"); doc.setFontSize(6.5); txt("kWh",x,y+1.1,{align:"center"}); },
+    fuse:(x,y)=>{ lw(0.4); doc.rect(x-2,y-4,4,8); doc.line(x,y-6,x,y+6); },
+    box:(x,y,w,h,dash)=>{ lw(0.3); if(dash) doc.setLineDashPattern([2,1.2],0); doc.rect(x,y,w,h); doc.setLineDashPattern([],0); }
+  };
+}
+async function exportSlpPdf(){
+  const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
+  const d=netzData(), c=d.cfg, nb=NB[c.nb]||NB.other; if(!d.wrs.length){ toast("Kein Wechselrichter im Projekt"); return; }
+  const doc=new J({orientation:"landscape",unit:"mm",format:"a4"}), W=297, H=210, s=slpSymbols(doc);
+  doc.setDrawColor(20); doc.setLineWidth(0.5); doc.rect(8,8,W-16,H-16);
+  s.label("Übersichtsschaltplan PV-Anlage (einpolige Darstellung)",14,16,12,null,true);
+  s.label(`${fmt(d.kwp,2)} kWp · ${fmt(d.sAC,2)} kVA${d.bats.length?" · Speicher "+fmt(d.bats.reduce((a,x)=>a+x.kwh,0),1)+" kWh":""} · Netz ${c.netzform} 400/230 V · ${nb.kurz}`,14,21.5,8.5);
+  /* Sammelschiene Zählerschrank rechts */
+  const busX=214, busTop=34, M=d.M;
+  const rows=d.wrs.map(({w,inv})=>{ const strs=P.strings.filter(x=>x.wr===w.id&&x.mods.length); const hasBat=d.bats.some(x=>x.b.wr===w.id); return {w,inv,strs,h:Math.max(hasBat?64:44,strs.length*15+10)}; });
+  const tot=rows.reduce((a,r)=>a+r.h+8,0); let y=Math.max(32,Math.min(40,(H-58-tot)/2+30));
+  const acNodes=[];
+  rows.forEach(({w,inv,strs,h},ri)=>{
+    const yc=y+h/2, invX=112, invS=22;
+    /* PV-Strings */
+    s.label(`Generator ${ri+1}`,14,y+2,7,null,true);
+    strs.forEach((st,i)=>{ const sy=y+6+i*15, n=st.mods.length, m=M?`${n} × ${M.name.replace(/\s\d+\s*Wp$/,"")} ${M.wp} Wp`:n+" Module";
+      s.pv(14,sy,12,8); s.label(`${st.name} (MPPT ${String.fromCharCode(65+(st.mppt||0))})`,29,sy+2.5,7,null,true);
+      s.label(m,29,sy+5.8,6.3); s.label(M?`${fmt(n*M.wp/1000,2)} kWp · Uoc(-10 °C) ca. ${fmt(n*M.voc*(1+(M.tcVoc||-0.3)/100*(-35)),0)} V`:"",29,sy+8.8,6.3);
+      const cc=cableCheck(st); s.line(96,sy+4,invX,yc-4+Math.min(8,i*2)); s.line(92,sy+4,96,sy+4);
+      if(i===0) s.label(`H1Z2Z2-K ${cc?cc.area:6} mm²`,92,sy+1.5,6,{align:"right"}); });
+    if(!strs.length) s.label("(noch keine Strings zugeordnet)",14,y+10,7);
+    /* Wechselrichter */
+    s.inv(invX,yc-invS/2,invS);
+    s.label(inv.name,invX+invS/2,yc+invS/2+4,7,{align:"center"},true);
+    s.label(`${fmt(inv.pac,2)} kVA · ${invPhases(inv)===3?"3~":"1~"} · DC-Trenner + NA-Schutz integriert`,invX+invS/2,yc+invS/2+7.5,6,{align:"center"});
+    /* Speicher */
+    const bs=d.bats.filter(x=>x.b.wr===w.id);
+    bs.forEach((x,i)=>{ const bx=invX-2+i*28, by=yc+invS/2+11; s.bat(bx,by,16,9); s.line(invX+invS/2,yc+invS/2,invX+invS/2,by);
+      s.label(x.B.name.replace(/^\S+\s/,""),bx+8,by+12.5,6,{align:"center"}); s.label(`${fmt(x.kwh,1)} kWh${x.dc?" · DC":""}`,bx+8,by+15.5,6,{align:"center"}); });
+    /* AC-Strecke: Leitung, LS, FI */
+    const ac=acDesign(w), lsX=160, fiX=176;
+    s.line(invX+invS,yc,busX,yc);
+    s.label(ac?`ÖLFLEX ${ac.cores}G${areaTxt(ac.A)}, ${fmt(ac.L,0)} m`:"AC-Leitung",invX+invS+2,yc-2,6);
+    s.ls(lsX,yc); s.label(ac?`LS C${ac.ls}/${ac.ph===3?3:1}`:"LS",lsX,yc+8,6,{align:"center"});
+    s.fi(fiX,yc); s.label("RCD Typ A 30 mA",fiX,yc+8,6,{align:"center"});
+    acNodes.push(yc);
+    /* PA */
+    s.dashed(invX+invS/2,yc-invS/2,invX+invS/2,yc-invS/2-4); s.label("PA",invX+invS/2+1.5,yc-invS/2-2.5,5.5);
+    y+=h+8;
+  });
+  /* Wallbox-Abgang */
+  const wb=P.wb&&P.wb.on?wbPick():null; let wbY=null;
+  if(P.wb&&P.wb.on){ wbY=Math.min(H-44,y+6); const dw=acCalc(P.wb.kw===22?22:11,3,wbLen().m,Number(SET.acDrop)>0?Number(SET.acDrop):1,true);
+    s.box(118,wbY-7,18,14); s.label("EV",127,wbY+1.5,9,{align:"center"},true);
+    s.label(wb?wb.name:"Wallbox "+(P.wb.kw||11)+" kW",127,wbY+10,6.3,{align:"center"}); s.line(136,wbY,busX,wbY);
+    s.label(`ÖLFLEX 5G${areaTxt(dw.A)}, ${fmt(dw.L,0)} m`,138,wbY-2,6); s.ls(lsX0(),wbY); s.label(`LS C${dw.ls}/3`,lsX0(),wbY+8,6,{align:"center"}); s.fi(176,wbY); s.label("RCD Typ A 30 mA",176,wbY+8,6,{align:"center"}); acNodes.push(wbY); }
+  function lsX0(){ return 160; }
+  /* Hausverbraucher */
+  const hvY=Math.min(H-30,(wbY||y)+16); s.line(busX,hvY,190,hvY); s.box(166,hvY-5,24,10); s.label("Hausverteilung",178,hvY+1.3,6.5,{align:"center"}); acNodes.push(hvY);
+  /* Sammelschiene */
+  const yMin=Math.min(...acNodes,busTop+10)-6, yMax=Math.max(...acNodes)+6; s.line(busX,yMin,busX,yMax,1.1);
+  s.label("Zählerschrank / Verteilung",busX,yMin-3,6.5,{align:"center"},true);
+  s.spd(busX+6,yMax-16); s.line(busX,yMax-16,busX+6,yMax-16); s.earth(busX+6,yMax-10); s.label("SPD Typ 1+2",busX+9.5,yMax-12,6);
+  /* Zähler, Smart Meter, HAK, Netz */
+  const zY=(yMin+yMax)/2, zX=236; s.line(busX,zY,zX-6,zY); s.meter(zX,zY,6);
+  s.label("Zweirichtungszähler",zX,zY+10,6.3,{align:"center"},true); s.label(c.zaehler?"Nr. "+c.zaehler:"(Messstellenbetreiber)",zX,zY+13.2,6,{align:"center"});
+  const mp=meterPick(); if(mp.art||mp.incl){ s.box(busX+4,zY-19,26,9,true); s.label(mp.art?mp.art.name.replace(/^Sungrow |^SMA |^Fronius |^Huawei /,""):"Smart Meter (Lieferumfang WR)",busX+17,zY-13.3,5.5,{align:"center"}); s.dashed(busX+17,zY-10,busX+17,zY); }
+  s.line(zX+6,zY,252,zY); s.fuse(256,zY); s.line(258,zY,266,zY); s.label("HAK"+(P.vo&&P.vo.val&&P.vo.val.hak?" "+P.vo.val.hak+" A":""),256,zY+9,6.3,{align:"center"});
+  s.label("Netz",267,zY-2,7,{align:"left"},true); s.label(nb.kurz,267,zY+2,6); s.label("400/230 V",267,zY+5.2,6);
+  /* PA-Schiene */
+  s.box(96,H-44,26,7); s.label("PA-Schiene",109,H-39.7,6.3,{align:"center"},true); s.earth(109,H-37); s.label("Montagegestell / WR / Speicher: H07V-K 16 mm² bzw. 6 mm²",125,H-39.7,6);
+  /* Schriftfeld */
+  titleBlock(doc,W,H,"Übersichtsschaltplan",1,1);
+  await netzSave(doc,"Uebersichtsschaltplan_");
+}
+
+/* ───────── PDF 3: Prüfprotokoll DC nach DIN EN 62446-1 ───────── */
+async function exportDcPdf(){
+  const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
+  const M=modOf(), strs=P.strings.filter(s=>s.mods.length); if(!M||!strs.length){ toast("Erst Strings anlegen"); return; }
+  const doc=new J({orientation:"landscape",unit:"mm",format:"a4"}), W=297, H=210, L=12, T=pdfTxt;
+  doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.text(T("Prüfprotokoll DC-Seite (nach DIN EN 62446-1)"),L,18);
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(90);
+  doc.text(T(`${P.name||""} · ${P.adresse||""} · Modul: ${M.name} · Sollwerte bei STC (25 °C) und für -10 °C Zelltemperatur`),L,23.5); doc.setTextColor(20);
+  const cols=[["String",22],["WR / MPPT",40],["Module",14],["Uoc STC\nsoll (V)",17],["Uoc -10 °C\nsoll (V)",18],["Uoc\ngemessen (V)",20],["Isc STC\nsoll (A)",16],["Isc\ngemessen (A)",19],["Polarität\nok",15],["Riso +\n(MΩ)",15],["Riso –\n(MΩ)",15],["Einstrahlung\n(W/m²)",20],["Bemerkung",42]];
+  let x=L, y=32; doc.setFillColor(238,242,241); doc.rect(L,y-5,W-2*L,11,"F"); doc.setFont("helvetica","bold"); doc.setFontSize(7.2);
+  cols.forEach(([t,w])=>{ doc.text(T(t).split("\n"),x+1.5,y-1); x+=w; }); y+=11;
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5);
+  strs.forEach(s=>{ if(y>190){ doc.addPage(); y=22; }
+    const wr=P.wrs.find(w=>w.id===s.wr), inv=wr&&invOf(wr.invId), n=s.mods.length, uoc=n*M.voc, uocC=uoc*(1+(M.tcVoc||-0.3)/100*(-35));
+    const vals=[s.name,(wr?wr.name:"–")+" / "+String.fromCharCode(65+(s.mppt||0)),String(n),fmt(uoc,1),fmt(uocC,1),"",fmt(M.isc,2),"","","","","",""];
+    x=L; doc.setDrawColor(200); doc.setLineWidth(0.2); doc.line(L,y+3,W-L,y+3);
+    cols.forEach(([t,w],i)=>{ if(vals[i]) doc.text(T(vals[i]),x+1.5,y); if(i===8){ doc.rect(x+5,y-3,3.5,3.5); } x+=w; });
+    if(inv&&uocC>inv.vmax) { doc.setTextColor(180,30,30); doc.text(T("> Umax WR!"),L+cols.slice(0,12).reduce((a,c)=>a+c[1],0)+1.5,y); doc.setTextColor(20); }
+    y+=9; });
+  if(y>118){ doc.addPage(); y=20; }
+  y+=4; doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.text(T("Sichtprüfung und Dokumentation"),L,y); y+=5; doc.setFont("helvetica","normal"); doc.setFontSize(8.3);
+  const chk=["Module, Gestell und Leitungen unbeschädigt, fachgerecht befestigt","Steckverbinder gleicher Hersteller/Typ, vollständig gesteckt","DC-Leitungen UV-beständig und geschützt verlegt, Schleifen klein gehalten",
+    "Potentialausgleich Gestell angeschlossen","Überspannungsschutz DC/AC vorhanden bzw. Bewertung durchgeführt","Kennzeichnung: DC-Warnhinweise am WR und Verteiler","Wechselrichter-Einstellungen (Ländercode, Blindleistung, Einspeisebegrenzung) nach Vorgabe Netzbetreiber","Datenblätter, Schaltplan und Protokoll an Betreiber übergeben"];
+  chk.forEach((t,i)=>{ const cy=y+i*6.2; doc.rect(L,cy-3,3.3,3.3); doc.text(T(t),L+5.5,cy); });
+  y+=chk.length*6.2+6;
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5);
+  [["Messgerät / Kalibrierung",L],["Datum",L+100],["Prüfer (Name, Unterschrift)",L+160]].forEach(([t,xx])=>{ doc.setDrawColor(120); doc.line(xx,y+8,xx+(t.startsWith("Prüfer")?110:90),y+8); doc.setTextColor(110); doc.setFontSize(7); doc.text(T(t),xx,y+11.5); });
+  doc.setTextColor(20);
+  await netzSave(doc,"Pruefprotokoll_DC_");
+}
+</script>
+<script>
+/* ───────── Planungscheck und Kundenblatt ─────────
+   Planungscheck: sammelt alle Hinweise aus den einzelnen Schritten an einer Stelle (Export-Schritt),
+   mit Sprung in den betroffenen Schritt. Kundenblatt: eine Seite fürs Beratungsgespräch mit Plan,
+   Kennzahlen, Ertrag und Komponenten. */
+function planCheck(){
+  const out=[], add=(lv,tab,txt)=>out.push({lv,tab,txt}), M=modOf();
+  if(!P.scale) add("bad","karte","Maßstab fehlt – Längen, Flächen und Kabelwege stimmen nicht");
+  if(!P.faces.length) add("bad","dach","Noch keine Dachfläche gezeichnet");
+  if(!MODS.length) add("bad","module","Noch keine Module belegt");
+  const used=new Set(P.strings.flatMap(s=>s.mods)), rest=MODS.filter(m=>!used.has(m.key)).length;
+  if(rest) add("warn","strings",`${rest} Modul${rest===1?"":"e"} keinem String zugeordnet`);
+  if(MODS.length&&!P.wrs.length) add("bad","strings","Kein Wechselrichter im Projekt");
+  P.strings.filter(s=>s.mods.length).forEach(s=>{ const r=checkString(s); (r.items||[]).filter(i=>i[1]!=="ok").forEach(i=>add(i[1],"strings",`${s.name}: ${i[0]}`)); });
+  P.wrs.forEach(w=>{ const c=wrCheck(w); if(c&&c.lv!=="ok") add(c.lv,"strings",`${w.name}: ${c.label}`); });
+  P.bats.forEach(b=>{ const B=LIB.batteries.find(x=>x.id===b.batId); batChecks(b).filter(c=>c[1]!=="ok").forEach(c=>add(c[1],"speicher",`${B?B.name:"Speicher"}: ${c[0]}`)); });
+  if(P.sub&&P.sub.on&&SUB&&SUB.warn) SUB.warn.forEach(w=>add("warn","unterbau",w));
+  P.strings.filter(s=>s.mods.length).forEach(s=>{ const c=cableCheck(s); if(c&&c.len!=null&&c.lv!=="ok") add(c.lv,"kabel",`${s.name}: DC-Spannungsfall ${fmt(c.pct,2)} %`); });
+  P.wrs.forEach(w=>{ const d=acDesign(w); if(d&&!d.ok) add("warn","kabel",`${w.name}: AC-Zuleitung – ${d.why}`); });
+  const est=[...P.wrs.filter(w=>!(Number(w.acLen)>0)).map(w=>"AC-Weg "+w.name),...Object.keys(RUN_DEF).filter(k=>runLen(k).est).map(k=>RUN_DEF[k].l.split(" (")[0])];
+  if(MODS.length&&est.length) add("info","kabel","Noch geschätzt statt aufgemessen: "+est.join(", "));
+  try{ netzData().checks.filter(c=>c[0]!=="ok").forEach(c=>add(c[0],"export",c[1])); }catch(e){}
+  if(P.offer&&P.offer.items.length){
+    const miss=P.offer.items.filter(it=>it.t!=="labor"&&(+it.qty||0)>0&&!(effEk(it)>0)&&!(it.vkFix>0));
+    if(miss.length) add("warn","angebot",`${miss.length} Angebotsposition${miss.length===1?"":"en"} ohne Preis: `+miss.slice(0,4).map(i=>i.name.slice(0,40)).join("; ")+(miss.length>4?" …":""));
+  } else if(MODS.length) add("info","angebot","Noch kein Angebot erzeugt");
+  const vo=typeof voDone==="function"?voDone():0; if(MODS.length&&vo<5) add("info","vorort",`Vor-Ort-Checkliste erst ${vo} von ${VO_ITEMS.length} Punkten erfasst`);
+  if(M&&!M.ok) add("warn","module","Modul aus der Bibliothek ist als „prüfen“ markiert – Datenblatt vergleichen");
+  P.wrs.forEach(w=>{ const i=invOf(w.invId); if(i&&!i.ok) add("warn","strings",`${i.name}: Bibliothekseintrag als „prüfen“ markiert`); });
+  const ord={bad:0,warn:1,info:2}; return out.sort((a,b)=>ord[a.lv]-ord[b.lv]);
+}
+function checkSideHtml(){
+  const L=planCheck(), n={bad:L.filter(x=>x.lv==="bad").length,warn:L.filter(x=>x.lv==="warn").length};
+  const lab={karte:"Karte",dach:"Dach",module:"Module",unterbau:"Unterbau",strings:"Strings",kabel:"Kabel",speicher:"Speicher",angebot:"Angebot",export:"Netz",vorort:"Vor Ort"};
+  return `<div class="sec"><h2>Planungscheck</h2>
+    ${!L.length?`<div class="pill ok" style="align-self:flex-start">Alles geprüft – keine Hinweise</div>`:`<div class="row">${n.bad?`<span class="pill bad">${n.bad} Fehler</span>`:""}${n.warn?`<span class="pill warn">${n.warn} Hinweis${n.warn===1?"":"e"}</span>`:""}${!n.bad&&!n.warn?`<span class="pill ok">keine Fehler</span>`:""}</div>
+    <div class="list">${L.map(x=>`<div data-goto="${x.tab}" title="Zum Schritt ${esc(lab[x.tab]||x.tab)}"><span class="pill ${x.lv==="info"?"":x.lv}" style="flex:none">${esc(lab[x.tab]||x.tab)}</span><span style="flex:1;white-space:normal;font-size:13px">${esc(x.txt)}</span></div>`).join("")}</div>`}
+    <button type="button" data-act="custPdf">Kundenblatt (PDF)</button></div>`;
+}
+side.addEventListener("click",e=>{ const g=e.target.closest("[data-goto]"); if(!g||!P) return; const t=g.dataset.goto; if(t!=="export") setTab(t); });
+
+/* ───────── Kundenblatt ───────── */
+async function exportCustPdf(){
+  const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
+  const M=modOf(); if(!M||!MODS.length){ toast("Erst Module belegen"); return; }
+  const doc=new J({orientation:"portrait",unit:"mm",format:"a4"}), W=210, L=14, R=196, T=pdfTxt, r=yieldResult();
+  const firm=(SET.firma&&SET.firma.name)||"";
+  doc.setFillColor(11,110,128); doc.rect(0,0,W,34,"F"); doc.setFillColor(242,169,0); doc.rect(0,34,W,1.6,"F");
+  doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.text(T("Ihre Photovoltaikanlage"),L,16);
+  doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text(T([P.kunde,P.adresse].filter(Boolean).join(" · ")||P.name),L,24);
+  doc.setFontSize(8.5); doc.text(T((firm?firm+" · ":"")+"Stand "+new Date().toLocaleDateString("de-DE")),L,29.5);
+  /* Plan */
+  let y=42; const img=renderPlanCanvas(false,!!IMG,R-L,86,false); const iw=Math.min(R-L,img.mmW), ih=img.mmH*(iw/img.mmW);
+  doc.addImage(img.url,"JPEG",L+(R-L-iw)/2,y,iw,ih); doc.setDrawColor(210); doc.rect(L+(R-L-iw)/2,y,iw,ih); y+=ih+7;
+  /* Kennzahlen */
+  const kwp=MODS.length*M.wp/1000, kpis=[["Anlagenleistung",fmt(kwp,2)+" kWp"],["Module",MODS.length+" × "+M.wp+" Wp"]];
+  if(r){ kpis.push(["Ertrag pro Jahr",fmt(r.year,0).replace(/\B(?=(\d{3})+(?!\d))/g,".")+" kWh"],["Autarkie",fmt(r.sim.aut*100,0)+" %"],["Eigenverbrauch",fmt(r.sim.evq*100,0)+" %"],["CO₂ vermieden".replace("₂","2"),"ca. "+fmt(r.year*0.363/1000,1)+" t / Jahr"]); }
+  const bw=(R-L-10)/3; kpis.forEach(([k,v],i)=>{ const x=L+(i%3)*(bw+5), yy=y+Math.floor(i/3)*19;
+    doc.setFillColor(244,246,245); doc.roundedRect(x,yy,bw,16,2,2,"F"); doc.setTextColor(95); doc.setFontSize(8); doc.text(T(k),x+4,yy+5.5);
+    doc.setTextColor(20); doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.text(T(v),x+4,yy+12.5); doc.setFont("helvetica","normal"); });
+  y+=Math.ceil(kpis.length/3)*19+4;
+  /* Monatsertrag */
+  if(r){ doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(20); doc.text(T("Erwarteter Ertrag je Monat (kWh)"),L,y); y+=3;
+    const mx=Math.max(...r.monthly), ch=30, cw=(R-L)/12, mn=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+    r.monthly.forEach((v,i)=>{ const h=v/mx*ch, x=L+i*cw+1.5; doc.setFillColor(242,169,0); doc.rect(x,y+ch-h+2,cw-3,h,"F");
+      doc.setFontSize(6.5); doc.setTextColor(95); doc.text(fmt(v,0),x+(cw-3)/2,y+ch-h+0.8,{align:"center"}); doc.text(T(mn[i]),x+(cw-3)/2,y+ch+6,{align:"center"}); });
+    y+=ch+11; }
+  /* Komponenten + Wirtschaftlichkeit */
+  const col=(x,title,rows)=>{ let yy=y; doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(20); doc.text(T(title),x,yy); yy+=5.5;
+    rows.forEach(([k,v])=>{ doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(95); doc.text(T(k),x,yy); doc.setTextColor(20);
+      const l=doc.splitTextToSize(T(v),52); doc.text(l,x+30,yy); yy+=Math.max(1,l.length)*4.2+1.2; }); return yy; };
+  const comp=[["Module",M.name.replace(/\s\d+\s*Wp$/,"")],...P.wrs.map(w=>["Wechselrichter",(invOf(w.invId)||{}).name||w.name]),
+    ...P.bats.map(b=>{ const B=LIB.batteries.find(x=>x.id===b.batId); return ["Speicher",(B?B.name:"")+(b.qty>1?" × "+b.qty:"")+(B?" ("+fmt(B.kwh*b.qty,1)+" kWh)":"")]; }),
+    ...(P.wb&&P.wb.on?[["Wallbox",(wbPick()||{}).name||"Wallbox "+(P.wb.kw||11)+" kW"]]:[]),...(P.sub&&P.sub.on?[["Montagesystem","K2 SolidRail mit Blechersatzziegeln"]]:[])];
+  const eco=r?[["Ersparnis / Jahr","ca. "+eur(r.save)],["Strompreis",fmt(r.cfg.price*100,1)+" ct/kWh"],["Einspeisung",fmt(r.cfg.feed*100,2)+" ct/kWh"],...(r.payback?[["Amortisation","ca. "+fmt(r.payback,1)+" Jahre"]]:[]),["Jahresverbrauch",fmt(r.cfg.cons,0).replace(/\B(?=(\d{3})+(?!\d))/g,".")+" kWh"]]:[];
+  const y1=col(L,"Komponenten",comp), y2=eco.length?col(L+96,"Wirtschaftlichkeit (Schätzung)",eco):y; y=Math.max(y1,y2)+4;
+  doc.setFont("helvetica","italic"); doc.setFontSize(7); doc.setTextColor(120);
+  doc.text(doc.splitTextToSize(T("Ertrag nach PVGIS (EU-Kommission, 2005–2023) ohne Verschattung; Eigenverbrauch und Autarkie geschätzt mit typischem Haushaltsprofil. Tatsächliche Werte hängen von Wetter und Verbrauchsverhalten ab. CO2 mit 363 g/kWh (Strommix Deutschland, Umweltbundesamt)."),R-L),L,Math.min(y,284));
+  await netzSave(doc,"Kundenblatt_");
+}
+</script>
+<script>
 /* ───────── Bibliothek ───────── */
 const KINDS={modules:"Module",inverters:"Wechselrichter",batteries:"Speicher",articles:"Artikel",std:"Standardliste"};
 UI.libQ="";
@@ -3943,6 +4333,8 @@ $("#lib").addEventListener("click",async e=>{
   for(const kind of Object.keys(defs)){
     const d=await S.get("lib/"+kind);
     if(d&&d.ver>=2&&Array.isArray(d.items)){
+      const defById=new Map(defs[kind].map(x=>[x.id,x]));
+      d.items=d.items.map(i=>i&&i.src==="Näherung"&&defById.has(i.id)?clone(defById.get(i.id)):i); /* Näherung → echtes Datenblatt */
       const have=new Set(d.items.map(i=>i.id));
       LIB[kind]=d.items.concat(clone(defs[kind]).filter(x=>!have.has(x.id)));
       if(d.ver!==LIB_VER){ try{ await S.set("lib/"+kind,{ver:LIB_VER,items:LIB[kind]}); }catch(e){} }
@@ -3968,7 +4360,7 @@ $("#lib").addEventListener("click",async e=>{
 </script>
 <script>
 /* ───────── PDF-Export ───────── */
-const pdfTxt=s=>String(s??"").replace(/≤/g,"<=").replace(/≥/g,">=").replace(/✓/g,"ok").replace(/✗/g,"X");
+const pdfTxt=s=>String(s??"").replace(/≤/g,"<=").replace(/≥/g,">=").replace(/✓/g,"ok").replace(/✗/g,"X").replace(/→/g,"->").replace(/Ω/g,"Ohm").replace(/Δ/g,"d").replace(/≈/g,"ca.").replace(/[−]/g,"-");
 function planBounds(){
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   const add=p=>{x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);};
