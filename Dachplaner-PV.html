@@ -1328,6 +1328,14 @@ function checkString(s){
   return r;
 }
 
+/* Zulässige Stringlänge für Modul + Wechselrichter bei den Projekttemperaturen:
+   max. = min(U_max / U_OC kalt, U_MPP,max / U_MPP kalt), min. = U_MPP,min / U_MPP heiß; parallel je MPPT nach I_SC/I_MPP. */
+function stringRange(inv,M){
+  if(!inv||!M) return null; const tc=M.tcVoc/100, vocC=M.voc*(1+tc*(P.tmin-25)), vmppC=M.vmpp*(1+tc*(P.tmin-25)), vmppH=M.vmpp*(1+tc*(P.tmax-25));
+  const max=Math.floor(Math.min(inv.vmax/vocC,inv.mppMax/vmppC)+1e-9), min=Math.ceil(inv.mppMin/vmppH-1e-9);
+  return {min,max,ok:min<=max,mppts:inv.mppts.map(m=>Math.max(0,Math.min(m.strings,Math.floor(m.isc/M.isc+1e-9)))),limitedBy:inv.vmax/vocC<inv.mppMax/vmppC?"U_OC kalt":"U_MPP kalt"};
+}
+
 /* ───────── Projekt speichern / laden ───────── */
 let saveTimer=null, imgDirty=false;
 /* ───────── Rückgängig / Wiederholen ─────────
@@ -1891,6 +1899,12 @@ function wrCheck(w){
   const ratio=inv.pac?kwp/inv.pac:0, lv=ratio>1.5?"bad":ratio>1.25?"warn":"ok";
   return {kwp,label:`DC/AC ${fmt(ratio,2)} (keine Max.-PV-Generatorleistung hinterlegt, Näherung über die AC-Leistung)`,lv};
 }
+function stringRangeHtml(){
+  const M=modOf(); if(!M||!P.wrs.length) return "";
+  return `<div class="stat">${P.wrs.map(w=>{ const inv=invOf(w.invId), r=stringRange(inv,M); if(!r) return "";
+    return `<span>${esc(w.name)}: Module je String</span><b>${r.ok?r.min+" – "+r.max:"passt nicht"}</b><span>parallel je MPPT</span><b>${r.mppts.join(" / ")}</b>`; }).join("")}</div>
+    <div class="hint">Für ${esc(M.name.replace(/\s\d+\s*Wp$/,""))} bei ${P.tmin} °C / ${P.tmax} °C. Oben begrenzt durch U_OC kalt bzw. U_MPP kalt, unten durch U_MPP heiß (MPP-Untergrenze).</div>`;
+}
 function wrStatHtml(){
   const M=modOf(); return P.wrs.map(w=>{ const inv=invOf(w.invId); const c=wrCheck(w);
     return `<div class="row"><span class="grow">${esc(w.name)}: ${fmt(c?c.kwp:0,2)} kWp DC${inv?` / ${fmt(inv.pac,1)} kW AC`:""}</span><span class="pill ${c?c.lv:""}">${esc(c?c.label:"?")}</span></div>`; }).join("");
@@ -1969,6 +1983,7 @@ function renderSide(){
       <select id="wrAdd" size="6" aria-label="Wechselrichter wählen">${optHtml(LIB.inverters,null)}</select>
       <button data-act="addWr" type="button">Ausgewählten Wechselrichter hinzufügen</button>
       <div id="wrStat">${wrStatHtml()}</div>
+      ${stringRangeHtml()}
       ${w?`<button data-act="delWr" class="dng" type="button">„${esc(w.name)}“ entfernen</button>`:""}</div>
     <div class="sec"><h2>Strings</h2>
       <div class="list" id="strList">${stringListHtml()}</div>
@@ -3240,6 +3255,11 @@ function runSelfTests(){
   test("Bibliothek: alle Geräte plausibel (MPP ≤ Umax, Isc ≥ Imax, Vmpp·Impp ≈ Wp)",()=>DEF_INVERTERS.every(i=>i.mppMin<i.mppMax&&i.mppMax<=i.vmax&&i.mppts.every(m=>m.isc>=m.imax))&&DEF_MODULES.every(m=>m.voc>m.vmpp&&m.isc>m.impp&&Math.abs(m.vmpp*m.impp-m.wp)/m.wp<0.02));
   test("Preise: jedes Modul, jeder Wechselrichter und Speicher hat einen Shop- oder Richtpreis (außer Auslaufmodelle STP TL)",()=>
     [...DEF_MODULES,...DEF_INVERTERS,...DEF_BATTERIES].filter(d=>!/000TL-30/.test(d.name)).every(d=>{ const a=devArt(d.id); return a&&a.price>0; }));
+  test("String-Rechner: max. 25 × DMEGC 455 an SH20T (1000 V) bei −10 °C",()=>{
+    const inv=DEF_INVERTERS.find(i=>i.id==="inv-sun-sh20t"), M=DEF_MODULES.find(m=>/G12RT-B48HBT/.test(m.name)&&m.wp===455), t0=P?[P.tmin,P.tmax]:null;
+    const save=P; P=P||{}; const a=P.tmin,b=P.tmax; P.tmin=-10; P.tmax=70; const r=stringRange(inv,M); P.tmin=a; P.tmax=b; if(!save) P=null;
+    /* 36,18 V · (1+0,0025·35) = 39,35 V → 1000/39,35 = 25,4; U_MPP kalt 30,69 · 1,0875 = 33,38 V → 950/33,38 = 28,5 → max 25 */
+    return r.max===25&&r.min>=1; });
   test("Phasen: Sunny Boy/Primo 1-phasig, Tripower/Symo/Sungrow 3-phasig",()=>
     invPhases({name:"SMA Sunny Boy 5.0"})===1&&invPhases({name:"Fronius Primo 8.2-1"})===1&&invPhases({name:"SMA Sunny Tripower X 15"})===3&&invPhases({name:"Sungrow SH10RT"})===3);
   test("Spannungsfall-Formel (Kupfer, Hin- und Rückleiter)",()=>{
