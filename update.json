@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.09.29.3",
+    "version": "2026.09.29.4",
     "file": "Dachplaner-PV.html",
-    "notes": "Bibliothek (eigene Module, Artikelpreise, Standardliste, Einstellungen) wird jetzt mit GitHub abgeglichen – überall dieselben Preise. Rückgängig/Wiederholen (Knöpfe oben, ⌘Z / ⇧⌘Z). Versionsliste je Projekt mit Wiederherstellen. Projekte nur ansehen erzeugt keine neue Version mehr. Dazu: alle PLF-Kanalgrößen, Switch, Zähler und Wallbox passend zum System."
+    "notes": "Neues Design (Schrittleiste, Karten, Projektübersicht mit Luftbild-Vorschau). Neuer Schritt „Vor Ort“: Checkliste und Fotos direkt mit der Kamera, auf allen Geräten abgeglichen. Ertragsprognose mit PVGIS-Daten, Eigenverbrauch, Autarkie und Amortisation. Sungrow iHomeManager optional statt DTSU666. Lange Namen (z. B. Ziegel) werden in Auswahllisten vollständig angezeigt."
   },
   "library": {
     "version": "2026.09.29.2",

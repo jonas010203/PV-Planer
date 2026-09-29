@@ -405,161 +405,250 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 </script>
 <style>
 :root{
-  --bg:#e9edef; --panel:#f8fafa; --panel2:#eef2f3; --ink:#122229; --muted:#5b6c74; --line:#cfd8dc;
-  --accent:#0a6a86; --accent-ink:#ffffff; --warm:#d99a00; --ok:#1c7c4a; --warn:#b26a00; --bad:#b3261e;
-  --stage:#c9d1d4; --focus:#0a6a86;
+  --bg:#eef1f0; --panel:#ffffff; --panel2:#f4f6f5; --panel3:#e9eeed; --ink:#13212a; --muted:#5d6d75; --line:#dbe2e1; --line2:#c9d3d2;
+  --accent:#0b6e80; --accent2:#0e8aa0; --accent-ink:#ffffff; --accent-soft:color-mix(in srgb,var(--accent) 12%,transparent);
+  --sun:#f2a900; --sun-soft:color-mix(in srgb,var(--sun) 16%,transparent); --warm:#d99a00;
+  --ok:#1d7f4c; --warn:#b36a00; --bad:#b4271e;
+  --stage:#cfd8d9; --focus:#0b6e80;
+  --r:12px; --r-sm:8px; --sh:0 1px 2px rgba(16,40,50,.05),0 6px 20px rgba(16,40,50,.06); --sh2:0 12px 40px rgba(10,30,40,.22);
   --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0f1619; --panel:#172126; --panel2:#1d2a30; --ink:#e4edf0; --muted:#8fa2ab; --line:#2b3b42;
-    --accent:#4cc3e2; --accent-ink:#06222b; --warm:#f0b429; --ok:#4fd08a; --warn:#f0a648; --bad:#ff7b72;
-    --stage:#0b1113; --focus:#4cc3e2;
+    --bg:#0c1316; --panel:#131c20; --panel2:#18242a; --panel3:#1e2c33; --ink:#e3ecef; --muted:#8fa1a9; --line:#24333a; --line2:#2f414a;
+    --accent:#46c1dc; --accent2:#6fd3ea; --accent-ink:#04222b; --sun:#f5b83d; --warm:#f0b429;
+    --ok:#4fd08a; --warn:#f0a648; --bad:#ff7b72; --stage:#0a1013; --focus:#46c1dc;
+    --sh:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); --sh2:0 12px 40px rgba(0,0,0,.55);
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0f1619; --panel:#172126; --panel2:#1d2a30; --ink:#e4edf0; --muted:#8fa2ab; --line:#2b3b42;
-  --accent:#4cc3e2; --accent-ink:#06222b; --warm:#f0b429; --ok:#4fd08a; --warn:#f0a648; --bad:#ff7b72;
-  --stage:#0b1113; --focus:#4cc3e2;
+  --bg:#0c1316; --panel:#131c20; --panel2:#18242a; --panel3:#1e2c33; --ink:#e3ecef; --muted:#8fa1a9; --line:#24333a; --line2:#2f414a;
+  --accent:#46c1dc; --accent2:#6fd3ea; --accent-ink:#04222b; --sun:#f5b83d; --warm:#f0b429;
+  --ok:#4fd08a; --warn:#f0a648; --bad:#ff7b72; --stage:#0a1013; --focus:#46c1dc;
+  --sh:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); --sh2:0 12px 40px rgba(0,0,0,.55);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);overflow:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font:14.5px/1.5 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
-.app{height:100%;display:grid;grid-template-rows:auto 1fr;padding-inline:0}
-.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:8px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
-.brand{font-weight:600;letter-spacing:.02em}
-.brand small{font:400 11px var(--mono);color:var(--muted);margin-left:6px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr;grid-template-columns:minmax(0,1fr);padding-inline:0}
+.top,.work,#home{min-width:0}
+
+/* ── Kopfzeile + Schrittleiste ── */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 16px 0;background:var(--panel);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15.5px;letter-spacing:.01em;padding-bottom:10px}
+.brand .logo{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(145deg,var(--accent),var(--accent2));box-shadow:inset 0 -2px 0 rgba(0,0,0,.12)}
+.brand small{font:500 10.5px var(--mono);color:var(--accent);background:var(--accent-soft);padding:1px 6px;border-radius:99px;margin-left:2px}
+.top>#homeBtn,.top>.ptitle,.top>#undoBar,.top>#saveState,.top>#updBtn{margin-bottom:10px}
 .top select{max-width:220px}
-#tabs{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
-#tabs button{border:0;background:transparent;padding:7px 12px;border-radius:6px;cursor:pointer;color:var(--muted);font-weight:500}
-#tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
-#tabs button:hover:not([aria-selected="true"]){background:var(--panel2);color:var(--ink)}
-.work{display:grid;grid-template-columns:352px minmax(0,1fr);min-height:0}
-#side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
-#sideBody{flex:1;overflow:auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:16px;min-height:0}
-#sideNav{display:flex;align-items:center;gap:8px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--panel)}
-#sideNav .msg{flex:1;font-size:12px;color:var(--muted);min-width:0}
+.ptitle{font-weight:600;font-size:15px;max-width:34ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#saveState{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+#saveState::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);opacity:.8}
+#saveState:empty::before{display:none}
+#tabs{display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;width:100%;min-width:0;order:10;scrollbar-width:none;margin:0 -4px;padding:0 4px}
+#tabs::-webkit-scrollbar{display:none}
+#tabs button{flex:none;border:0;background:transparent;padding:9px 12px 11px;border-radius:0;cursor:pointer;color:var(--muted);font-weight:500;display:inline-flex;align-items:center;gap:8px;border-bottom:2.5px solid transparent;box-shadow:none;min-height:0}
+#tabs button b{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;font:600 11.5px var(--mono);background:var(--panel3);color:var(--muted)}
+#tabs button:hover:not([aria-selected="true"]){color:var(--ink);background:transparent}
+#tabs button:hover b{background:var(--line)}
+#tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+#tabs button[aria-selected="true"] b{background:var(--accent);color:var(--accent-ink)}
+#tabs button[data-tab="lib"]{margin-left:auto}
+
+/* ── Arbeitsfläche ── */
+.work{display:grid;grid-template-columns:392px minmax(0,1fr);min-height:0}
+#side{background:var(--bg);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#sideBody{flex:1;overflow:auto;padding:14px 14px 28px;display:flex;flex-direction:column;gap:12px;min-height:0}
+#sideBody>.sec{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--sh)}
+#sideNav{display:flex;align-items:center;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--panel)}
+#sideNav .msg{flex:1;font-size:12px;color:var(--muted);min-width:0;line-height:1.35}
 #sideNav .msg.warn{color:var(--warn)}
-#sideNav button{padding:8px 14px}
+#sideNav button{padding:9px 16px}
 .stage{position:relative;background:var(--stage);min-height:0;min-width:0}
 #cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
-.hud{position:absolute;left:10px;bottom:10px;right:10px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
-.hud span{background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:4px;padding:2px 8px;font:12px var(--mono)}
-.zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}
-.zoom button{width:32px;height:32px;padding:0}
-h2{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
-h3{font-size:14px;margin:0 0 6px}
-.sec{display:flex;flex-direction:column;gap:8px}
+.hud{position:absolute;left:12px;bottom:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.hud span{background:color-mix(in srgb,var(--panel) 90%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:99px;padding:3px 11px;font:12px var(--mono);box-shadow:var(--sh)}
+.zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:38px;height:38px;padding:0;border-radius:50%;font-size:17px;background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+
+/* ── Typografie & Layout-Bausteine ── */
+h2{font-size:13px;font-weight:600;letter-spacing:.01em;color:var(--ink);margin:0 0 4px;display:flex;align-items:center;gap:8px}
+h2::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--sun);flex:none}
+h3{font-size:14.5px;margin:0 0 6px}
+.sec{display:flex;flex-direction:column;gap:10px}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-label.f{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
-input[type=text],input[type=number],select,textarea{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:5px;background:var(--panel2);color:var(--ink)}
-input[type=number]{font-family:var(--mono);font-size:13px}
-input[type=checkbox]{accent-color:var(--accent)}
-button{border:1px solid var(--line);background:var(--panel2);padding:6px 11px;border-radius:5px;cursor:pointer}
-button:hover{border-color:var(--accent)}
-button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:500}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:500}
+label.row{font-size:13.5px;cursor:pointer}
+input[type=text],input[type=number],input[type=date],input[type=password],input[type=email],select,textarea{width:100%;min-height:38px;padding:7px 10px;border:1px solid var(--line2);border-radius:var(--r-sm);background:var(--panel);color:var(--ink);transition:border-color .12s,box-shadow .12s}
+input:hover,select:hover,textarea:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line2))}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input[type=number]{font-family:var(--mono);font-size:13.5px}
+input[type=checkbox],input[type=radio]{accent-color:var(--accent);width:17px;height:17px}
+select{cursor:pointer}
+textarea{min-height:80px;resize:vertical}
+button{border:1px solid var(--line2);background:var(--panel);padding:7px 13px;border-radius:var(--r-sm);cursor:pointer;min-height:36px;font-weight:500;box-shadow:0 1px 1px rgba(0,0,0,.04);transition:background .12s,border-color .12s,transform .06s}
+button:hover{border-color:var(--accent);background:var(--panel2)}
+button:active{transform:translateY(1px)}
+button:disabled{opacity:.45;cursor:default;transform:none}
+button.pri{background:linear-gradient(180deg,var(--accent2),var(--accent));color:var(--accent-ink);border-color:var(--accent);font-weight:600;box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 30%,transparent)}
+button.pri:hover{filter:brightness(1.06);background:linear-gradient(180deg,var(--accent2),var(--accent))}
 button.dng{color:var(--bad)}
-button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.hint{font-size:12px;color:var(--muted)}
+button.dng:hover{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 8%,var(--panel))}
+button.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:600}
+button.sm{padding:3px 10px;font-size:12.5px;min-height:28px}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.45}
 #syncLine a{color:var(--accent);font-weight:600}
-.banner{border:1px solid var(--warn);color:var(--warn);border-radius:5px;padding:6px 9px;font-size:12px}
-.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.list>div{display:flex;align-items:center;gap:8px;padding:6px 9px;cursor:pointer;border-bottom:1px solid var(--line);background:var(--panel)}
+.banner{border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent);color:var(--ink);border-radius:var(--r-sm);padding:9px 12px;font-size:12.5px}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--panel)}
+.list>div{display:flex;align-items:center;gap:10px;padding:9px 12px;min-height:42px;cursor:pointer;border-bottom:1px solid var(--line);background:var(--panel);transition:background .1s}
+.list>div:hover{background:var(--panel2)}
 .list>div:last-child{border-bottom:0}
-.list>div.sel{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
-.list .sw{width:12px;height:12px;border-radius:3px;flex:none}
+.list>div.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.list .sw{width:14px;height:14px;border-radius:4px;flex:none}
 .list .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Auswahlliste (ersetzt <select size>): lange Namen umbrechen, gut antippbar */
+.picklist{max-height:260px;overflow:auto;border:1px solid var(--line2);border-radius:var(--r-sm);background:var(--panel)}
+.picklist .pg{position:sticky;top:0;z-index:1;font:600 10.5px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--panel2);padding:5px 12px;border-bottom:1px solid var(--line)}
+.picklist .po{padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13.5px;line-height:1.35;white-space:normal;word-break:break-word}
+.picklist .po:last-child{border-bottom:0}
+.picklist .po:hover{background:var(--panel2)}
+.picklist .po.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent);font-weight:600}
+.picklist .none{padding:10px 12px;color:var(--muted);font-size:13px}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
-.pill{font:500 11px var(--mono);padding:1px 7px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
-.pill.ok{color:var(--ok)}.pill.warn{color:var(--warn)}.pill.bad{color:var(--bad)}
-.stat{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px}
+.pill{font:600 11px var(--sans);padding:2px 9px;border-radius:99px;border:1px solid transparent;white-space:nowrap;background:var(--panel3);color:var(--muted);letter-spacing:.01em}
+.pill.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)}
+.pill.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.pill.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.stat{display:grid;grid-template-columns:auto 1fr;gap:0 12px;font-size:13px;background:var(--panel2);border-radius:var(--r-sm);padding:8px 12px}
+.stat>span,.stat>b{padding:4px 0;border-bottom:1px dashed var(--line)}
+.stat>span:nth-last-child(-n+2),.stat>b:last-child{border-bottom:0}
 .stat b{font:500 13px var(--mono);text-align:right}
-.chk{font:12px var(--mono);display:grid;grid-template-columns:1fr auto;gap:1px 8px;margin-top:4px}
+.chk{font:12px var(--mono);display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-top:4px}
 .chk .bad{color:var(--bad)}.chk .warn{color:var(--warn)}.chk .ok{color:var(--ok)}
-#lib{position:absolute;inset:0;background:var(--bg);overflow:auto;padding:16px;display:none}
+details summary{cursor:pointer;font-weight:500}
+
+/* ── Vollflächige Ansichten (Bibliothek, Angebot) ── */
+#lib{position:absolute;inset:0;background:var(--bg);overflow:auto;padding:20px;display:none}
 #lib.show{display:block}
-#offer{position:absolute;inset:0;background:var(--bg);overflow:auto;padding:16px;display:none}
+#offer{position:absolute;inset:0;background:var(--bg);overflow:auto;padding:20px;display:none}
 #offer.show{display:block}
-.ofwrap{max-width:1100px;margin:0 auto}
-.ofwrap h1{font-size:16px;margin:4px 0 6px}
-.ofscroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.ofwrap{max-width:1140px;margin:0 auto}
+.ofwrap h1{font-size:20px;margin:4px 0 8px;letter-spacing:-.01em}
+.ofscroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--sh)}
 .otbl{width:100%;border-collapse:collapse;font-size:13px;min-width:820px}
-.otbl th{font:600 11px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 8px;border-bottom:1px solid var(--line)}
-.otbl td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-.otbl input[type=text],.otbl input[type=number],.otbl select{padding:4px 6px;font-size:13px}
+.otbl th{font:600 11px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);background:var(--panel2);position:sticky;top:0}
+.otbl td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.otbl tr:hover td{background:color-mix(in srgb,var(--panel2) 60%,transparent)}
+.otbl input[type=text],.otbl input[type=number],.otbl select{padding:5px 8px;font-size:13px;min-height:32px}
 .otbl input[type=number]{width:84px;text-align:right}
 .otbl td:nth-child(2){min-width:280px}
-.otbl td:nth-child(2) input{margin-bottom:2px}
-button.sm{padding:2px 8px;font-size:12px}
+.otbl td:nth-child(2) input{margin-bottom:3px}
 .stdtbl{min-width:1040px}
 .stdtbl td:nth-child(2){min-width:0;width:118px}
 .stdtbl td:nth-child(3){min-width:300px}
 .stdtbl td:nth-child(4){width:190px}
-.ofsum{display:flex;justify-content:flex-end;margin:14px 0}
-.ofsum .stat{min-width:300px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
-.ofpick{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:5}
+.ofsum{display:flex;justify-content:flex-end;margin:16px 0}
+.ofsum .stat{min-width:320px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;box-shadow:var(--sh)}
+.ofpick{position:absolute;inset:0;background:rgba(8,20,26,.5);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:5}
 .ofpick[hidden]{display:none}
 .ofpick .card{width:min(720px,100%)}
-.ofpick .list>div:hover{background:var(--panel2)}
 [hidden]{display:none!important}
-.ptitle{font-weight:600;max-width:34ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── Projektübersicht ── */
 #home{overflow:auto;min-height:0;background:var(--bg)}
-.homewrap{max-width:1100px;margin:0 auto;padding:22px 16px 48px}
-.homehead{display:flex;flex-wrap:wrap;gap:12px 16px;justify-content:space-between;align-items:flex-end;margin-bottom:16px}
-.homehead h1{font-size:20px;margin:0}
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
-.pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;cursor:pointer}
-.pcard:hover{border-color:var(--accent)}
-.pcard h3{margin:0;font-size:15px;overflow:hidden;text-overflow:ellipsis}
+.homewrap{max-width:1180px;margin:0 auto;padding:26px 18px 56px}
+.homehead{display:flex;flex-wrap:wrap;gap:14px 18px;justify-content:space-between;align-items:flex-end;margin-bottom:18px}
+.homehead h1{font-size:26px;margin:0;letter-spacing:-.02em}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px;box-shadow:var(--sh)}
+.kpi b{display:block;font:600 22px var(--mono);letter-spacing:-.02em}
+.kpi span{font-size:12px;color:var(--muted)}
+.kpi.sun b{color:var(--warm)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:0;display:flex;flex-direction:column;cursor:pointer;box-shadow:var(--sh);overflow:hidden;transition:transform .12s,box-shadow .12s,border-color .12s}
+.pcard:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));transform:translateY(-2px);box-shadow:0 10px 30px rgba(16,40,50,.12)}
+.pthumb{height:118px;background:linear-gradient(135deg,var(--panel3),var(--panel2));background-size:cover;background-position:center;position:relative}
+.pthumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.28))}
+.pthumb .pill{position:absolute;top:10px;right:10px;z-index:1;background:var(--panel);box-shadow:var(--sh)}
+.pbody{padding:12px 16px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.pcard h3{margin:0;font-size:16px;overflow:hidden;text-overflow:ellipsis}
 .prow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.pfacts{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px}
-.pnote{font-size:13px;color:var(--muted);border-left:2px solid var(--line);padding-left:8px;max-height:3.4em;overflow:hidden}
-.pact{margin-top:auto}
-.pact{gap:6px}
-.pact button{padding:4px 9px;font-size:12.5px}
-.mback{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
-.mbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;width:min(540px,100%);max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
-.libgrid{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr);gap:16px;max-width:1100px;margin:0 auto 24px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
-.libgrid h1{grid-column:1/-1;font-size:16px;margin:8px 0 0}
-.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:9;max-width:90vw}
+.pfacts{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.pfacts b{color:var(--ink);font-size:15px}
+.pnote{font-size:13px;color:var(--muted);border-left:3px solid var(--sun);padding-left:9px;max-height:3.4em;overflow:hidden}
+.pact{margin-top:auto;gap:6px;padding-top:4px}
+.pact button{padding:4px 10px;font-size:12.5px;min-height:30px}
+.mback{position:fixed;inset:0;background:rgba(8,20,26,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.mbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;width:min(560px,100%);max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:12px;box-shadow:var(--sh2)}
+.mbox h3{font-size:17px}
+.libgrid{display:grid;grid-template-columns:minmax(230px,310px) minmax(0,1fr);gap:16px;max-width:1140px;margin:0 auto 24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
+.libgrid h1{grid-column:1/-1;font-size:20px;margin:6px 0 0;letter-spacing:-.01em}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:13.5px;z-index:30;max-width:90vw;box-shadow:var(--sh2);animation:tin .18s ease-out}
+@keyframes tin{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+/* Vor-Ort-Fotos */
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.photos figure{margin:0;position:relative;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line);background:var(--panel2);aspect-ratio:1}
+.photos img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
+.photos figcaption{position:absolute;left:0;right:0;bottom:0;font-size:11px;padding:3px 6px;background:rgba(0,0,0,.55);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.photos button{position:absolute;top:4px;right:4px;min-height:0;width:24px;height:24px;padding:0;border-radius:50%;font-size:13px;line-height:1}
+.checklist label.row{padding:6px 0;border-bottom:1px dashed var(--line);align-items:flex-start}
+.checklist label.row:last-child{border-bottom:0}
+.checklist label.row span{flex:1}
+/* Ertrag: Monatsbalken */
+.bars{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:120px;padding:6px 2px 0}
+.bars div{background:linear-gradient(180deg,var(--sun),color-mix(in srgb,var(--sun) 55%,var(--warm)));border-radius:4px 4px 1px 1px;position:relative;min-height:2px}
+.bars div span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font:10px var(--mono);color:var(--muted)}
+.bars{margin-bottom:20px}
 @media (max-width:860px){
   body{overflow:auto}
   .app{height:auto;min-height:100%}
-  .work{grid-template-columns:1fr}
-  .stage{height:62vh;order:-1}
+  .work{grid-template-columns:minmax(0,1fr)}
+  .stage{height:58vh;order:-1}
   #side{border-right:0}
   #sideBody{overflow:visible}
-  #tabs{margin-left:0}
   .libgrid{grid-template-columns:1fr}
   #lib{position:static}
+  .top{padding:8px 12px 0;gap:6px 8px;flex-wrap:nowrap;overflow:hidden}
+  .top>*{flex:none}
+  .brand{font-size:0;gap:0}
+  .brand small{display:none}
+  .top>#homeBtn{padding:6px 10px}
+  .ptitle{max-width:none;flex:1 1 auto!important;min-width:0;font-size:14px}
+  #saveState{font-size:0;gap:0}
+  #updBtn{padding:6px 10px}
+  #updBtn:not(.pri){display:none}
+  .top{flex-wrap:wrap}
+  #tabs{flex-basis:100%}
+  #tabs button[data-tab="lib"]{margin-left:0}
+  .homehead h1{font-size:22px}
 }
 </style>
 
 </head><body>
 <div class="app">
   <header class="top">
-    <div class="brand">Dachplaner<small>PV</small></div>
+    <div class="brand"><span class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="17.5" cy="6" r="3" fill="#f5b83d"/><path d="M3 20l3.5-9h11L21 20z" fill="#fff" opacity=".95"/><path d="M8 11.5l-1.6 8M12 11.5v8M16 11.5l1.6 8M5 15.5h14" stroke="#0b6e80" stroke-width="1.3"/></svg></span>Dachplaner<small>PV</small></div>
     <button id="homeBtn" type="button" hidden>← Projekte</button>
     <span class="ptitle" id="projTitle"></span>
     <span class="row" id="undoBar" hidden style="gap:4px"><button id="undoBtn" type="button" class="sm" title="Rückgängig (⌘Z / Strg+Z)" aria-label="Rückgängig" disabled>↶</button><button id="redoBtn" type="button" class="sm" title="Wiederholen (⇧⌘Z / Strg+Y)" aria-label="Wiederholen" disabled>↷</button></span>
     <span class="hint" id="saveState"></span>
     <button id="updBtn" type="button" hidden>Update</button>
     <nav id="tabs" role="tablist" aria-label="Arbeitsschritte">
-      <button role="tab" data-tab="karte" type="button">1 Karte</button>
-      <button role="tab" data-tab="dach" type="button">2 Dach</button>
-      <button role="tab" data-tab="module" type="button">3 Module</button>
-      <button role="tab" data-tab="unterbau" type="button">4 Unterbau</button>
-      <button role="tab" data-tab="strings" type="button">5 Strings</button>
-      <button role="tab" data-tab="kabel" type="button">6 Kabel</button>
-      <button role="tab" data-tab="speicher" type="button">7 Speicher &amp; Wallbox</button>
-      <button role="tab" data-tab="angebot" type="button">8 Angebot</button>
-      <button role="tab" data-tab="export" type="button">9 Export</button>
+      <button role="tab" data-tab="vorort" type="button"><b>1</b>Vor Ort</button>
+      <button role="tab" data-tab="karte" type="button"><b>2</b>Karte</button>
+      <button role="tab" data-tab="dach" type="button"><b>3</b>Dach</button>
+      <button role="tab" data-tab="module" type="button"><b>4</b>Module</button>
+      <button role="tab" data-tab="unterbau" type="button"><b>5</b>Unterbau</button>
+      <button role="tab" data-tab="strings" type="button"><b>6</b>Strings</button>
+      <button role="tab" data-tab="kabel" type="button"><b>7</b>Kabel</button>
+      <button role="tab" data-tab="speicher" type="button"><b>8</b>Speicher &amp; Wallbox</button>
+      <button role="tab" data-tab="angebot" type="button"><b>9</b>Angebot</button>
+      <button role="tab" data-tab="export" type="button"><b>10</b>Export</button>
       <button role="tab" data-tab="lib" type="button">Bibliothek</button>
     </nav>
   </header>
@@ -1486,9 +1575,10 @@ const selObst=()=>P.obst.find(o=>o.id===UI.selObst)||null;
 const selStr=()=>P.strings.find(s=>s.id===UI.selString)||null;
 function num(id,label,val,attr,step,extra=""){ return `<label class="f">${label}<input id="${id}" type="number" step="${step||"any"}" value="${val}" ${attr} ${extra}></label>`; }
 function txt(id,label,val,attr){ return `<label class="f">${label}<input id="${id}" type="text" value="${esc(val)}" ${attr}></label>`; }
-const STEPS=["karte","dach","module","unterbau","strings","kabel","speicher","angebot","export"];
+const STEPS=["vorort","karte","dach","module","unterbau","strings","kabel","speicher","angebot","export"];
 const STEP_LABEL={karte:"Karte",dach:"Dach",module:"Module",unterbau:"Unterbau",strings:"Strings",kabel:"Kabel",speicher:"Speicher",angebot:"Angebot",export:"Export"};
 function navMsg(){
+  if(UI.tab==="vorort"){ const n=voDone(); const np=(P.photos||[]).length; return [n+" von "+VO_ITEMS.length+" Punkten · "+np+" Foto"+(np===1?"":"s"),n?"ok":""]; }
   if(UI.tab==="karte") return P.scale?["Maßstab gesetzt","ok"]:["Maßstab fehlt noch","warn"];
   if(UI.tab==="dach") return P.faces.length?[P.faces.length+" Dachfläche"+(P.faces.length>1?"n":""),"ok"]:["Noch keine Dachfläche","warn"];
   if(UI.tab==="module"){ return MODS.length?[MODS.length+" Module belegt","ok"]:["Noch keine Module","warn"]; }
@@ -1506,6 +1596,39 @@ function renderNav(){
   el.innerHTML=(i>0?`<button data-nav="${STEPS[i-1]}" type="button">← Zurück</button>`:"")+`<span class="msg ${l}">${esc(m)}</span>`+(i<STEPS.length-1?`<button class="pri" data-nav="${STEPS[i+1]}" type="button">Weiter: ${STEP_LABEL[STEPS[i+1]]} →</button>`:"");
 }
 $("#sideNav").addEventListener("click",e=>{ const b=e.target.closest("[data-nav]"); if(b) setTab(b.dataset.nav); });
+/* ───────── Auswahlliste statt <select size=…> ─────────
+   Native Listboxen schneiden lange Namen ab (z. B. Ziegeltypen) und sind auf dem iPad schlecht zu treffen.
+   Jede Listbox in der Seitenleiste bekommt eine sichtbare, umbrechende Liste; das <select> bleibt versteckt
+   die „Quelle der Wahrheit“ (Suche, Knöpfe und change-Handler arbeiten unverändert damit). */
+function pickSync(sel){
+  let pl=sel._pick;
+  if(!pl||!pl.isConnected){
+    pl=document.createElement("div"); pl.className="picklist"; pl.setAttribute("role","listbox"); pl.tabIndex=0;
+    if(sel.getAttribute("aria-label")) pl.setAttribute("aria-label",sel.getAttribute("aria-label"));
+    sel.after(pl); sel._pick=pl; sel.style.display="none";
+    const choose=v=>{ if(v==null||v==="") return; sel.value=v; sel.dispatchEvent(new Event("change",{bubbles:true})); pickMark(sel); };
+    pl.addEventListener("click",e=>{ const o=e.target.closest(".po"); if(o) choose(o.dataset.v); });
+    pl.addEventListener("keydown",e=>{
+      if(e.key!=="ArrowDown"&&e.key!=="ArrowUp") return; e.preventDefault();
+      const os=[...pl.querySelectorAll(".po")], i=os.findIndex(o=>o.dataset.v===sel.value), n=os[Math.max(0,Math.min(os.length-1,i+(e.key==="ArrowDown"?1:-1)))];
+      if(n) choose(n.dataset.v);
+    });
+  }
+  const size=+sel.getAttribute("size")||6; pl.style.maxHeight=Math.max(4,size)*44+"px";
+  const opt=o=>`<div class="po${o.selected&&o.value?" sel":""}" role="option" data-v="${esc(o.value)}" aria-selected="${o.selected}">${esc(o.textContent)}</div>`;
+  const html=[...sel.children].map(c=>c.tagName==="OPTGROUP"?`<div class="pg">${esc(c.label)}</div>`+[...c.children].map(opt).join(""):c.value?opt(c):`<div class="none">${esc(c.textContent)}</div>`).join("");
+  pl.innerHTML=html||`<div class="none">Keine Einträge</div>`;
+  const s=pl.querySelector(".po.sel"); if(s) s.scrollIntoView({block:"nearest"});
+}
+function pickMark(sel){ const pl=sel._pick; if(!pl) return; pl.querySelectorAll(".po").forEach(o=>{ const on=o.dataset.v===sel.value; o.classList.toggle("sel",on); o.setAttribute("aria-selected",on); }); }
+new MutationObserver(ms=>{
+  const todo=new Set();
+  ms.forEach(m=>{ if(m.target.closest&&m.target.closest(".picklist")) return;
+    if(m.target.tagName==="SELECT"&&m.target.hasAttribute("size")) todo.add(m.target);
+    m.addedNodes.forEach(n=>{ if(n.nodeType!==1) return; if(n.matches&&n.matches("select[size]")) todo.add(n); n.querySelectorAll&&n.querySelectorAll("select[size]").forEach(s=>todo.add(s)); });
+  });
+  todo.forEach(s=>{ if(!s.multiple&&(+s.getAttribute("size")>1)) pickSync(s); });
+}).observe(document.getElementById("side"),{childList:true,subtree:true});
 function optHtml(items,sel,q){
   q=(q||"").toLowerCase().trim(); const by={};
   items.filter(i=>!q||i.name.toLowerCase().includes(q)).forEach(i=>{ (by[i.brand||"Sonstige"]=by[i.brand||"Sonstige"]||[]).push(i); });
@@ -1602,7 +1725,8 @@ function wrStatHtml(){
 function renderSide(){
   if(!P){ $("#sideBody").innerHTML=""; return; }
   const M=modOf(); let h="";
-  if(UI.tab==="karte"){
+  if(UI.tab==="vorort"){ h=vorortSideHtml(); }
+  else if(UI.tab==="karte"){
     const sp=scalePx();
     h=`<div class="sec"><h2>Luftbild</h2>
       <div class="hint">Google Maps → Satellit, 2D, senkrecht von oben, möglichst weit hineingezoomt. Screenshot machen und hier laden. Schräge 45°-Ansichten sind für Maße unbrauchbar. Auch ein PDF geht (Lageplan, Katasterauszug, exportierter Grundriss) – die erste Seite wird geladen.</div>
@@ -1626,7 +1750,7 @@ function renderSide(){
       <button data-act="tool" data-id="face" class="${UI.tool==="face"?"on":""}" type="button">Dachfläche</button>
       <button data-act="tool" data-id="obst" class="${UI.tool==="obst"?"on":""}" type="button">Hindernis</button></div>
       ${UI.tool==="face"?`<div class="hint">Ecken der Dachfläche klicken. Die <b>erste Kante ist die Traufe</b> (orange). Doppelklick oder Enter schließt die Fläche.</div>`:""}
-      ${!P.scale?`<div class="banner">Maßstab fehlt – erst unter „1 Karte“ setzen.</div>`:""}</div>
+      ${!P.scale?`<div class="banner">Maßstab fehlt – erst unter „Karte“ setzen.</div>`:""}</div>
     <div class="sec"><h2>Dachflächen</h2><div class="list">${P.faces.map(x=>`<div class="${x.id===UI.selFace?"sel":""}" data-act="selFace" data-id="${x.id}"><span class="grow">${esc(x.name)}</span><span class="mono hint">${x.pitch}° · ${compass(azimuthOf(x))}</span></div>`).join("")||`<div class="hint">Noch keine Fläche.</div>`}</div></div>`;
     if(f) h+=`<div class="sec"><h2>Fläche bearbeiten</h2>
       ${txt("fName","Name",f.name,'data-f="name"')}
@@ -1694,8 +1818,8 @@ function renderSide(){
       <label class="f">Suchen<input id="batQ" type="text" data-q="batAdd" placeholder="BYD, Sungrow, HVS …"></label>
       <select id="batAdd" size="7" aria-label="Speicher wählen">${optHtml(LIB.batteries,null)}</select>
       <button data-act="addBat" class="pri" type="button" ${P.wrs.length?"":"disabled"}>Zum Projekt hinzufügen</button>
-      ${P.wrs.length?"":`<div class="hint">Erst unter „4 Strings“ einen Wechselrichter anlegen.</div>`}
-      <div class="hint">Geprüft wird die Batteriespannung gegen den Batterieeingang des Hybrid-Wechselrichters. Die Kompatibilitätslisten der Hersteller bleiben maßgeblich.</div></div>`+wbSideHtml();
+      ${P.wrs.length?"":`<div class="hint">Erst unter „Strings“ einen Wechselrichter anlegen.</div>`}
+      <div class="hint">Geprüft wird die Batteriespannung gegen den Batterieeingang des Hybrid-Wechselrichters. Die Kompatibilitätslisten der Hersteller bleiben maßgeblich.</div></div>`+emsSideHtml()+wbSideHtml();
   }
   else if(UI.tab==="unterbau"){ h=subSideHtml(); }
   else if(UI.tab==="angebot"){ h=offerSideHtml(); }
@@ -1718,7 +1842,8 @@ function renderSide(){
   else if(UI.tab==="lib"){
     h=`<div class="sec"><h2>Bibliothek</h2><div class="hint">Module und Wechselrichter werden gespeichert und stehen in allen Projekten zur Verfügung. Die vorgegebenen Werte sind Näherungen. Vor dem Einsatz jeden Eintrag mit dem aktuellen Datenblatt vergleichen und dann „Datenblatt geprüft“ setzen.</div></div>`;
   }
-  $("#sideBody").innerHTML=h; renderNav();
+  if(UI.tab==="export") h+=yieldSideHtml();
+  $("#sideBody").innerHTML=h; if(UI.tab==="vorort") voLoadThumbs(); renderNav();
 }
 
 /* ───────── Ereignisse der Seitenleiste ───────── */
@@ -2427,21 +2552,40 @@ function homeCards(){
     .sort((a,b)=>String(b.updated).localeCompare(String(a.updated)));
   if(!list.length) return `<div class="hint" style="grid-column:1/-1;padding:24px 0">${projList.length?"Keine Projekte gefunden.":"Noch kein Projekt. Lege mit „Neues Projekt“ los."}</div>`;
   return list.map(p=>`<article class="pcard" data-open="${esc(p.id)}" tabindex="0">
-    <div class="prow"><h3>${esc(p.name)}</h3><span class="pill ${STATUS_CLS[p.status]||""}">${esc(p.status)}</span></div>
+    <div class="pthumb" data-thumb="${esc(p.id)}"><span class="pill ${STATUS_CLS[p.status]||""}">${esc(p.status)}</span></div>
+    <div class="pbody">
+    <div class="prow"><h3>${esc(p.name)}</h3></div>
     <div class="hint">${p.kunde?esc(p.kunde):"Kein Kunde eingetragen"}${p.adresse?" · "+esc(p.adresse):""}</div>
     <div class="pfacts"><span><b class="mono">${p.mods}</b> Module</span><span><b class="mono">${fmt(p.kwp,2)}</b> kWp</span>${p.offer?`<span><b class="mono">${eur(p.offer)}</b> netto</span>`:""}${p.termin?`<span>Termin <b class="mono">${fmtDate(p.termin)}</b></span>`:""}</div>
     ${p.note?`<div class="pnote">${esc(p.note)}</div>`:""}
     <div class="hint mono">Erstellt ${fmtDate(p.created)} · Bearbeitet ${fmtDate(p.updated)}</div>
-    <div class="row pact"><button class="pri" data-pa="open" data-id="${esc(p.id)}" type="button">Öffnen</button><button data-pa="edit" data-id="${esc(p.id)}" type="button">Bearbeiten</button><button data-pa="dup" data-id="${esc(p.id)}" type="button">Duplizieren</button>${syncOn()?`<button data-pa="ver" data-id="${esc(p.id)}" type="button">Versionen</button>`:""}<button data-pa="exp" data-id="${esc(p.id)}" type="button">Exportieren</button><button class="dng" data-pa="del" data-id="${esc(p.id)}" type="button">Löschen</button></div></article>`).join("");
+    <div class="row pact"><button class="pri" data-pa="open" data-id="${esc(p.id)}" type="button">Öffnen</button><button data-pa="edit" data-id="${esc(p.id)}" type="button">Bearbeiten</button><button data-pa="dup" data-id="${esc(p.id)}" type="button">Duplizieren</button>${syncOn()?`<button data-pa="ver" data-id="${esc(p.id)}" type="button">Versionen</button>`:""}<button data-pa="exp" data-id="${esc(p.id)}" type="button">Exportieren</button><button class="dng" data-pa="del" data-id="${esc(p.id)}" type="button">Löschen</button></div></div></article>`).join("");
 }
 function renderHome(){
   const el=$("#home");
   el.innerHTML=`<div class="homewrap">${updateBannerHtml()}${installHintHtml()}<div class="homehead"><div><h1>Projekte</h1><div class="hint">${projList.length} Projekt${projList.length===1?"":"e"} · zuletzt bearbeitete zuerst</div><div class="hint" id="syncLine">${syncLineHtml()}</div></div>
     <div class="row"><input id="hQ" type="text" placeholder="Suchen: Name, Kunde, Adresse" value="${esc(HOME.q)}" style="width:240px"><select id="hSt" style="width:auto"><option value="">Alle Status</option>${STATUSES.map(s=>`<option${s===HOME.st?" selected":""}>${s}</option>`).join("")}</select><button data-pa="import" type="button">Projekt importieren</button><input id="hImp" type="file" accept=".json,.dachplaner.json" hidden><button data-pa="test" type="button">Selbsttest</button><button class="pri" data-pa="new" type="button">Neues Projekt</button></div></div>
-    <div class="pgrid" id="pgrid">${homeCards()}</div></div>`;
+    ${kpiHtml()}<div class="pgrid" id="pgrid">${homeCards()}</div></div>`;
+  THUMBS.clear(); loadThumbs(); /* volle Neuanzeige: Bilder frisch laden (können sich per Abgleich geändert haben) */
 }
-$("#home").addEventListener("input",e=>{ if(e.target.id==="hQ"){ HOME.q=e.target.value; $("#pgrid").innerHTML=homeCards(); } });
-$("#home").addEventListener("change",e=>{ if(e.target.id==="hImp"&&e.target.files[0]){ importProjectFile(e.target.files[0]); e.target.value=""; return; } if(e.target.id==="hSt"){ HOME.st=e.target.value; $("#pgrid").innerHTML=homeCards(); } });
+function kpiHtml(){
+  if(!projList.length) return "";
+  const kwp=projList.reduce((a,p)=>a+(+p.kwp||0),0), open=projList.filter(p=>p.status==="Angebot"), vol=open.reduce((a,p)=>a+(+p.offer||0),0);
+  const run=projList.filter(p=>p.status==="Beauftragt"||p.status==="Montage").length;
+  return `<div class="kpis"><div class="kpi"><b>${projList.length}</b><span>Projekte</span></div><div class="kpi sun"><b>${fmt(kwp,1)}</b><span>kWp geplant</span></div>
+    <div class="kpi"><b>${open.length}</b><span>offene Angebote${vol?" · "+eur(vol):""}</span></div><div class="kpi"><b>${run}</b><span>beauftragt / in Montage</span></div></div>`;
+}
+/* Luftbild als Vorschau auf der Projektkarte (aus dem lokalen Speicher, nachträglich geladen) */
+const THUMBS=new Map();
+async function loadThumbs(){
+  for(const el of document.querySelectorAll("#pgrid [data-thumb]")){
+    const id=el.dataset.thumb; let src=THUMBS.get(id);
+    if(src===undefined){ try{ const im=await S.get("projectimg/"+id); src=im&&im.data?im.data:null; }catch(e){ src=null; } THUMBS.set(id,src); }
+    if(src&&el.isConnected) el.style.backgroundImage=`url("${src}")`;
+  }
+}
+$("#home").addEventListener("input",e=>{ if(e.target.id==="hQ"){ HOME.q=e.target.value; $("#pgrid").innerHTML=homeCards(); loadThumbs(); } });
+$("#home").addEventListener("change",e=>{ if(e.target.id==="hImp"&&e.target.files[0]){ importProjectFile(e.target.files[0]); e.target.value=""; return; } if(e.target.id==="hSt"){ HOME.st=e.target.value; $("#pgrid").innerHTML=homeCards(); loadThumbs(); } });
 $("#home").addEventListener("click",e=>{
   const b=e.target.closest("[data-pa]");
   if(b){ const a=b.dataset.pa, id=b.dataset.id; if(a==="sync"||a==="syncnow") e.preventDefault(); if(a==="sync") syncDialog(); else if(a==="syncnow") syncRun(); else if(a==="upd") updateDialog(); else if(a==="ver") versionsDialog(id); else if(a==="installhint"){ try{ localStorage.setItem("pvplan-installhint","aus"); }catch(x){} renderHome(); } else if(a==="test") selfTestModal(); else if(a==="new") newDialog(); else if(a==="import") $("#hImp").click(); else if(a==="exp") exportProject(id); else if(a==="open") openProject(id); else if(a==="edit") editDialog(id); else if(a==="dup") duplicateProject(id); else if(a==="del") deleteDialog(id); return; }
@@ -2458,7 +2602,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.29.3", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.29.2";
+const APP_VERSION="2026.09.29.4", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.29.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -2737,6 +2881,7 @@ async function syncRun(){
       } else await remotePut(id,null,d); /* neu hier, oder hier geändert nachdem es woanders gelöscht wurde */
     }
     const libGot=await libSync();
+    await photoSync();
     if(libGot){ if(UI.tab==="lib"&&typeof renderLib==="function") renderLib(); if(P){ recompute(); renderSide(); draw(); } }
     SYNC.last=Date.now();
     await refreshList(); if(VIEW==="home") renderHome();
@@ -2897,6 +3042,10 @@ function runSelfTests(){
   test("Wallbox 22 kW, 25 m: LS 32 A, 5G10 (0,78 %) · 11 kW, 25 m: LS 16 A, 5G4 (0,97 %)",()=>{
     const a=acCalc(22,3,25,1,true), b=acCalc(11,3,25,1,true); return a.ls===32&&a.A===10&&eq(a.dU,0.778,0.003)&&b.ls===16&&b.A===4&&eq(b.dU,0.972,0.003); });
   test("Kleiner WR 5 kW 3-phasig: mindestens LS 16 A, 5G2,5",()=>{ const d=acCalc(5,3,10,1); return d.ls===16&&d.A===2.5; });
+  test("Ertrag: PVGIS-Raster 49,5° N / 30° / Süd = 1082 kWh/kWp, Nord < Ost < Süd",()=>{
+    const s=(a,b,c)=>pvgisMonthly(a,b,c).reduce((x,y)=>x+y,0); return Math.round(s(49.5,30,0))===1082&&s(49.5,30,180)<s(49.5,30,-90)&&s(49.5,30,-90)<s(49.5,30,0); });
+  test("Autarkie plausibel (HTW-Richtwerte): 10 kWp/4500 kWh ohne Speicher 30–37 %, mit 10 kWh 64–74 %",()=>{
+    const f=[{asp:0,monthly:pvgisMonthly(49.5,35,0).map(v=>v*10)}], a=simulate(f,4500,0,49.5).aut, b=simulate(f,4500,10,49.5).aut; return a>0.30&&a<0.37&&b>0.64&&b<0.74; });
   test("Phasen: Sunny Boy/Primo 1-phasig, Tripower/Symo/Sungrow 3-phasig",()=>
     invPhases({name:"SMA Sunny Boy 5.0"})===1&&invPhases({name:"Fronius Primo 8.2-1"})===1&&invPhases({name:"SMA Sunny Tripower X 15"})===3&&invPhases({name:"Sungrow SH10RT"})===3);
   test("Spannungsfall-Formel (Kupfer, Hin- und Rückleiter)",()=>{
@@ -3197,10 +3346,14 @@ function kanalRows(){
 /* ───────── Energiezähler / Home Manager passend zum Wechselrichter ───────── */
 const METER_MATCH={SMA:{id:"sma-sunny-home-manager-2-0",lan:true},Fronius:{id:"fronius-ts65-3-smart-meter"},Sungrow:{id:"sungrow-smart-meter-dtsu666-20-3-phasig"},Huawei:{id:"huawei-smart-meter-dtsu666-h-100a"}};
 function sysBrand(){ const inv=P.wrs.map(w=>invOf(w.invId)).find(Boolean); return inv?inv.brand:null; }
+/* Sungrow iHomeManager: Energiemanager mit eingebautem Zähler – ersetzt den DTSU666, nötig fürs Überschussladen.
+   P.ems: true/false = bewusst gewählt; nicht gesetzt = automatisch an, sobald eine Sungrow-Wallbox geplant ist. */
+function emsOn(){ if(sysBrand()!=="Sungrow") return false; if(P.ems===true||P.ems===false) return P.ems; const a=P.wb&&P.wb.on?wbPick():null; return !!(a&&/sungrow/i.test(a.name)); }
+function wrHasMeter(){ const wrArt=P.wrs.map(w=>invOf(w.invId)).filter(Boolean).map(inv=>findArt("Wechselrichter",[inv.brand,...modelTokens(inv)])).find(Boolean); return !!(wrArt&&/smart ?meter/i.test(wrArt.name)); }
 function meterPick(){
   const b=sysBrand(), m=b&&METER_MATCH[b]; if(!m) return {art:null,lan:false};
-  const wrArt=P.wrs.map(w=>invOf(w.invId)).filter(Boolean).map(inv=>findArt("Wechselrichter",[inv.brand,...modelTokens(inv)])).find(Boolean);
-  if(wrArt&&/smart ?meter/i.test(wrArt.name)) return {art:null,lan:false,incl:true};
+  if(emsOn()) return {art:artOf("sungrow-ihomemanager"),lan:true,note:"Energiemanager mit eingebautem Zähler, ersetzt den Smart Meter DTSU666"+(wrHasMeter()?" · WR-Paket enthält bereits einen Smart Meter – ggf. WR ohne Smartmeter bestellen":"")};
+  if(wrHasMeter()) return {art:null,lan:false,incl:true};
   return {art:artOf(m.id),lan:!!m.lan,note:b==="SMA"?"nötig für Eigenverbrauchsanzeige, Überschussladen und Einspeiseregelung":"Netzanschlusszähler für Eigenverbrauch und Einspeiseregelung"};
 }
 /* ───────── Wallbox (P.wb = {on, kw, art:"auto"|id, len, ems}) ───────── */
@@ -3212,21 +3365,28 @@ function wbAutoArt(){ const b=sysBrand(), id=b&&WB_MATCH[b]&&WB_MATCH[b][P.wb&&P
 function wbPick(){ const w=P.wb; if(!w||!w.on) return null; return w.art&&w.art!=="auto"?artOf(w.art):wbAutoArt(); }
 function wbLen(){ const v=P.wb&&Number(P.wb.len); return v>0?{m:v,est:false}:{m:WB_LEN_DEFAULT,est:true}; }
 /* Sungrow braucht für Überschussladen den iHomeManager (Zähler integriert); SMA und Fronius regeln über den Zähler aus der Standardliste */
-function wbEmsPick(){ const a=wbPick(); if(!a||!(P.wb&&P.wb.ems!==false)) return null; return /sungrow/i.test(a.name)?artOf("sungrow-ihomemanager"):null; }
+function wbEmsPick(){ return null; } /* iHomeManager läuft jetzt über emsOn()/meterPick(), damit er nicht doppelt kommt */
+function emsSideHtml(){
+  if(sysBrand()!=="Sungrow") return "";
+  return `<div class="sec"><h2>Energiemanagement</h2>
+    <label class="row"><input type="checkbox" data-ems="on" ${emsOn()?"checked":""}> <span>Sungrow iHomeManager statt Smart Meter DTSU666</span></label>
+    <div class="hint">Der iHomeManager hat den Netzzähler eingebaut, der DTSU666 fällt dann weg. Er bindet Wallbox, Wärmepumpe und bis zu 5 Wechselrichter ein und ist fürs PV-Überschussladen der Sungrow-Wallbox nötig.${wrHasMeter()?" Hinweis: Der gewählte Wechselrichter-Artikel enthält bereits einen Smart Meter.":""}</div></div>`;
+}
+side.addEventListener("change",e=>{ const t=e.target; if(!P||t.dataset.ems!=="on") return; P.ems=t.checked; scheduleSave(); renderSide(); });
 function wbSideHtml(){
   const w=P.wb||{}, b=sysBrand(), auto=wbAutoArt();
   if(!w.on) return `<div class="sec"><h2>Wallbox (optional)</h2><label class="row"><input type="checkbox" data-wb="on"> Wallbox mit einplanen</label>
     <div class="hint">Vorschlag passend zum Wechselrichter (${esc(b||"noch kein WR")}), frei änderbar, z. B. wenn der Kunde eine andere möchte.</div></div>`;
-  const d=acCalc(w.kw===22?22:11,3,wbLen().m,Number(SET.acDrop)>0?Number(SET.acDrop):1,true), a=wbPick(), ems=wbEmsPick();
+  const d=acCalc(w.kw===22?22:11,3,wbLen().m,Number(SET.acDrop)>0?Number(SET.acDrop):1,true), a=wbPick();
   const opts=wbArts().sort((x,y)=>x.brand.localeCompare(y.brand)||x.price-y.price).map(x=>`<option value="${esc(x.id)}"${w.art===x.id?" selected":""}>${esc(x.name)} · ${eur(x.price)}</option>`).join("");
   return `<div class="sec"><h2>Wallbox (optional)</h2><label class="row"><input type="checkbox" data-wb="on" checked> Wallbox mit einplanen</label>
     <div class="grid2"><label class="f">Ladeleistung<select data-wb="kw"><option value="11"${w.kw!==22?" selected":""}>11 kW (anzeigepflichtig)</option><option value="22"${w.kw===22?" selected":""}>22 kW (genehmigungspflichtig)</option></select></label>
       ${num("wbLen","Zuleitung Zählerschrank → Wallbox (m)",w.len||"",'data-wb="len" min="0" placeholder="'+WB_LEN_DEFAULT+' (Schätzung)"',0.5)}</div>
     <label class="f">Modell<select data-wb="art"><option value="auto"${!w.art||w.art==="auto"?" selected":""}>Passend zum System: ${auto?esc(auto.name):"keine "+esc(b||"")+"-Wallbox in der Liste"}</option>${opts}</select></label>
-    ${a&&/sungrow/i.test(a.name)?`<label class="row"><input type="checkbox" data-wb="ems" ${w.ems!==false?"checked":""}> Sungrow iHomeManager für PV-Überschussladen mitnehmen</label>`:""}
+
     <div class="stat"><span>Wallbox</span><b>${a?esc(a.brand):"–"}</b><span>Strom</span><b>${fmt(d.inom,1)} A</b><span>Leitungsschutz</span><b>C ${d.ls} A, 3-polig</b><span>Zuleitung</span><b>ÖLFLEX 5G${areaTxt(d.A)}</b><span>Spannungsfall</span><b>${fmt(d.dU,2)} %</b></div>
     <div class="hint">${!a?"":b&&!new RegExp(b,"i").test(a.brand)?"Andere Marke als der Wechselrichter: Für PV-Überschussladen braucht es meist einen eigenen Energiemanager der Wallbox-Marke oder eine Fremdanbindung, bitte Kompatibilität prüfen."
-      :/sma/i.test(a.brand)?"Überschussladen läuft über den Sunny Home Manager 2.0 aus der Standardliste.":/fronius/i.test(a.brand)?"Überschussladen läuft über den Fronius Smart Meter.":ems?"Überschussladen läuft über den iHomeManager.":""}</div></div>`;
+      :/sma/i.test(a.brand)?"Überschussladen läuft über den Sunny Home Manager 2.0 aus der Standardliste.":/fronius/i.test(a.brand)?"Überschussladen läuft über den Fronius Smart Meter.":/sungrow/i.test(a.brand)?(emsOn()?"Überschussladen läuft über den iHomeManager (siehe Energiemanagement).":"Für PV-Überschussladen oben den iHomeManager aktivieren."):""}</div></div>`;
 }
 side.addEventListener("change",e=>{
   const t=e.target, k=t.dataset.wb; if(!P||!k) return; P.wb=P.wb||{on:false,kw:11,art:"auto"};
@@ -3240,7 +3400,7 @@ function stdCounts(){
   const faces=new Set(MODS.map(m=>m.fi)).size;
   const wb=P.wb&&P.wb.on?1:0;
   return {mod:MODS.length,str:P.strings.filter(s=>s.mods.length).length,face:faces,wr:P.wrs.length,wrbat:P.wrs.length+P.bats.length,wb,
-    lan:P.wrs.length+(meterPick().lan?1:0)+wb+(wb&&wbEmsPick()?1:0)+1};
+    lan:P.wrs.length+(meterPick().lan?1:0)+wb+1};
 }
 function stdOfferItems(o){
   const out=[], C=stdCounts(), eaton=SET.pref==="Eaton";
@@ -3443,6 +3603,240 @@ $("#lib").addEventListener("click",e=>{
   else if(k==="reset"){ if(!confirm("Standardliste auf die mitgelieferte Liste zurücksetzen? Eigene Positionen und Änderungen gehen verloren.")) return; delete SET.std; delete SET.stdGone; saveSettings(); }
   renderLib();
 });
+</script>
+<script>
+/* PVGIS 5.3 Monatserträge kWh/kWp (1 kWp, 14 % Verluste, ohne Horizont, lon 10,5°), abgerufen 29.09.2026.
+   Schlüssel: Breite|Neigung|Ausrichtung (0 = Süd, −90 = Ost, +90 = West). Quelle: re.jrc.ec.europa.eu */
+const YIELD_GRID={"47.5|0|0":[32.6,51.9,88.8,108.5,114.0,120.2,120.5,105.7,84.6,62.7,33.1,25.0],"47.5|10|-120":[26.9,45.7,82.1,104.6,112.5,119.8,119.5,103.4,80.2,55.9,28.1,20.3],"47.5|10|-150":[22.2,40.1,76.8,101.2,110.8,118.4,117.9,100.7,76.2,50.4,24.1,16.6],"47.5|10|-30":[43.5,63.2,98.9,114.3,116.4,121.7,122.7,110.2,92.0,73.5,41.8,34.1],"47.5|10|-60":[38.9,58.8,94.7,112.1,115.8,121.9,122.4,108.9,89.3,69.0,38.2,30.3],"47.5|10|-90":[33.0,52.5,88.6,108.6,114.4,121.2,121.3,106.4,85.0,62.7,33.3,25.2],"47.5|10|0":[45.2,64.8,100.4,114.8,116.1,121.0,122.1,110.0,92.6,75.2,43.2,35.5],"47.5|10|120":[26.8,45.1,81.5,103.0,110.1,116.3,116.5,100.6,78.5,55.7,28.1,20.1],"47.5|10|150":[22.1,39.8,76.4,100.3,109.4,116.3,116.1,99.0,75.1,50.3,24.1,16.4],"47.5|10|180":[20.3,37.7,74.6,99.7,109.7,117.2,116.7,99.1,74.3,48.1,22.5,15.0],"47.5|10|30":[43.6,62.9,98.6,113.5,115.0,119.8,121.0,108.6,91.0,73.4,41.8,34.0],"47.5|10|60":[39.1,58.1,94.2,110.6,113.5,118.4,119.4,106.2,87.5,68.8,38.2,30.1],"47.5|10|90":[32.9,51.8,88.0,106.8,111.7,117.1,117.8,103.3,83.0,62.5,33.2,25.0],"47.5|20|-120":[23.2,41.2,75.7,99.4,109.1,117.2,116.3,99.6,75.4,50.0,24.5,17.3],"47.5|20|-150":[15.8,30.1,64.0,91.8,105.3,114.2,112.8,93.5,66.4,38.6,17.4,12.2],"47.5|20|-30":[52.8,72.6,106.5,118.0,117.0,121.4,122.8,112.7,97.3,82.3,49.2,42.1],"47.5|20|-60":[44.3,64.4,99.1,114.0,116.2,122.0,122.8,110.6,92.5,74.0,42.5,34.8],"47.5|20|-90":[33.7,53.5,88.1,107.7,113.3,120.5,120.4,105.9,84.8,62.6,33.6,25.8],"47.5|20|0":[56.3,75.6,109.3,118.6,116.2,119.8,121.5,112.2,98.5,85.4,51.9,44.7],"47.5|20|120":[23.2,40.1,74.4,96.1,104.5,110.2,110.4,94.2,72.0,49.6,24.5,17.0],"47.5|20|150":[15.7,29.5,63.1,89.9,102.5,110.0,109.2,90.2,64.3,38.4,17.4,12.1],"47.5|20|180":[14.5,24.7,58.1,88.4,103.2,111.9,110.5,90.3,61.9,33.0,15.2,12.5],"47.5|20|30":[53.2,71.9,106.1,116.3,114.4,117.6,119.7,109.7,95.5,82.1,49.3,41.8],"47.5|20|60":[44.6,63.3,97.9,111.2,111.6,115.5,117.0,105.4,89.4,73.5,42.5,34.4],"47.5|20|90":[33.8,52.1,86.9,104.1,108.0,112.7,113.6,100.0,80.9,62.2,33.6,25.3],"47.5|30|-120":[21.0,38.2,70.1,93.8,104.5,112.9,111.7,94.8,70.6,45.4,22.0,15.4],"47.5|30|-150":[14.4,23.9,52.4,81.0,97.6,107.5,105.2,84.4,56.5,30.0,14.8,11.8],"47.5|30|-30":[60.3,79.8,111.6,119.3,115.8,119.4,121.3,113.2,100.6,88.8,55.1,48.5],"47.5|30|-60":[48.4,68.7,101.4,114.6,115.1,120.2,121.2,110.8,94.1,77.5,45.6,38.3],"47.5|30|-90":[34.3,54.2,87.2,105.7,111.1,118.2,118.2,104.3,83.8,62.2,33.6,26.2],"47.5|30|0":[65.5,84.2,115.5,120.0,114.2,116.5,118.9,112.1,102.1,93.2,58.9,52.3],"47.5|30|120":[21.1,36.9,68.5,89.2,97.9,102.9,103.2,87.4,66.1,44.9,22.1,15.2],"47.5|30|150":[14.4,23.6,51.4,78.1,93.5,101.3,99.8,79.6,53.8,29.6,14.8,11.8],"47.5|30|180":[14.5,20.1,41.2,74.6,94.4,104.2,101.8,79.1,47.8,22.9,14.9,11.8],"47.5|30|30":[61.0,78.8,111.0,116.9,111.9,114.0,116.4,108.8,98.0,88.5,55.1,48.2],"47.5|30|60":[48.9,66.9,100.2,110.1,108.8,111.6,113.5,103.4,89.6,77.0,45.7,37.7],"47.5|30|90":[34.7,52.1,85.3,100.8,103.8,107.7,108.8,96.2,78.6,61.6,33.8,25.6],"47.5|40|-120":[19.2,35.7,65.1,87.8,98.9,107.2,106.0,89.3,65.6,41.5,20.1,14.0],"47.5|40|-150":[13.3,20.7,43.7,70.4,88.2,98.4,95.3,74.6,47.9,25.1,13.7,10.8],"47.5|40|-30":[65.9,84.9,114.3,118.6,112.4,115.1,117.3,111.5,101.8,93.0,59.4,53.5],"47.5|40|-60":[51.1,71.3,102.3,113.2,112.0,116.9,118.2,108.9,94.2,79.0,47.6,40.7],"47.5|40|-90":[34.5,54.2,85.5,102.5,107.6,114.5,114.6,101.4,81.7,61.0,33.4,26.2],"47.5|40|0":[72.5,90.5,119.1,119.0,110.1,111.2,114.1,109.9,103.5,98.7,64.2,58.2],"47.5|40|120":[19.7,34.5,63.3,82.6,91.0,95.7,95.7,80.8,60.9,40.9,20.2,13.9],"47.5|40|150":[13.3,20.7,43.2,67.0,82.8,90.3,88.3,68.8,45.4,24.9,13.7,10.8],"47.5|40|180":[13.3,19.2,31.1,59.0,83.3,93.9,90.5,65.7,35.0,21.5,13.6,10.8],"47.5|40|30":[66.9,83.6,113.3,115.5,107.8,108.8,111.6,106.3,98.6,92.6,59.5,53.0],"47.5|40|60":[52.0,69.2,100.1,107.8,104.3,106.0,108.7,100.4,88.7,78.4,47.7,40.0],"47.5|40|90":[34.8,52.0,82.9,96.6,98.9,102.0,103.3,91.6,75.9,60.2,33.6,25.5],"47.5|50|-120":[17.4,32.9,59.9,81.2,92.2,100.6,99.1,83.1,60.5,38.0,18.3,12.6],"47.5|50|-150":[11.9,18.3,37.4,60.9,78.1,87.8,84.5,65.1,41.0,21.9,12.2,9.7],"47.5|50|-30":[69.8,87.8,114.3,115.4,107.2,108.9,111.5,107.8,100.8,94.9,62.0,56.9],"47.5|50|-60":[52.6,72.2,100.8,109.6,107.4,111.8,113.3,105.3,92.2,79.1,48.5,42.1],"47.5|50|-90":[34.0,53.5,82.3,98.0,102.4,109.1,109.1,97.0,78.4,59.0,32.5,25.7],"47.5|50|0":[77.5,94.4,119.8,115.4,104.0,104.0,107.1,105.4,102.6,101.6,67.8,62.4],"47.5|50|120":[18.0,32.2,58.4,75.9,83.9,88.0,88.0,74.2,55.8,37.3,18.5,12.5],"47.5|50|150":[11.9,18.4,37.3,58.1,72.5,78.4,76.6,59.8,39.4,21.8,12.2,9.7],"47.5|50|180":[11.9,17.3,28.4,45.3,70.0,81.2,76.8,51.6,29.5,19.3,12.2,9.7],"47.5|50|30":[70.9,86.2,113.1,111.6,101.6,101.5,104.7,101.5,96.9,94.4,62.2,56.3],"47.5|50|60":[53.5,69.8,98.6,103.4,98.7,99.8,102.2,95.4,85.9,78.2,48.5,41.2],"47.5|50|90":[34.5,50.8,79.8,91.5,93.0,95.6,97.0,86.3,71.9,58.3,32.7,24.9],"47.5|60|-120":[15.5,29.9,54.4,73.9,84.5,92.4,90.9,76.0,54.8,34.3,16.3,11.1],"47.5|60|-150":[10.4,15.9,32.2,52.5,68.2,76.7,73.7,56.3,35.2,19.0,10.7,8.4],"47.5|60|-30":[71.7,88.4,111.7,109.8,100.0,100.6,103.5,101.9,97.5,94.5,63.1,58.8],"47.5|60|-60":[52.8,71.6,97.5,104.0,100.6,104.5,106.3,99.7,88.5,77.3,48.2,42.4],"47.5|60|-90":[32.8,51.7,78.2,91.8,95.6,102.2,102.2,91.0,73.9,56.0,31.0,24.6],"47.5|60|0":[80.4,96.0,117.8,109.4,95.9,94.6,97.9,98.6,99.4,102.1,69.7,64.9],"47.5|60|120":[16.3,29.4,53.3,69.0,76.5,79.9,80.1,67.3,50.6,33.7,16.6,11.0],"47.5|60|150":[10.4,16.0,32.2,50.4,63.3,68.1,66.7,52.0,34.2,18.9,10.7,8.4],"47.5|60|180":[10.4,15.2,25.0,37.2,56.8,66.8,62.2,41.1,25.8,16.9,10.6,8.4],"47.5|60|30":[73.0,86.7,110.4,105.6,93.8,92.6,96.0,94.9,93.1,93.9,63.3,58.1],"47.5|60|60":[53.8,68.7,95.0,97.6,91.5,91.9,94.6,89.2,81.9,76.4,48.3,41.3],"47.5|60|90":[33.5,48.9,75.3,85.3,85.8,87.8,89.5,80.1,67.4,55.2,31.2,23.9],"47.5|70|-120":[13.4,26.7,48.4,66.1,75.8,83.2,81.5,68.1,48.8,30.5,14.4,9.6],"47.5|70|-150":[8.9,13.6,27.4,44.8,58.5,65.8,63.0,48.1,30.0,16.2,9.1,7.2],"47.5|70|-30":[71.8,86.9,106.6,101.8,90.6,90.3,93.3,93.6,92.0,91.9,62.7,59.2],"47.5|70|-60":[51.8,69.3,92.3,96.7,92.5,95.7,97.3,92.3,83.2,73.9,46.7,41.6],"47.5|70|-90":[30.7,48.9,72.7,84.5,87.5,93.4,93.4,83.6,68.1,52.1,29.1,23.2],"47.5|70|0":[81.3,95.1,112.9,100.9,85.8,83.4,86.8,89.8,93.8,100.1,69.8,65.7],"47.5|70|120":[14.5,26.4,47.8,61.6,68.4,71.3,71.7,60.1,45.1,29.9,14.6,9.5],"47.5|70|150":[8.9,13.8,27.6,43.4,54.6,58.4,57.5,44.7,29.3,16.2,9.1,7.2],"47.5|70|180":[8.9,13.1,21.6,31.6,45.2,52.5,48.8,34.0,22.2,14.6,9.1,7.2],"47.5|70|30":[73.1,85.0,105.1,97.3,84.3,82.3,85.7,86.5,87.3,91.2,62.8,58.4],"47.5|70|60":[52.7,66.3,89.6,90.0,83.2,83.0,85.7,81.6,76.2,73.0,46.8,40.4],"47.5|70|90":[31.8,46.2,69.8,77.8,78.2,79.7,81.3,72.6,61.5,51.0,29.2,22.4],"47.5|80|-120":[11.5,23.1,42.5,57.8,66.1,72.8,71.2,59.5,42.6,26.6,12.5,8.2],"47.5|80|-150":[7.5,11.4,23.1,37.5,49.5,55.8,53.3,40.6,25.2,13.6,7.6,6.0],"47.5|80|-30":[70.1,83.2,99.0,91.9,79.9,78.6,81.6,83.8,84.6,86.9,60.6,58.0],"47.5|80|-60":[49.5,65.7,85.4,87.2,82.2,84.7,86.2,82.7,75.6,68.5,44.3,39.8],"47.5|80|-90":[28.4,44.9,65.6,75.5,77.7,83.0,82.9,74.6,61.4,47.5,26.6,21.3],"47.5|80|0":[80.0,91.9,105.3,90.0,73.9,70.3,73.7,78.8,86.0,95.6,68.2,64.9],"47.5|80|120":[12.3,23.2,41.8,54.2,59.6,62.0,62.6,52.9,39.5,25.9,12.7,8.0],"47.5|80|150":[7.5,11.6,23.2,36.8,46.5,49.6,49.0,37.8,24.8,13.6,7.6,6.0],"47.5|80|180":[7.5,11.0,18.2,26.5,37.2,42.6,39.8,28.3,18.8,12.2,7.6,6.0],"47.5|80|30":[71.4,81.2,97.4,87.2,73.3,70.2,73.4,76.3,79.6,86.2,60.8,57.2],"47.5|80|60":[50.3,62.3,82.2,80.7,73.3,72.7,75.3,72.5,68.9,68.0,44.3,38.6],"47.5|80|90":[29.3,42.5,63.6,69.8,69.1,70.2,71.9,64.9,55.5,46.5,26.8,20.5],"47.5|90|-120":[9.7,19.9,35.9,48.8,56.6,63.2,61.7,50.9,36.2,22.8,10.2,6.6],"47.5|90|-150":[6.1,9.4,18.9,31.4,40.9,46.1,43.9,33.7,20.7,11.2,6.2,4.9],"47.5|90|-30":[66.5,77.4,89.1,79.8,67.0,64.8,67.6,71.7,75.3,79.8,57.0,55.3],"47.5|90|-60":[46.0,60.6,76.3,76.8,71.6,73.4,74.8,72.7,67.5,62.2,40.5,37.0],"47.5|90|-90":[25.4,40.4,58.2,66.4,68.1,72.8,72.6,65.6,53.9,41.6,23.3,18.9],"47.5|90|0":[76.7,86.3,94.9,76.8,60.0,56.0,59.0,65.9,75.9,88.6,64.8,62.5],"47.5|90|120":[10.5,19.6,36.0,46.2,50.5,52.4,53.2,44.9,33.7,22.2,10.7,6.4],"47.5|90|150":[6.1,9.6,19.2,30.6,38.8,41.2,40.9,31.7,20.5,11.2,6.2,4.9],"47.5|90|180":[6.1,9.1,15.2,21.9,30.7,34.5,32.5,23.3,15.6,10.1,6.2,4.9],"47.5|90|30":[67.8,75.4,87.5,74.8,61.1,58.1,61.0,64.5,70.2,79.1,57.2,54.5],"47.5|90|60":[46.8,57.2,73.8,70.8,62.8,61.2,63.7,62.6,61.0,61.2,40.9,35.8],"47.5|90|90":[26.5,38.3,55.9,60.1,59.0,59.7,61.5,55.7,48.2,41.4,24.0,18.1],"48.5|0|0":[22.8,40.9,77.5,108.1,124.4,135.7,136.8,116.6,86.0,52.2,25.9,19.0],"48.5|10|-120":[19.6,36.3,71.6,103.3,121.4,132.7,133.0,111.8,79.9,46.6,22.5,15.9],"48.5|10|-150":[17.2,32.5,67.2,99.9,119.5,131.6,131.7,109.0,76.0,42.8,20.0,13.6],"48.5|10|-30":[28.6,48.5,86.1,114.2,127.3,137.0,138.8,121.5,93.4,59.9,31.4,25.0],"48.5|10|-60":[26.1,45.3,82.3,111.6,126.0,136.1,137.4,119.0,89.8,56.3,29.0,22.5],"48.5|10|-90":[22.9,40.9,77.2,107.7,123.8,134.3,135.3,115.5,85.0,51.5,25.8,19.1],"48.5|10|0":[29.5,49.7,87.4,115.0,127.5,137.3,139.3,122.4,94.9,61.5,32.5,25.9],"48.5|10|120":[19.6,36.3,71.5,102.6,120.5,132.7,133.4,111.9,80.7,47.6,22.9,15.8],"48.5|10|150":[17.1,32.5,67.1,99.5,119.0,131.6,131.9,109.2,76.5,43.4,20.2,13.5],"48.5|10|180":[16.2,31.0,65.5,98.5,118.7,131.2,131.3,108.1,74.7,41.4,19.1,12.6],"48.5|10|30":[28.6,48.5,86.0,113.9,126.7,137.0,139.0,121.6,93.9,60.6,31.7,24.9],"48.5|10|60":[26.2,45.3,82.3,111.0,125.0,135.9,137.6,119.2,90.6,57.5,29.4,22.3],"48.5|10|90":[22.8,40.9,77.0,106.8,122.8,134.3,135.6,115.7,85.9,52.8,26.3,19.0],"48.5|20|-120":[17.6,32.7,65.8,97.3,116.3,127.1,126.8,105.4,73.6,41.9,20.1,13.9],"48.5|20|-150":[13.8,25.3,56.1,89.5,112.0,124.6,123.5,98.9,64.8,34.0,16.0,10.9],"48.5|20|-30":[33.6,54.8,92.5,118.3,128.0,136.2,138.6,124.2,98.7,66.1,36.1,30.2],"48.5|20|-60":[29.0,48.9,85.9,113.5,126.0,134.8,136.5,119.9,92.4,59.5,31.6,25.4],"48.5|20|-90":[23.2,41.1,76.4,106.2,121.7,131.4,132.2,113.2,83.5,50.9,25.8,19.4],"48.5|20|0":[35.5,57.1,95.1,119.5,128.3,136.6,139.3,125.7,101.5,69.1,38.2,31.9],"48.5|20|120":[17.5,32.7,65.5,95.8,114.5,126.9,127.4,105.5,74.9,43.5,20.7,13.8],"48.5|20|150":[13.7,25.4,55.9,88.6,111.0,124.6,124.0,99.1,65.6,34.8,16.1,10.9],"48.5|20|180":[13.4,22.0,51.5,86.3,110.5,124.0,122.9,96.9,61.3,30.3,14.8,11.4],"48.5|20|30":[33.7,54.8,92.4,117.5,127.0,135.9,138.9,124.3,99.6,67.4,36.7,30.0],"48.5|20|60":[29.0,48.9,85.6,112.2,124.1,134.4,136.5,120.0,93.9,61.5,32.5,25.0],"48.5|20|90":[23.1,41.1,76.1,104.6,119.5,131.0,132.3,113.3,85.0,53.1,26.7,19.1],"48.5|30|-120":[16.1,30.0,60.7,91.1,109.9,119.9,119.4,98.5,67.9,38.3,18.5,12.7],"48.5|30|-150":[12.9,21.0,46.3,77.7,102.0,114.7,112.5,86.9,53.9,27.8,14.4,10.7],"48.5|30|-30":[37.6,59.6,96.8,119.8,126.8,133.6,136.5,124.7,101.9,70.6,39.9,34.5],"48.5|30|-60":[31.1,51.5,87.7,113.9,124.4,131.6,133.6,119.4,93.4,61.5,33.3,27.7],"48.5|30|-90":[23.2,41.0,75.2,104.0,118.4,127.3,128.1,110.2,81.7,50.2,25.6,19.6],"48.5|30|0":[40.3,62.9,100.4,121.4,126.6,133.4,136.8,126.3,105.7,74.9,42.8,36.9],"48.5|30|120":[16.1,30.0,60.3,88.9,107.5,119.4,119.9,98.4,69.4,40.2,19.1,12.5],"48.5|30|150":[12.9,21.0,46.0,76.4,100.5,114.6,113.0,87.0,54.8,28.4,14.4,10.7],"48.5|30|180":[12.9,18.9,37.5,71.6,99.5,113.9,111.6,83.1,46.3,23.2,14.4,10.7],"48.5|30|30":[37.8,59.5,96.8,118.7,125.1,133.0,136.2,124.5,103.2,72.4,40.6,34.1],"48.5|30|60":[31.2,51.4,87.5,111.8,121.8,131.3,133.9,119.1,95.2,64.4,34.6,27.1],"48.5|30|90":[23.3,40.9,74.7,101.7,115.5,126.5,128.0,110.1,83.6,53.0,26.9,19.2],"48.5|40|-120":[14.7,27.7,56.1,84.8,103.0,112.0,111.5,91.5,62.5,35.2,17.1,11.6],"48.5|40|-150":[11.8,18.6,39.1,66.6,90.1,102.0,99.0,74.6,45.2,24.3,13.2,9.7],"48.5|40|-30":[40.5,62.9,99.0,119.2,123.1,128.2,131.7,122.7,103.1,73.3,42.5,37.8],"48.5|40|-60":[32.4,52.9,88.2,112.5,120.6,127.0,129.4,116.7,93.1,62.1,34.4,29.3],"48.5|40|-90":[23.0,40.4,73.3,100.5,114.0,122.0,122.9,106.1,79.2,48.8,25.2,19.4],"48.5|40|0":[44.0,67.1,103.4,120.8,122.5,127.6,131.6,124.4,107.6,78.9,46.2,40.8],"48.5|40|120":[14.9,27.7,55.6,82.4,99.9,111.5,111.7,91.4,64.3,37.2,17.7,11.4],"48.5|40|150":[11.8,18.6,38.9,65.1,88.1,101.8,99.5,74.6,46.2,24.6,13.2,9.7],"48.5|40|180":[11.8,17.7,29.6,55.2,85.9,100.8,97.1,66.7,33.4,21.8,13.2,9.7],"48.5|40|30":[40.8,62.7,98.8,117.9,121.2,127.8,131.7,122.8,104.7,75.7,43.5,37.2],"48.5|40|60":[32.6,52.8,87.5,110.0,117.6,126.0,129.5,116.7,95.3,65.8,36.0,28.6],"48.5|40|90":[23.0,40.4,72.6,97.9,110.5,120.9,122.7,105.8,81.4,52.1,26.7,18.9],"48.5|50|-120":[13.3,25.4,51.4,78.2,95.3,103.8,103.1,84.2,57.2,32.2,15.6,10.4],"48.5|50|-150":[10.6,16.6,33.8,57.3,78.4,88.1,85.3,64.1,38.7,21.4,11.8,8.7],"48.5|50|-30":[42.4,64.6,98.9,116.1,117.4,121.0,124.8,118.5,101.8,74.3,44.0,40.0],"48.5|50|-60":[32.9,53.1,86.6,108.9,115.4,120.7,123.3,112.4,90.8,61.7,34.7,30.1],"48.5|50|-90":[22.2,39.2,70.2,96.0,108.2,115.0,116.1,100.8,75.5,47.0,24.3,18.9],"48.5|50|0":[46.4,69.6,104.0,117.5,116.0,119.4,123.7,119.8,107.0,80.9,48.4,43.5],"48.5|50|120":[13.5,25.4,51.1,75.9,92.2,103.0,103.4,84.3,59.3,34.2,16.1,10.2],"48.5|50|150":[10.6,16.6,33.7,56.1,76.4,87.8,85.9,64.3,40.0,21.6,11.8,8.7],"48.5|50|180":[10.6,15.9,26.9,41.7,70.0,84.5,79.6,50.2,28.7,19.6,11.8,8.7],"48.5|50|30":[42.8,64.4,98.6,114.3,115.0,120.0,124.2,118.2,103.6,77.0,45.2,39.4],"48.5|50|60":[33.2,53.0,86.1,105.9,111.8,119.5,122.8,111.8,93.1,65.7,36.5,29.2],"48.5|50|90":[22.4,39.0,69.6,93.0,104.5,114.1,116.3,100.5,77.9,50.6,25.9,18.2],"48.5|60|-120":[11.8,23.0,46.5,71.0,86.9,94.4,93.8,76.4,51.7,29.1,13.8,9.2],"48.5|60|-150":[9.2,14.4,29.2,49.3,67.8,76.0,73.5,55.0,33.3,18.7,10.3,7.6],"48.5|60|-30":[43.1,64.7,96.5,110.5,109.2,111.3,115.3,111.7,98.4,73.5,44.5,41.1],"48.5|60|-60":[32.6,52.2,83.4,103.3,107.9,112.2,115.0,105.8,86.8,59.9,34.1,30.1],"48.5|60|-90":[21.1,37.4,66.2,89.8,100.6,106.8,108.0,93.9,70.8,44.2,23.0,17.9],"48.5|60|0":[47.7,70.3,102.2,111.6,107.1,108.7,113.2,112.5,103.9,80.9,49.4,45.1],"48.5|60|120":[12.1,22.9,46.2,69.0,84.1,93.9,94.6,76.7,54.1,31.0,14.5,9.0],"48.5|60|150":[9.2,14.5,29.2,48.6,66.3,76.1,74.6,55.5,34.6,18.9,10.3,7.6],"48.5|60|180":[9.2,13.9,23.7,34.6,55.1,67.0,62.0,39.8,25.1,17.2,10.3,7.6],"48.5|60|30":[43.6,64.5,96.3,108.5,106.5,110.0,114.6,111.2,100.3,76.6,45.8,40.4],"48.5|60|60":[33.0,52.0,82.9,100.3,104.3,110.9,114.7,105.5,89.4,64.2,36.1,29.1],"48.5|60|90":[21.3,37.1,65.5,87.0,96.9,105.7,108.2,94.0,73.5,48.1,24.7,17.2],"48.5|70|-120":[10.2,20.4,41.3,63.4,77.6,84.2,83.7,68.2,45.8,25.7,12.2,8.0],"48.5|70|-150":[7.8,12.3,24.9,42.1,58.0,64.7,62.6,46.8,28.4,16.0,8.8,6.4],"48.5|70|-30":[42.9,63.3,92.0,102.5,98.8,99.4,103.5,102.3,92.8,71.1,43.9,41.2],"48.5|70|-60":[31.6,50.0,78.6,96.0,98.9,102.0,104.8,97.5,81.2,56.8,32.8,29.4],"48.5|70|-90":[19.5,34.8,61.2,82.6,91.8,97.1,98.3,85.9,65.0,40.9,21.3,16.7],"48.5|70|0":[47.8,69.4,97.9,103.1,95.8,95.6,100.2,102.5,98.3,79.0,49.2,45.5],"48.5|70|120":[10.6,20.3,41.1,61.6,75.3,84.2,85.1,68.5,48.5,27.6,12.7,7.8],"48.5|70|150":[7.8,12.4,24.9,41.7,57.1,65.3,64.2,47.6,29.7,16.2,8.8,6.4],"48.5|70|180":[7.8,12.0,20.4,29.3,44.0,52.0,48.4,33.0,21.6,14.8,8.8,6.4],"48.5|70|30":[43.4,63.0,91.6,100.4,96.0,98.2,102.8,102.0,94.7,74.3,45.2,40.5],"48.5|70|60":[32.0,49.9,78.1,92.9,95.2,100.8,104.7,97.3,83.9,61.4,35.0,28.3],"48.5|70|90":[19.9,34.6,60.5,79.6,88.5,96.4,99.0,85.8,67.6,44.5,22.9,16.0],"48.5|80|-120":[8.7,17.5,36.1,55.6,67.7,73.2,72.7,59.3,39.8,22.3,10.5,6.8],"48.5|80|-150":[6.5,10.3,21.0,35.3,49.0,54.4,52.6,39.3,23.8,13.4,7.3,5.3],"48.5|80|-30":[41.5,60.3,85.2,92.3,86.7,85.9,90.0,91.2,85.0,66.8,42.1,40.3],"48.5|80|-60":[29.9,46.9,72.3,86.5,87.6,89.6,92.4,86.8,73.6,52.2,30.9,28.0],"48.5|80|-90":[17.7,31.6,55.0,73.8,81.4,85.7,86.9,76.3,58.4,37.0,19.4,15.2],"48.5|80|0":[46.7,66.7,91.3,92.1,82.4,80.2,84.6,90.2,90.3,75.2,47.8,44.7],"48.5|80|120":[8.9,17.7,35.8,54.1,65.8,73.7,74.7,60.5,42.4,23.9,10.9,6.4],"48.5|80|150":[6.5,10.4,21.0,35.3,48.5,55.4,54.6,40.2,25.1,13.6,7.4,5.3],"48.5|80|180":[6.5,10.0,17.2,24.6,36.3,41.9,39.4,27.5,18.3,12.4,7.3,5.3],"48.5|80|30":[42.0,60.0,84.9,90.2,83.8,83.8,88.4,90.6,86.9,70.3,43.6,39.5],"48.5|80|60":[30.2,46.5,71.4,83.5,84.2,88.7,92.7,87.2,76.4,57.3,33.1,26.9],"48.5|80|90":[17.9,31.2,54.8,71.5,78.5,85.5,88.2,77.1,61.4,40.7,20.9,14.5],"48.5|90|-120":[7.2,15.0,30.4,47.0,57.6,63.1,62.7,50.4,33.8,19.0,8.5,5.4],"48.5|90|-150":[5.3,8.5,17.2,29.4,40.5,44.7,43.1,32.5,19.4,11.1,6.0,4.3],"48.5|90|-30":[39.1,55.8,76.5,80.1,72.3,70.1,74.0,77.7,75.4,61.0,39.4,38.3],"48.5|90|-60":[27.5,42.8,64.2,75.9,76.0,77.0,79.7,75.9,65.4,47.2,27.9,25.9],"48.5|90|-90":[15.7,28.1,48.5,64.8,71.1,74.5,75.7,66.7,51.0,32.1,16.8,13.4],"48.5|90|0":[44.5,62.4,82.3,78.7,66.6,63.1,67.2,75.3,79.9,69.5,45.2,42.9],"48.5|90|120":[7.5,14.8,30.7,46.2,55.9,62.5,63.7,51.5,36.5,20.5,9.2,5.2],"48.5|90|150":[5.3,8.6,17.4,29.3,40.5,46.0,45.5,33.5,20.8,11.3,6.0,4.3],"48.5|90|180":[5.3,8.3,14.3,20.3,29.9,34.2,32.0,22.6,15.2,10.2,6.0,4.3],"48.5|90|30":[39.6,55.6,76.3,77.6,69.7,69.1,73.4,77.0,77.2,64.5,40.9,37.5],"48.5|90|60":[27.7,42.4,63.9,73.4,72.5,75.0,78.9,75.7,68.1,51.6,30.4,24.8],"48.5|90|90":[15.9,27.7,47.7,61.7,67.2,73.2,75.9,66.5,53.7,36.2,18.7,12.6],"49.5|0|0":[19.6,36.6,72.2,108.2,128.4,136.0,135.7,113.6,85.6,51.1,23.8,16.0],"49.5|10|-120":[17.2,32.7,67.0,103.4,125.3,133.0,132.3,109.2,80.1,45.8,20.7,13.6],"49.5|10|-150":[15.2,29.4,62.9,99.8,123.2,131.9,130.8,106.5,75.8,41.6,18.2,11.7],"49.5|10|-30":[24.5,43.3,80.2,114.6,131.8,137.3,137.9,118.4,93.6,59.4,29.4,20.9],"49.5|10|-60":[22.5,40.6,76.8,112.0,130.3,136.4,136.7,116.1,90.2,55.8,27.0,18.9],"49.5|10|-90":[19.9,36.8,72.1,107.9,128.0,134.6,134.6,112.8,85.3,50.9,23.9,16.2],"49.5|10|0":[25.2,44.3,81.3,115.4,131.9,137.6,138.3,119.2,94.8,60.8,30.2,21.6],"49.5|10|120":[17.0,32.6,66.5,102.4,124.0,132.9,132.2,109.0,79.7,45.9,20.7,13.4],"49.5|10|150":[15.1,29.3,62.5,99.3,122.5,131.9,130.7,106.4,75.6,41.7,18.2,11.6],"49.5|10|180":[14.3,28.1,61.1,98.3,122.2,131.5,130.3,105.5,74.2,39.9,17.2,11.0],"49.5|10|30":[24.4,43.3,79.9,114.2,131.0,137.3,137.8,118.3,93.4,59.5,29.4,20.7],"49.5|10|60":[22.3,40.5,76.4,111.1,129.0,136.2,136.4,116.0,89.8,56.0,27.0,18.6],"49.5|10|90":[19.6,36.6,71.6,106.8,126.5,134.6,134.3,112.6,84.9,51.1,23.9,15.9],"49.5|20|-120":[15.7,29.7,62.1,97.5,120.0,127.5,126.5,103.4,74.4,41.3,18.5,12.1],"49.5|20|-150":[12.7,23.3,53.0,89.3,115.2,124.9,123.0,97.0,64.8,32.8,14.4,9.8],"49.5|20|-30":[28.8,48.9,86.2,119.0,132.8,136.6,138.0,121.1,99.5,66.1,34.1,25.4],"49.5|20|-60":[25.1,43.8,80.4,114.1,130.7,135.2,136.2,117.3,93.5,59.6,29.7,21.5],"49.5|20|-90":[20.3,37.0,71.8,106.7,126.0,131.9,132.0,111.0,84.6,50.8,24.1,16.6],"49.5|20|0":[30.2,50.8,88.3,120.1,133.0,136.9,138.4,122.3,101.6,68.7,35.8,26.6],"49.5|20|120":[15.4,29.5,61.1,95.5,117.4,127.2,126.0,102.8,73.5,41.5,18.5,11.8],"49.5|20|150":[12.7,23.2,52.3,88.1,113.8,124.8,122.8,96.8,64.3,32.9,14.4,9.9],"49.5|20|180":[12.6,20.4,48.5,85.9,113.3,124.3,122.0,94.9,60.6,28.7,13.5,10.2],"49.5|20|30":[28.6,48.7,85.7,117.9,131.3,136.3,137.7,120.8,99.0,66.3,34.1,24.9],"49.5|20|60":[24.6,43.6,79.3,112.4,128.0,134.8,135.2,116.6,92.8,59.9,29.8,20.8],"49.5|20|90":[19.8,36.7,70.7,104.5,122.9,131.4,131.0,110.3,83.6,51.1,24.1,15.9],"49.5|30|-120":[14.6,27.4,57.7,91.4,113.6,120.5,119.5,97.3,69.2,37.9,17.0,11.1],"49.5|30|-150":[12.0,19.6,44.3,77.5,104.7,115.0,112.3,85.8,54.3,26.8,13.1,9.5],"49.5|30|-30":[32.2,53.1,90.2,120.8,131.9,134.0,136.2,121.8,103.2,71.1,37.9,28.9],"49.5|30|-60":[26.9,46.1,82.2,114.8,129.4,132.2,133.7,117.1,95.1,62.2,31.7,23.5],"49.5|30|-90":[20.5,37.0,71.0,104.7,123.0,128.0,128.4,108.5,83.4,50.5,24.1,16.8],"49.5|30|0":[34.2,55.9,93.2,122.3,131.5,133.8,136.1,122.9,106.1,74.8,40.3,30.8],"49.5|30|120":[14.4,27.1,56.5,88.7,109.8,119.8,118.6,96.2,68.0,38.1,17.0,10.8],"49.5|30|150":[12.0,19.6,43.6,75.8,102.4,114.8,111.9,85.3,53.6,26.9,13.1,9.5],"49.5|30|180":[12.0,18.0,35.9,71.0,101.7,114.3,110.8,81.7,45.6,22.2,13.1,9.5],"49.5|30|30":[31.9,52.9,89.6,119.3,129.5,133.5,135.2,121.0,102.6,71.5,37.9,28.3],"49.5|30|60":[26.4,45.6,81.1,112.1,125.6,131.8,132.7,115.8,93.9,62.6,31.7,22.4],"49.5|30|90":[20.0,36.5,69.5,101.7,118.6,127.0,126.7,107.4,82.0,50.9,24.1,16.0],"49.5|40|-120":[13.5,25.4,53.7,85.4,106.6,113.0,112.2,91.1,64.3,35.0,15.6,10.2],"49.5|40|-150":[11.0,17.5,37.8,66.6,92.3,102.5,99.2,74.5,46.1,23.4,12.0,8.7],"49.5|40|-30":[34.7,55.9,92.3,120.4,128.4,128.8,131.7,120.0,104.8,74.3,40.6,31.7],"49.5|40|-60":[28.1,47.3,82.9,113.6,125.8,128.0,129.9,114.8,95.3,63.3,33.0,24.9],"49.5|40|-90":[20.4,36.5,69.5,101.5,118.7,123.0,123.5,105.1,81.4,49.5,23.9,16.7],"49.5|40|0":[37.3,59.5,96.0,121.8,127.4,128.1,131.0,121.0,108.2,79.1,43.7,34.0],"49.5|40|120":[13.3,25.1,52.4,82.4,102.0,112.3,110.7,89.9,63.1,35.3,15.7,9.9],"49.5|40|150":[11.0,17.5,37.4,64.8,89.3,102.1,98.6,73.9,45.7,23.5,12.0,8.7],"49.5|40|180":[11.0,16.8,29.1,54.5,87.2,101.1,96.6,66.3,33.6,21.1,12.0,8.7],"49.5|40|30":[34.4,55.6,91.4,118.6,125.6,128.4,130.7,119.3,104.0,74.8,40.6,30.8],"49.5|40|60":[27.4,46.9,81.0,110.4,121.3,126.8,128.3,113.5,93.9,63.8,32.9,23.6],"49.5|40|90":[19.8,36.0,67.6,98.0,113.5,121.8,121.5,103.5,79.8,49.9,23.8,15.7],"49.5|50|-120":[12.2,23.3,49.4,78.9,98.9,105.0,104.0,84.3,59.3,32.0,14.2,9.2],"49.5|50|-150":[9.8,15.6,32.9,57.6,80.4,89.0,86.2,64.8,39.8,20.7,10.7,7.7],"49.5|50|-30":[36.3,57.4,92.3,117.5,122.8,121.8,125.2,116.1,103.9,75.7,42.3,33.6],"49.5|50|-60":[28.6,47.5,81.6,110.3,120.7,121.9,124.1,111.0,93.4,63.3,33.4,25.6],"49.5|50|-90":[19.9,35.4,66.8,97.1,112.8,116.4,117.0,100.3,78.1,47.8,23.1,16.3],"49.5|50|0":[39.4,61.6,96.5,118.7,120.9,120.0,123.4,116.6,107.7,81.4,46.0,36.2],"49.5|50|120":[12.1,23.1,48.3,76.1,94.3,104.0,102.7,83.4,58.4,32.4,14.3,8.9],"49.5|50|150":[9.8,15.6,32.7,56.3,77.5,88.5,85.5,64.6,39.8,20.8,10.7,7.7],"49.5|50|180":[9.8,15.1,26.6,41.8,70.5,85.0,79.7,51.1,29.3,19.0,10.7,7.7],"49.5|50|30":[36.0,57.0,91.2,115.2,119.2,120.8,123.5,114.8,103.0,76.2,42.3,32.6],"49.5|50|60":[27.9,46.9,79.7,106.4,115.4,120.5,121.9,109.0,91.7,63.7,33.3,24.0],"49.5|50|90":[19.2,34.8,64.9,93.3,107.3,115.3,115.3,98.5,76.5,48.3,23.1,15.1],"49.5|60|-120":[10.9,21.0,44.9,71.9,90.2,95.9,94.9,76.9,53.9,29.0,12.6,8.1],"49.5|60|-150":[8.5,13.6,28.5,49.8,69.6,77.4,74.7,56.0,34.3,18.0,9.3,6.7],"49.5|60|-30":[37.0,57.5,90.2,112.1,114.5,112.3,116.0,109.7,100.7,75.3,42.9,34.5],"49.5|60|-60":[28.4,46.6,78.8,104.8,113.2,113.6,116.0,104.9,89.8,61.8,33.1,25.6],"49.5|60|-90":[18.9,33.7,63.1,91.2,105.2,108.4,109.0,93.8,73.8,45.3,21.9,15.5],"49.5|60|0":[40.5,62.2,94.8,113.0,111.8,109.4,113.2,109.7,104.8,81.7,47.1,37.5],"49.5|60|120":[10.8,20.8,43.9,69.4,86.0,95.3,94.0,76.4,53.3,29.4,12.8,7.8],"49.5|60|150":[8.5,13.7,28.4,48.9,67.5,77.3,74.6,56.5,34.6,18.1,9.4,6.7],"49.5|60|180":[8.5,13.2,23.4,35.1,55.6,67.9,62.9,41.4,25.8,16.7,9.3,6.7],"49.5|60|30":[36.6,57.1,88.9,109.5,110.6,111.0,114.1,108.2,99.7,75.8,42.9,33.4],"49.5|60|60":[27.6,46.0,76.8,101.0,107.7,112.2,113.9,103.0,88.1,62.3,33.0,23.9],"49.5|60|90":[18.3,33.1,61.2,87.5,99.7,107.1,107.4,92.5,72.2,45.8,21.9,14.3],"49.5|70|-120":[9.4,18.7,40.0,64.3,80.8,85.9,85.0,68.8,48.0,25.6,11.1,7.0],"49.5|70|-150":[7.3,11.6,24.4,42.6,59.6,66.2,64.1,47.9,29.3,15.4,8.0,5.7],"49.5|70|-30":[36.8,56.2,86.0,104.2,103.8,100.6,104.4,100.8,95.4,73.1,42.5,34.6],"49.5|70|-60":[27.7,44.6,74.4,97.6,104.0,103.5,105.9,97.0,84.5,59.0,32.0,25.1],"49.5|70|-90":[17.6,31.3,58.5,84.0,96.2,98.8,99.5,86.1,68.1,42.0,20.4,14.5],"49.5|70|0":[40.6,61.4,90.9,104.6,100.2,96.5,100.6,100.1,99.4,80.0,47.0,37.9],"49.5|70|120":[9.5,18.5,39.1,62.0,77.2,85.7,84.6,68.5,47.9,26.2,11.2,6.8],"49.5|70|150":[7.3,11.7,24.4,42.1,58.3,66.7,64.5,48.9,29.8,15.5,8.0,5.7],"49.5|70|180":[7.3,11.3,20.1,29.9,44.9,53.5,49.9,34.6,22.2,14.3,8.0,5.7],"49.5|70|30":[36.4,55.7,84.6,101.4,99.8,99.3,102.6,99.3,94.1,73.7,42.5,33.4],"49.5|70|60":[26.8,44.1,72.4,93.7,98.4,102.2,104.1,95.2,82.7,59.5,31.9,23.3],"49.5|70|90":[17.1,30.8,56.5,80.2,91.1,97.9,98.3,84.6,66.5,42.4,20.3,13.2],"49.5|80|-120":[8.0,16.0,35.0,56.6,70.5,75.0,74.1,60.1,41.9,22.3,9.6,6.0],"49.5|80|-150":[6.0,9.7,20.5,35.8,50.4,56.0,54.1,40.3,24.7,13.0,6.6,4.7],"49.5|80|-30":[35.7,53.5,79.9,94.2,91.4,87.2,91.2,90.2,87.7,69.0,41.0,33.9],"49.5|80|-60":[26.2,41.9,68.7,88.2,92.3,91.2,93.5,86.7,76.9,54.5,30.2,23.9],"49.5|80|-90":[16.1,28.4,52.7,75.3,85.5,87.5,88.1,76.7,61.5,38.2,18.6,13.2],"49.5|80|0":[39.6,59.0,84.8,93.7,86.5,81.3,85.5,88.3,91.5,76.3,45.7,37.2],"49.5|80|120":[7.9,16.0,34.2,54.6,67.7,75.2,74.4,60.9,41.8,22.7,9.6,5.6],"49.5|80|150":[6.0,9.8,20.5,35.8,49.6,56.9,55.0,41.6,25.2,13.1,6.6,4.7],"49.5|80|180":[6.0,9.5,17.0,25.1,37.1,43.4,41.0,29.0,18.7,12.0,6.6,4.7],"49.5|80|30":[35.2,53.0,78.5,91.3,87.3,85.1,88.5,88.5,86.4,69.7,41.0,32.6],"49.5|80|60":[25.2,41.0,66.2,84.4,87.1,90.3,92.2,85.5,75.4,55.5,30.1,22.1],"49.5|80|90":[15.3,27.8,51.3,72.2,80.9,87.1,87.5,76.3,60.4,38.7,18.5,12.0],"49.5|90|-120":[6.7,13.6,29.6,47.9,59.8,64.8,64.1,51.1,35.8,19.0,7.7,4.7],"49.5|90|-150":[4.9,8.0,16.8,29.8,41.7,46.3,44.6,33.5,20.2,10.7,5.4,3.8],"49.5|90|-30":[33.7,49.6,71.9,82.0,76.5,71.6,75.3,77.5,78.2,63.4,38.5,32.2],"49.5|90|-60":[24.2,38.2,61.2,77.7,80.3,78.7,80.9,76.1,68.8,49.5,27.5,22.2],"49.5|90|-90":[14.3,25.3,46.7,66.3,74.7,76.3,76.9,67.3,54.0,33.3,16.1,11.7],"49.5|90|0":[37.7,55.2,76.5,80.4,70.2,64.5,68.6,74.2,81.2,70.7,43.3,35.7],"49.5|90|120":[6.6,13.4,29.3,46.8,57.5,64.1,63.5,52.1,36.1,19.5,8.1,4.5],"49.5|90|150":[4.9,8.1,17.0,29.7,41.6,47.5,46.2,34.7,20.9,10.8,5.4,3.8],"49.5|90|180":[4.9,7.8,14.1,20.7,30.6,35.6,33.3,23.9,15.6,9.9,5.4,3.8],"49.5|90|30":[33.2,49.1,70.5,78.8,72.7,70.5,73.9,75.4,76.8,63.9,38.5,30.9],"49.5|90|60":[23.1,37.4,59.4,74.4,75.4,76.6,78.6,74.7,67.2,50.0,27.6,20.3],"49.5|90|90":[13.6,24.7,44.7,62.5,69.4,74.8,75.3,66.2,53.0,34.5,16.5,10.3],"50.5|0|0":[17.2,33.4,68.4,105.2,126.6,132.7,130.7,109.4,81.3,45.4,19.7,13.2],"50.5|10|-120":[15.0,29.8,63.1,100.5,123.5,129.9,127.2,105.3,75.8,40.5,17.1,11.3],"50.5|10|-150":[13.1,26.6,59.1,96.9,121.4,128.7,125.8,102.6,71.7,37.0,15.2,9.8],"50.5|10|-30":[21.7,39.9,76.1,111.7,130.1,134.2,132.8,114.2,88.9,52.6,24.2,17.3],"50.5|10|-60":[19.9,37.3,72.7,109.1,128.7,133.3,131.5,112.0,85.5,49.4,22.3,15.6],"50.5|10|-90":[17.4,33.7,68.0,105.0,126.3,131.7,129.3,108.8,80.8,45.0,19.7,13.4],"50.5|10|0":[22.4,40.7,77.4,112.5,130.3,134.5,133.3,114.8,90.1,53.9,25.0,17.9],"50.5|10|120":[14.8,29.4,63.1,99.3,122.3,129.3,127.4,104.9,75.8,41.1,17.3,11.1],"50.5|10|150":[13.1,26.4,59.1,96.2,120.7,128.3,125.9,102.4,71.8,37.3,15.3,9.7],"50.5|10|180":[12.4,25.3,57.6,95.3,120.4,128.2,125.3,101.6,70.3,35.6,14.4,9.3],"50.5|10|30":[21.6,39.6,76.2,111.1,129.4,134.0,132.9,113.9,89.0,53.0,24.4,17.1],"50.5|10|60":[19.7,36.9,72.8,108.0,127.4,132.8,131.6,111.6,85.6,50.0,22.5,15.4],"50.5|10|90":[17.2,33.2,68.2,103.7,124.8,131.1,129.5,108.3,80.9,45.7,19.9,13.2],"50.5|20|-120":[13.6,27.1,58.0,94.7,118.4,124.8,121.5,99.9,70.2,36.6,15.5,10.1],"50.5|20|-150":[11.1,21.1,49.3,86.5,113.4,121.9,118.1,93.6,61.1,29.4,12.4,8.6],"50.5|20|-30":[25.7,45.2,81.9,116.2,131.4,133.9,133.0,116.9,94.4,58.4,28.1,21.0],"50.5|20|-60":[22.2,40.5,76.0,111.3,129.2,132.6,130.9,113.2,88.5,52.5,24.4,17.8],"50.5|20|-90":[17.8,34.1,67.4,103.9,124.5,129.3,126.8,107.2,80.0,44.8,19.9,13.7],"50.5|20|0":[27.0,46.9,84.3,117.3,131.6,134.0,133.6,117.9,96.8,60.9,29.6,22.1],"50.5|20|120":[13.4,26.6,58.1,92.3,115.7,123.4,121.7,98.9,70.1,37.5,15.7,10.0],"50.5|20|150":[11.1,20.9,49.3,85.1,112.0,121.2,118.3,93.1,61.1,29.8,12.4,8.6],"50.5|20|180":[11.1,18.4,45.2,83.0,111.5,121.0,117.3,91.4,57.2,25.9,11.9,8.8],"50.5|20|30":[25.5,44.8,82.1,114.9,129.9,133.1,133.0,116.4,94.6,59.1,28.3,20.6],"50.5|20|60":[21.8,39.8,76.0,109.3,126.5,131.2,130.7,112.2,88.8,53.6,24.8,17.2],"50.5|20|90":[17.4,33.3,67.6,101.4,121.4,127.6,126.6,106.1,80.0,46.1,20.3,13.3],"50.5|30|-120":[12.6,25.2,53.7,88.8,112.1,118.2,114.6,94.0,65.1,33.8,14.3,9.3],"50.5|30|-150":[10.5,18.0,41.0,74.9,102.9,112.3,107.7,82.9,51.1,24.5,11.5,8.2],"50.5|30|-30":[28.9,49.4,85.8,118.2,130.7,131.7,131.3,117.6,98.0,62.7,31.2,24.0],"50.5|30|-60":[24.0,42.9,77.6,112.2,128.2,130.0,128.5,113.1,90.0,54.6,26.0,19.4],"50.5|30|-90":[18.0,34.3,66.5,102.0,121.6,125.8,123.2,104.8,78.7,44.5,19.9,13.9],"50.5|30|0":[30.8,51.9,89.2,119.6,130.3,131.2,131.5,118.6,101.1,66.3,33.4,25.5],"50.5|30|120":[12.5,24.6,53.7,85.6,108.3,115.9,114.6,92.6,65.0,34.8,14.6,9.2],"50.5|30|150":[10.5,17.9,41.0,72.8,100.7,111.1,107.9,82.1,51.1,24.7,11.4,8.2],"50.5|30|180":[10.5,16.8,33.3,68.2,99.8,111.0,106.5,78.7,43.0,20.8,11.5,8.2],"50.5|30|30":[28.6,48.7,86.1,116.4,128.3,130.3,130.9,116.6,98.2,63.8,31.5,23.5],"50.5|30|60":[23.5,41.7,78.0,109.0,124.3,128.2,128.4,111.4,90.2,56.3,26.5,18.7],"50.5|30|90":[17.6,33.2,66.6,98.5,117.2,123.0,122.6,103.3,78.6,46.1,20.4,13.3],"50.5|40|-120":[11.7,23.4,49.8,82.8,105.2,111.1,107.6,88.0,60.3,31.3,13.2,8.6],"50.5|40|-150":[9.6,16.2,35.2,64.3,90.7,100.2,95.1,72.1,43.4,21.6,10.5,7.5],"50.5|40|-30":[31.3,52.3,87.9,117.9,127.5,126.9,127.0,116.0,99.5,65.4,33.4,26.3],"50.5|40|-60":[25.1,44.2,78.2,111.1,124.8,126.1,124.8,111.0,90.2,55.5,27.0,20.6],"50.5|40|-90":[18.0,33.9,65.0,98.9,117.4,121.0,118.5,101.5,76.7,43.6,19.6,13.9],"50.5|40|0":[33.7,55.4,92.1,119.3,126.5,125.8,126.8,116.9,103.2,70.1,36.1,28.2],"50.5|40|120":[11.6,22.8,49.8,79.4,100.7,108.2,107.2,86.5,60.5,32.3,13.5,8.4],"50.5|40|150":[9.6,16.2,35.3,62.2,87.8,98.5,95.2,71.3,43.6,21.7,10.5,7.5],"50.5|40|180":[9.6,15.6,27.8,52.2,85.4,98.0,92.8,64.0,32.3,19.8,10.5,7.5],"50.5|40|30":[30.9,51.4,88.2,115.8,124.5,125.3,126.7,114.9,99.8,66.8,33.8,25.6],"50.5|40|60":[24.5,42.9,78.3,107.4,120.2,123.0,124.4,109.2,90.3,57.6,27.6,19.6],"50.5|40|90":[17.4,32.8,64.9,94.9,112.2,117.6,117.8,99.5,76.7,45.4,20.2,13.1],"50.5|50|-120":[10.6,21.5,45.7,76.5,97.5,103.0,99.7,81.5,55.5,28.8,12.1,7.7],"50.5|50|-150":[8.6,14.4,30.8,55.7,79.2,87.2,82.7,62.9,37.7,19.1,9.4,6.7],"50.5|50|-30":[32.9,53.8,87.9,115.3,122.1,120.3,120.8,112.3,98.7,66.5,34.7,27.9],"50.5|50|-60":[25.7,44.5,76.9,107.9,119.8,120.3,119.2,107.2,88.3,55.4,27.3,21.2],"50.5|50|-90":[17.5,33.0,62.2,94.6,111.6,114.5,112.2,96.8,73.4,42.1,19.0,13.5],"50.5|50|0":[35.7,57.5,92.8,116.5,120.2,118.1,119.7,112.7,102.9,72.1,38.0,30.1],"50.5|50|120":[10.5,21.0,45.9,73.1,93.1,100.0,99.6,80.2,55.9,29.8,12.3,7.5],"50.5|50|150":[8.6,14.4,30.9,54.0,76.4,85.2,83.0,62.6,38.2,19.3,9.4,6.7],"50.5|50|180":[8.6,14.0,25.4,40.4,69.1,82.3,76.6,50.0,28.6,17.7,9.4,6.7],"50.5|50|30":[32.5,52.8,88.2,112.6,118.4,118.0,120.0,110.7,99.0,68.2,35.2,27.1],"50.5|50|60":[24.9,43.0,77.2,103.5,114.4,116.7,118.3,104.8,88.3,57.6,28.0,20.0],"50.5|50|90":[16.9,31.7,62.4,90.2,106.2,111.0,111.8,94.6,73.5,44.1,19.7,12.6],"50.5|60|-120":[9.4,19.5,41.4,69.6,89.1,94.0,91.0,74.3,50.4,26.0,10.7,6.8],"50.5|60|-150":[7.5,12.6,26.7,48.2,68.8,75.8,71.9,54.6,32.7,16.7,8.2,5.8],"50.5|60|-30":[33.6,54.0,86.0,110.1,114.1,111.2,112.0,106.2,95.7,66.1,35.2,28.7],"50.5|60|-60":[25.6,43.8,74.1,102.5,112.3,112.2,111.4,101.4,84.9,54.0,26.9,21.3],"50.5|60|-90":[16.7,31.5,58.7,88.7,104.1,106.6,104.5,90.5,69.1,39.8,18.0,12.9],"50.5|60|0":[36.7,58.2,91.3,111.0,111.5,108.1,110.1,106.2,100.3,72.4,38.9,31.2],"50.5|60|120":[9.4,18.9,41.7,66.6,85.0,91.3,91.3,73.4,51.0,27.1,11.0,6.6],"50.5|60|150":[7.5,12.6,26.9,47.0,66.8,74.2,72.7,54.8,33.4,16.8,8.2,5.8],"50.5|60|180":[7.5,12.2,22.3,34.4,55.1,66.1,60.9,41.0,25.1,15.5,8.2,5.8],"50.5|60|30":[33.1,52.9,86.3,107.1,110.0,108.5,111.0,104.3,96.0,67.9,35.8,27.8],"50.5|60|60":[24.8,42.2,74.5,98.2,106.9,108.4,110.6,99.0,85.0,56.5,27.8,20.0],"50.5|60|90":[16.1,30.1,58.8,84.4,98.6,102.8,104.2,88.7,69.4,42.0,18.7,11.9],"50.5|70|-120":[8.1,17.3,36.9,62.2,79.9,84.0,81.4,66.5,44.9,23.0,9.4,5.9],"50.5|70|-150":[6.3,10.7,22.9,41.3,59.1,64.9,61.8,46.7,28.0,14.3,6.9,4.9],"50.5|70|-30":[33.5,52.9,82.1,102.6,103.7,99.8,101.0,97.9,90.7,64.1,34.8,28.8],"50.5|70|-60":[24.9,42.1,70.0,95.6,103.3,102.2,101.8,93.7,79.8,51.5,26.0,20.8],"50.5|70|-90":[15.5,29.4,54.4,81.7,95.2,97.0,95.3,83.1,63.6,37.0,16.8,12.0],"50.5|70|0":[36.9,57.5,87.8,103.0,100.3,95.8,98.2,97.2,95.2,70.9,38.8,31.5],"50.5|70|120":[8.2,16.8,37.2,59.5,76.4,82.0,82.3,65.8,45.9,24.2,9.6,5.7],"50.5|70|150":[6.3,10.8,23.1,40.6,57.8,64.5,63.0,47.5,28.9,14.4,6.9,4.9],"50.5|70|180":[6.3,10.5,19.2,29.3,45.1,52.4,49.0,34.5,21.6,13.3,6.9,4.9],"50.5|70|30":[33.0,51.8,82.3,99.3,99.5,97.1,100.0,95.9,90.8,66.1,35.4,27.9],"50.5|70|60":[24.1,40.5,70.3,91.0,97.7,98.6,101.2,91.5,79.8,54.1,26.9,19.4],"50.5|70|90":[15.1,28.1,54.4,77.3,90.2,93.8,95.5,81.0,64.0,39.0,17.4,11.1],"50.5|80|-120":[6.9,14.8,32.2,54.7,69.8,73.3,71.0,58.1,39.2,20.1,8.1,5.0],"50.5|80|-150":[5.2,9.0,19.3,34.8,50.0,55.0,52.3,39.4,23.6,12.0,5.8,4.0],"50.5|80|-30":[32.5,50.6,76.3,92.8,91.5,86.9,88.4,87.7,83.5,60.5,33.6,28.2],"50.5|80|-60":[23.7,39.6,64.5,86.5,91.8,90.1,89.9,84.6,72.6,47.6,24.6,19.9],"50.5|80|-90":[14.2,26.8,48.8,73.2,84.7,85.8,84.4,74.1,57.4,33.7,15.3,11.0],"50.5|80|0":[36.1,55.4,82.0,92.5,87.0,81.2,83.9,86.0,87.8,67.7,37.8,31.0],"50.5|80|120":[6.8,14.5,32.6,52.3,67.0,71.9,72.5,58.5,40.0,21.0,8.2,4.7],"50.5|80|150":[5.2,9.0,19.4,34.5,49.4,55.1,53.7,40.5,24.4,12.1,5.8,4.0],"50.5|80|180":[5.2,8.8,16.2,24.6,37.4,43.1,40.5,28.9,18.3,11.2,5.8,4.0],"50.5|80|30":[32.0,49.4,76.6,89.6,87.3,83.5,86.6,85.6,83.6,62.6,34.2,27.2],"50.5|80|60":[22.7,37.7,64.5,81.9,86.6,86.9,89.8,82.1,72.9,50.6,25.4,18.4],"50.5|80|90":[13.5,25.3,49.4,69.5,80.2,83.2,85.2,73.2,58.1,35.7,15.9,10.0],"50.5|90|-120":[5.8,12.7,27.2,46.4,59.0,63.3,61.4,49.3,33.4,17.1,6.5,3.9],"50.5|90|-150":[4.3,7.4,15.8,28.9,41.6,45.4,43.2,32.8,19.4,9.9,4.7,3.2],"50.5|90|-30":[30.7,47.0,68.7,81.1,76.8,71.7,73.3,75.6,74.5,55.6,31.5,26.8],"50.5|90|-60":[21.9,36.3,57.5,76.1,79.9,77.8,77.9,73.7,64.8,43.2,22.3,18.5],"50.5|90|-90":[12.7,24.0,43.1,64.4,74.1,74.8,73.7,65.0,50.4,29.3,13.2,9.7],"50.5|90|0":[34.4,52.0,74.3,79.7,71.1,64.9,67.8,72.7,78.2,62.8,35.8,29.8],"50.5|90|120":[5.7,12.2,27.9,44.8,57.1,61.3,61.9,50.0,34.8,18.1,6.9,3.8],"50.5|90|150":[4.3,7.4,16.1,28.5,41.6,46.0,45.3,33.8,20.3,10.0,4.7,3.2],"50.5|90|180":[4.3,7.2,13.4,20.3,31.0,35.4,33.0,23.9,15.2,9.2,4.7,3.2],"50.5|90|30":[30.2,45.8,69.1,77.5,72.9,69.1,72.5,73.1,74.5,57.6,32.2,25.9],"50.5|90|60":[20.8,34.4,57.9,72.1,75.2,73.6,76.7,71.8,65.0,45.7,23.5,17.0],"50.5|90|90":[12.0,22.5,43.1,60.0,68.8,71.4,73.4,63.4,50.9,31.9,14.2,8.6],"51.5|0|0":[15.9,31.7,69.1,106.6,129.3,134.7,131.2,111.0,81.6,46.5,20.2,12.8],"51.5|10|-120":[13.8,28.1,63.3,101.2,125.8,131.5,127.4,106.6,75.8,41.2,17.4,10.7],"51.5|10|-150":[12.2,25.1,59.2,97.5,123.5,130.2,125.9,103.7,71.7,37.4,15.1,9.2],"51.5|10|-30":[20.2,38.1,77.2,113.4,133.3,136.4,133.5,116.1,89.5,54.3,25.5,17.2],"51.5|10|-60":[18.4,35.5,73.5,110.4,131.6,135.3,132.0,113.8,86.0,50.7,23.3,15.4],"51.5|10|-90":[16.1,31.9,68.5,106.0,128.9,133.4,129.7,110.3,81.1,46.1,20.3,13.0],"51.5|10|0":[20.9,39.0,78.6,114.5,133.5,136.8,134.1,116.8,90.8,55.7,26.4,17.9],"51.5|10|120":[13.8,28.0,63.8,100.9,124.6,131.4,127.7,106.1,75.8,41.9,17.5,10.7],"51.5|10|150":[12.2,25.0,59.4,97.4,122.8,130.2,126.1,103.5,71.7,37.8,15.2,9.2],"51.5|10|180":[11.6,23.8,57.7,96.1,122.4,129.8,125.5,102.6,70.1,36.0,14.3,8.8],"51.5|10|30":[20.2,38.0,77.5,113.3,132.5,136.4,133.7,115.8,89.5,54.7,25.6,17.2],"51.5|10|60":[18.4,35.3,74.0,110.1,130.3,135.2,132.2,113.3,86.0,51.6,23.4,15.3],"51.5|10|90":[16.1,31.7,69.1,105.6,127.4,133.3,130.0,109.8,81.1,46.9,20.5,13.0],"51.5|20|-120":[12.5,25.4,57.9,94.7,120.2,126.0,121.5,100.9,70.1,37.0,15.5,9.5],"51.5|20|-150":[10.5,19.7,49.0,86.3,114.8,122.9,117.9,94.2,60.7,29.4,12.3,8.4],"51.5|20|-30":[24.0,43.3,83.3,118.0,134.9,136.2,133.8,119.2,95.4,60.6,30.0,21.3],"51.5|20|-60":[20.6,38.5,76.8,112.5,132.3,134.4,131.4,115.2,89.2,54.1,25.8,17.7],"51.5|20|-90":[16.4,32.1,67.8,104.4,127.0,130.8,127.0,108.7,80.3,45.8,20.5,13.3],"51.5|20|0":[25.3,45.1,86.1,119.7,135.3,136.5,134.6,120.3,97.8,63.4,31.7,22.6],"51.5|20|120":[12.5,25.1,58.7,94.0,117.6,125.5,121.9,99.8,69.8,38.1,15.7,9.6],"51.5|20|150":[10.6,19.6,49.4,85.9,113.4,122.8,118.2,93.7,60.6,29.9,12.3,8.4],"51.5|20|180":[10.7,17.3,44.8,83.1,112.7,122.2,117.1,91.8,56.6,25.8,11.9,8.5],"51.5|20|30":[23.9,43.1,83.9,117.7,133.4,135.8,134.0,118.6,95.4,61.5,30.2,21.2],"51.5|20|60":[20.5,38.2,77.6,111.9,129.6,133.9,131.5,114.1,89.2,55.5,26.1,17.5],"51.5|20|90":[16.3,31.8,68.7,103.6,123.9,130.1,127.1,107.5,80.0,47.2,20.9,13.2],"51.5|30|-120":[11.6,23.4,53.5,88.3,113.6,118.9,114.4,94.9,64.9,33.9,14.3,8.9],"51.5|30|-150":[10.1,17.0,40.6,74.1,103.5,112.7,107.2,83.0,50.6,24.5,11.5,8.0],"51.5|30|-30":[27.1,47.4,87.5,120.2,134.5,134.1,132.3,120.2,99.2,65.3,33.7,24.7],"51.5|30|-60":[22.2,40.7,78.5,113.2,131.4,131.9,129.0,115.3,90.9,56.4,27.7,19.6],"51.5|30|-90":[16.4,32.2,66.7,102.2,123.9,127.2,123.3,106.4,79.0,45.3,20.6,13.6],"51.5|30|0":[28.9,50.0,91.5,122.4,134.3,133.9,132.8,121.3,102.5,69.4,36.1,26.6],"51.5|30|120":[11.6,23.1,54.4,87.2,109.8,117.9,114.9,93.2,64.6,35.1,14.5,8.9],"51.5|30|150":[10.1,16.9,41.0,73.4,101.3,112.4,107.6,82.2,50.4,24.8,11.5,8.0],"51.5|30|180":[10.1,16.2,32.9,67.7,100.2,111.7,106.0,78.6,42.2,21.2,11.5,8.0],"51.5|30|30":[26.9,47.1,88.4,119.6,132.1,133.3,132.1,119.0,99.3,66.6,34.0,24.5],"51.5|30|60":[22.1,40.3,79.9,112.1,127.6,131.2,129.5,113.3,90.7,58.5,28.1,19.4],"51.5|30|90":[16.4,31.7,68.0,101.0,119.6,125.8,123.3,104.5,78.5,47.3,21.0,13.5],"51.5|40|-120":[10.8,21.7,49.6,82.0,106.4,111.7,107.2,88.7,60.1,31.2,13.2,8.2],"51.5|40|-150":[9.2,15.4,35.0,63.2,90.7,100.0,94.3,72.1,43.0,21.8,10.5,7.2],"51.5|40|-30":[29.4,50.2,89.8,120.0,131.4,129.3,128.0,118.7,101.0,68.4,36.4,27.4],"51.5|40|-60":[23.3,42.0,79.2,112.0,128.0,128.0,125.3,113.2,91.1,57.5,28.9,20.9],"51.5|40|-90":[16.3,31.7,65.2,98.8,119.7,122.2,118.5,103.0,77.0,44.3,20.4,13.6],"51.5|40|0":[31.7,53.5,94.7,122.4,130.7,128.6,128.2,119.8,104.9,73.5,39.5,29.8],"51.5|40|120":[10.7,21.4,50.5,80.9,102.0,110.3,107.5,87.0,60.0,32.5,13.4,8.2],"51.5|40|150":[9.2,15.3,35.4,62.5,87.8,99.4,94.8,71.2,43.1,21.9,10.5,7.2],"51.5|40|180":[9.2,14.9,28.0,51.2,84.9,98.1,91.9,63.4,32.0,20.2,10.5,7.2],"51.5|40|30":[29.2,49.9,90.8,119.5,128.5,128.3,128.2,117.5,101.0,70.1,36.7,27.1],"51.5|40|60":[23.1,41.5,80.5,110.8,123.5,126.2,125.6,111.1,90.8,60.0,29.5,20.6],"51.5|40|90":[16.2,31.2,66.4,97.6,114.6,120.5,118.6,100.7,76.6,46.5,20.9,13.4],"51.5|50|-120":[9.8,19.9,45.6,75.5,98.7,103.5,99.3,82.1,55.4,28.6,12.0,7.4],"51.5|50|-150":[8.2,13.7,30.7,54.8,79.0,86.7,82.1,62.8,37.4,19.4,9.4,6.4],"51.5|50|-30":[30.9,51.8,90.0,117.5,126.0,122.7,121.8,115.2,100.3,69.8,38.1,29.2],"51.5|50|-60":[23.8,42.2,77.9,108.6,123.1,122.1,119.8,109.5,89.4,57.4,29.4,21.7],"51.5|50|-90":[15.8,30.8,62.5,94.2,113.9,115.8,112.3,98.3,73.8,42.7,19.8,13.3],"51.5|50|0":[33.6,55.7,95.7,119.8,124.5,120.9,121.3,115.8,104.8,75.9,41.8,32.0],"51.5|50|120":[9.7,19.6,46.6,74.6,94.3,102.1,99.9,80.7,55.5,29.9,12.2,7.3],"51.5|50|150":[8.2,13.7,31.0,54.4,76.4,86.1,82.7,62.5,37.8,19.5,9.4,6.4],"51.5|50|180":[8.2,13.4,25.7,40.0,67.9,81.8,75.5,49.5,28.7,18.1,9.4,6.4],"51.5|50|30":[30.7,51.4,91.2,116.5,122.5,121.3,121.6,113.4,100.4,71.7,38.5,28.9],"51.5|50|60":[23.6,41.7,79.6,107.2,117.8,120.1,119.7,106.8,88.9,60.1,30.1,21.3],"51.5|50|90":[15.7,30.2,64.0,92.9,108.5,113.9,112.7,95.8,73.5,45.2,20.4,13.1],"51.5|60|-120":[8.6,18.0,41.3,68.7,90.1,94.5,90.8,74.8,50.2,25.9,10.7,6.5],"51.5|60|-150":[7.1,12.0,26.7,47.5,68.6,75.4,71.6,54.6,32.5,16.9,8.2,5.6],"51.5|60|-30":[31.6,52.0,88.1,112.2,118.0,113.5,113.2,109.1,97.5,69.5,38.9,30.3],"51.5|60|-60":[23.7,41.5,75.1,103.2,115.6,114.0,112.0,103.7,86.0,56.0,29.3,21.9],"51.5|60|-90":[15.0,29.3,59.1,88.3,106.3,107.8,104.7,92.0,69.5,40.4,18.9,12.8],"51.5|60|0":[34.7,56.5,94.4,114.4,115.7,110.8,111.7,109.3,102.3,76.4,43.0,33.4],"51.5|60|120":[8.6,17.7,42.4,67.9,86.0,93.5,91.5,73.8,50.6,27.2,10.9,6.5],"51.5|60|150":[7.1,12.0,27.0,47.3,66.8,75.3,72.5,54.9,33.0,17.0,8.2,5.6],"51.5|60|180":[7.1,11.7,22.6,34.4,54.1,65.6,60.3,41.0,25.2,15.9,8.2,5.6],"51.5|60|30":[31.4,51.6,89.4,111.2,114.0,111.8,112.7,107.0,97.5,71.7,39.3,30.0],"51.5|60|60":[23.5,40.9,77.0,101.9,110.1,111.7,112.0,100.9,85.6,58.9,30.0,21.4],"51.5|60|90":[14.9,28.7,60.5,87.1,100.8,105.8,105.1,89.8,69.3,43.0,19.4,12.5],"51.5|70|-120":[7.5,15.9,36.8,61.2,80.8,84.5,81.4,67.0,44.8,22.9,9.4,5.7],"51.5|70|-150":[6.0,10.2,22.9,40.7,58.9,64.8,61.9,46.7,27.8,14.5,7.0,4.7],"51.5|70|-30":[31.6,51.1,84.2,104.6,107.4,102.0,102.0,100.9,92.5,67.6,38.7,30.6],"51.5|70|-60":[23.1,40.0,71.0,96.1,106.4,104.0,102.4,96.0,80.8,53.4,28.4,21.5],"51.5|70|-90":[13.9,27.2,54.7,81.2,97.3,98.2,95.5,84.5,64.0,37.4,17.6,12.0],"51.5|70|0":[34.9,55.9,90.9,106.4,104.3,98.4,99.8,100.2,97.3,75.0,43.2,34.0],"51.5|70|120":[7.4,15.7,37.8,60.7,77.3,84.2,82.4,66.2,45.4,24.2,9.5,5.6],"51.5|70|150":[6.0,10.2,23.2,40.9,57.8,65.6,62.6,47.6,28.5,14.6,7.0,4.7],"51.5|70|180":[6.0,10.0,19.4,29.4,44.7,52.6,48.9,34.7,21.7,13.6,7.0,4.7],"51.5|70|30":[31.3,50.6,85.6,103.4,103.3,100.2,101.9,98.5,92.3,69.9,39.1,30.2],"51.5|70|60":[22.8,39.4,72.9,94.7,100.7,101.8,102.6,93.3,80.4,56.5,29.1,21.0],"51.5|70|90":[13.8,26.7,56.1,79.8,92.2,96.8,96.3,82.0,63.9,39.8,18.1,11.7],"51.5|80|-120":[6.3,13.6,32.1,53.9,70.6,73.8,71.1,58.7,39.0,19.9,8.0,4.7],"51.5|80|-150":[5.0,8.6,19.3,34.4,49.9,55.0,52.5,39.4,23.4,12.2,5.8,3.9],"51.5|80|-30":[30.7,48.8,78.4,94.6,95.0,88.9,89.5,90.4,85.2,63.9,37.5,30.1],"51.5|80|-60":[21.9,37.6,65.5,86.9,94.7,91.7,90.6,86.9,73.9,49.4,26.9,20.6],"51.5|80|-90":[12.7,24.8,49.2,72.6,86.6,86.9,84.7,75.3,57.8,34.0,16.1,11.0],"51.5|80|0":[34.2,54.0,85.2,95.8,90.7,83.7,85.6,88.9,89.9,71.8,42.2,33.6],"51.5|80|120":[6.2,13.5,33.1,53.3,67.9,74.1,72.6,58.7,39.5,21.0,8.2,4.6],"51.5|80|150":[5.0,8.5,19.6,34.8,49.3,56.2,53.3,40.6,24.1,12.3,5.8,3.9],"51.5|80|180":[5.0,8.4,16.4,24.7,37.1,43.4,40.6,29.1,18.4,11.4,5.8,3.9],"51.5|80|30":[30.5,48.4,79.8,93.5,90.8,86.6,88.7,88.0,85.0,66.4,38.0,29.7],"51.5|80|60":[21.5,36.7,67.0,85.3,89.4,90.0,91.2,83.7,73.5,52.9,27.6,20.1],"51.5|80|90":[12.3,23.9,51.0,71.8,82.0,86.1,85.9,74.0,58.0,36.4,16.6,10.7],"51.5|90|-120":[5.3,11.6,27.2,45.6,59.7,63.5,61.6,49.6,33.3,16.9,6.5,3.8],"51.5|90|-150":[4.1,7.0,15.9,28.5,41.6,45.6,43.4,32.9,19.3,10.0,4.7,3.1],"51.5|90|-30":[29.1,45.4,70.7,82.8,79.9,73.4,74.4,78.3,76.2,58.8,35.4,28.8],"51.5|90|-60":[20.2,34.4,58.4,76.3,82.5,79.2,78.5,75.6,65.8,44.8,24.6,19.3],"51.5|90|-90":[11.3,22.1,43.5,63.8,75.8,75.8,74.0,66.1,50.7,29.5,13.9,9.8],"51.5|90|0":[32.6,50.6,77.3,82.8,74.3,67.0,69.6,75.4,80.2,66.7,40.2,32.4],"51.5|90|120":[5.1,11.3,28.3,45.8,57.9,63.3,61.9,50.3,34.3,18.0,6.8,3.7],"51.5|90|150":[4.1,7.0,16.2,28.8,41.7,47.0,45.1,33.7,20.0,10.1,4.7,3.1],"51.5|90|180":[4.1,6.9,13.6,20.4,30.7,35.7,33.1,24.1,15.2,9.4,4.7,3.1],"51.5|90|30":[28.8,44.9,72.2,81.3,75.9,71.6,74.3,75.3,75.9,61.2,35.8,28.3],"51.5|90|60":[19.8,33.5,60.3,75.3,77.7,76.7,77.8,73.4,65.5,47.8,25.6,18.8],"51.5|90|90":[10.9,21.3,44.6,62.1,70.5,74.0,74.0,64.0,50.8,32.5,14.8,9.3],"52.5|0|0":[14.3,29.9,64.5,103.6,125.5,132.8,127.9,108.2,77.2,43.8,18.4,11.1],"52.5|10|-120":[12.2,26.4,59.1,98.4,121.8,129.3,124.1,103.6,72.0,39.0,15.5,9.2],"52.5|10|-150":[10.6,23.3,55.2,94.6,119.5,128.0,122.5,100.8,67.9,35.1,13.4,7.7],"52.5|10|-30":[18.8,36.5,72.0,110.5,129.4,134.7,130.5,113.4,85.0,51.7,23.5,15.5],"52.5|10|-60":[17.0,33.9,68.6,107.6,127.7,133.3,128.9,111.0,81.8,48.4,21.3,13.7],"52.5|10|-90":[14.6,30.2,64.0,103.2,124.9,131.3,126.5,107.4,77.1,43.8,18.4,11.4],"52.5|10|0":[19.4,37.4,73.4,111.4,129.8,135.2,131.1,114.2,86.2,52.9,24.4,16.1],"52.5|10|120":[12.1,26.1,59.5,97.6,121.0,129.6,124.4,103.5,71.5,38.9,15.6,9.1],"52.5|10|150":[10.6,23.1,55.4,94.1,119.0,128.2,122.7,100.7,67.6,35.0,13.4,7.8],"52.5|10|180":[10.0,21.9,53.8,93.1,118.5,127.7,122.0,99.7,66.2,33.5,12.6,7.4],"52.5|10|30":[18.6,36.3,72.3,110.1,128.9,134.8,130.7,113.3,84.8,51.6,23.6,15.3],"52.5|10|60":[16.8,33.5,69.1,106.8,126.7,133.6,129.1,110.8,81.4,48.3,21.4,13.5],"52.5|10|90":[14.4,29.9,64.4,102.3,123.8,131.7,126.8,107.2,76.6,43.7,18.5,11.2],"52.5|20|-120":[11.0,23.7,54.1,92.3,116.2,123.4,118.2,97.7,67.0,35.3,13.8,8.2],"52.5|20|-150":[9.2,18.1,45.8,83.6,110.8,120.3,114.4,91.1,57.7,27.6,10.9,7.3],"52.5|20|-30":[22.8,42.0,77.8,115.4,131.1,134.6,131.1,116.6,90.9,58.2,28.1,19.5],"52.5|20|-60":[19.3,37.0,71.7,110.0,128.4,132.4,128.5,112.3,85.3,52.1,23.8,16.0],"52.5|20|-90":[14.9,30.5,63.3,102.1,123.0,128.4,123.9,105.7,76.8,44.0,18.6,11.7],"52.5|20|0":[24.0,43.7,80.4,116.8,131.7,135.2,131.9,117.9,93.0,60.5,29.7,20.7],"52.5|20|120":[10.9,23.3,54.7,90.5,114.3,123.8,118.4,97.3,65.8,34.9,13.9,8.1],"52.5|20|150":[9.2,17.9,46.0,82.6,109.8,120.8,114.7,90.9,57.0,27.4,10.9,7.3],"52.5|20|180":[9.4,15.8,41.8,80.1,108.9,119.8,113.5,88.8,53.4,23.8,10.7,7.3],"52.5|20|30":[22.5,41.6,78.3,114.5,130.0,134.6,131.1,116.3,90.5,58.1,28.1,19.2],"52.5|20|60":[18.9,36.5,72.4,108.5,126.4,132.6,128.5,111.8,84.3,51.9,24.1,15.7],"52.5|20|90":[14.6,30.0,64.0,100.1,120.7,128.7,123.9,105.1,75.5,43.7,18.9,11.4],"52.5|30|-120":[10.2,21.9,50.0,86.2,109.6,116.2,111.2,91.7,62.4,32.5,12.7,7.6],"52.5|30|-150":[8.8,15.7,38.1,71.7,99.6,109.8,103.7,79.8,48.4,23.1,10.3,6.8],"52.5|30|-30":[26.0,46.2,81.7,117.8,130.8,132.7,129.8,117.7,94.8,63.1,31.7,22.9],"52.5|30|-60":[21.1,39.5,73.4,111.1,127.5,130.0,126.4,112.4,87.2,54.8,25.8,18.0],"52.5|30|-90":[15.2,30.8,62.3,100.2,120.0,124.7,120.3,103.3,76.1,44.0,18.8,12.1],"52.5|30|0":[27.8,48.8,85.4,119.6,130.9,132.9,130.4,119.1,97.6,66.5,34.1,24.6],"52.5|30|120":[10.1,21.4,50.6,83.8,106.8,116.3,111.3,90.9,61.0,32.1,12.8,7.5],"52.5|30|150":[8.8,15.6,38.4,70.2,97.9,110.3,104.0,79.5,47.6,23.0,10.3,6.8],"52.5|30|180":[8.8,15.2,31.1,64.8,96.4,109.0,102.2,75.5,39.8,20.2,10.3,6.8],"52.5|30|30":[25.6,45.7,82.6,116.5,129.0,132.4,129.5,117.0,94.2,63.0,31.9,22.5],"52.5|30|60":[20.5,38.6,74.5,108.7,124.7,130.1,126.5,111.3,85.8,54.5,26.0,17.4],"52.5|30|90":[14.7,29.9,63.3,97.5,116.8,124.5,120.0,102.4,74.1,43.6,19.0,11.6],"52.5|40|-120":[9.4,20.4,46.3,80.2,102.8,108.8,103.9,85.5,58.2,30.1,11.7,7.0],"52.5|40|-150":[8.0,14.3,33.0,61.2,87.0,96.8,90.9,69.0,41.5,20.6,9.4,6.2],"52.5|40|-30":[28.6,49.3,83.9,117.8,127.9,128.2,126.0,116.4,96.8,66.4,34.5,25.5],"52.5|40|-60":[22.4,40.9,74.0,110.2,124.4,126.1,122.9,110.4,87.8,56.2,27.1,19.4],"52.5|40|-90":[15.2,30.4,60.8,97.1,116.0,119.8,115.5,99.9,74.5,43.4,18.6,12.1],"52.5|40|0":[30.7,52.5,88.5,119.8,127.6,127.9,126.3,117.9,99.9,70.7,37.5,27.7],"52.5|40|120":[9.3,19.7,47.0,77.7,99.4,108.8,103.9,84.8,56.9,29.9,11.8,6.9],"52.5|40|150":[8.0,14.2,33.3,59.8,84.9,97.4,91.2,68.8,41.3,20.6,9.4,6.2],"52.5|40|180":[8.0,13.9,27.0,48.7,81.2,95.3,88.2,60.5,31.1,19.2,9.4,6.2],"52.5|40|30":[28.0,48.6,84.8,116.3,125.7,127.6,125.8,115.8,95.9,66.4,34.6,25.1],"52.5|40|60":[21.6,39.9,75.0,107.3,120.9,125.4,122.6,109.4,85.9,55.8,27.4,18.6],"52.5|40|90":[14.6,29.4,61.8,94.1,112.1,119.4,115.2,98.8,72.4,42.7,18.8,11.6],"52.5|50|-120":[8.6,18.7,42.5,74.0,95.3,100.6,96.0,79.0,53.8,27.6,10.6,6.3],"52.5|50|-150":[7.2,12.7,29.0,53.1,75.8,83.7,78.9,60.2,36.2,18.3,8.4,5.5],"52.5|50|-30":[30.3,51.0,84.1,115.6,122.9,121.7,120.1,113.0,96.4,68.1,36.3,27.5],"52.5|50|-60":[23.0,41.3,72.8,107.2,119.7,120.3,117.4,106.8,86.4,56.5,27.7,20.2],"52.5|50|-90":[14.8,29.7,58.2,92.9,110.5,113.3,109.3,95.2,71.7,42.0,18.1,11.9],"52.5|50|0":[32.9,54.9,89.4,117.5,121.7,120.6,119.7,114.2,100.0,73.2,39.8,30.1],"52.5|50|120":[8.4,18.1,43.4,71.6,92.0,100.8,96.4,78.7,52.9,27.5,10.7,6.2],"52.5|50|150":[7.2,12.7,29.3,52.2,74.0,84.3,79.5,60.5,36.5,18.4,8.4,5.5],"52.5|50|180":[7.2,12.4,24.6,38.6,64.7,78.9,72.0,47.5,28.1,17.2,8.4,5.5],"52.5|50|30":[29.6,50.2,85.2,113.6,120.1,120.8,119.6,112.0,95.3,68.0,36.5,26.9],"52.5|50|60":[22.1,40.1,74.2,103.8,115.6,119.5,116.8,105.3,84.2,55.9,28.0,19.4],"52.5|50|90":[14.1,28.5,59.5,89.5,106.3,113.0,109.3,94.0,69.6,41.4,18.3,11.3],"52.5|60|-120":[7.5,16.9,38.5,67.4,87.0,91.7,87.5,72.0,48.9,25.0,9.5,5.5],"52.5|60|-150":[6.2,11.1,25.3,46.0,65.9,72.5,68.6,52.4,31.4,16.1,7.3,4.8],"52.5|60|-30":[31.2,51.5,82.4,110.8,115.2,112.7,111.8,107.2,93.9,68.1,37.2,28.6],"52.5|60|-60":[23.1,40.8,70.1,102.1,112.5,112.3,109.8,101.1,83.4,55.5,27.6,20.5],"52.5|60|-90":[14.2,28.3,55.0,87.2,103.1,105.4,101.6,89.0,67.8,39.9,17.2,11.5],"52.5|60|0":[34.1,55.9,88.3,112.4,113.3,110.7,110.7,108.0,97.7,73.8,41.1,31.5],"52.5|60|120":[7.4,16.2,39.5,65.3,84.0,92.5,88.1,72.0,48.4,25.0,9.5,5.4],"52.5|60|150":[6.2,11.1,25.6,45.6,64.9,73.9,69.6,53.1,32.1,16.0,7.3,4.8],"52.5|60|180":[6.2,10.9,21.7,33.3,51.9,63.2,57.7,39.8,24.7,15.1,7.3,4.8],"52.5|60|30":[30.5,50.6,83.6,108.5,112.1,111.6,111.0,106.0,92.6,68.0,37.4,28.0],"52.5|60|60":[22.1,39.5,71.8,98.7,108.3,111.3,109.3,99.7,81.0,54.8,28.0,19.6],"52.5|60|90":[13.4,27.1,56.2,84.0,99.0,105.1,101.7,88.2,65.8,39.4,17.4,10.8],"52.5|70|-120":[6.5,14.9,34.2,60.0,78.1,82.0,78.1,64.4,43.7,22.1,8.3,4.8],"52.5|70|-150":[5.2,9.5,21.7,39.5,56.7,62.5,59.2,45.0,26.9,13.7,6.2,4.0],"52.5|70|-30":[31.3,50.7,78.8,103.5,105.0,101.4,101.1,99.3,89.4,66.5,37.1,29.0],"52.5|70|-60":[22.7,39.4,66.3,95.3,103.7,102.4,100.2,93.6,78.8,53.2,26.9,20.3],"52.5|70|-90":[13.2,26.3,50.8,80.3,94.5,96.0,92.5,81.7,62.6,37.1,16.1,10.8],"52.5|70|0":[34.4,55.5,85.1,104.7,102.5,98.6,99.2,99.3,93.1,72.7,41.4,32.1],"52.5|70|120":[6.3,14.4,35.2,58.5,75.6,83.4,79.1,64.6,43.7,22.2,8.3,4.7],"52.5|70|150":[5.2,9.4,22.0,39.5,56.2,64.5,60.2,46.1,27.8,13.7,6.2,4.0],"52.5|70|180":[5.2,9.3,18.6,28.5,43.2,51.1,47.3,33.8,21.2,12.9,6.2,4.0],"52.5|70|30":[30.6,49.8,80.0,100.9,101.8,100.2,100.5,97.8,87.8,66.3,37.3,28.4],"52.5|70|60":[21.6,38.1,68.0,91.7,99.3,101.5,100.0,92.3,76.3,52.5,27.3,19.3],"52.5|70|90":[12.5,25.3,52.1,76.9,90.7,96.2,93.0,80.7,60.8,36.5,16.3,10.1],"52.5|80|-120":[5.5,12.9,29.7,53.0,68.4,71.5,68.1,56.4,38.1,19.3,7.0,4.0],"52.5|80|-150":[4.3,7.9,18.2,33.5,48.1,53.0,50.3,37.9,22.7,11.5,5.2,3.3],"52.5|80|-30":[30.6,48.7,73.5,93.9,93.1,88.5,88.8,89.0,82.6,63.2,36.1,28.6],"52.5|80|-60":[21.6,37.1,61.2,86.5,92.4,90.4,88.8,84.7,72.4,49.5,25.5,19.6],"52.5|80|-90":[12.1,24.1,45.6,72.0,84.1,84.9,81.8,72.8,56.7,33.8,14.7,9.9],"52.5|80|0":[33.9,53.7,79.8,94.5,89.3,84.3,85.6,88.4,86.2,69.7,40.5,31.9],"52.5|80|120":[5.3,12.3,30.8,51.4,66.7,73.5,69.7,57.0,38.2,19.3,7.1,3.8],"52.5|80|150":[4.3,7.9,18.6,33.6,47.9,55.5,51.2,39.5,23.5,11.5,5.2,3.3],"52.5|80|180":[4.3,7.8,15.7,23.9,36.0,42.3,39.4,28.3,17.9,10.8,5.2,3.3],"52.5|80|30":[29.8,47.7,74.7,91.4,89.7,87.2,88.1,87.7,80.9,63.1,36.3,28.0],"52.5|80|60":[20.4,35.6,62.4,82.7,88.3,89.8,88.8,82.9,69.8,49.1,25.9,18.5],"52.5|80|90":[11.1,22.6,47.3,69.3,80.8,85.7,82.8,72.8,55.3,33.3,14.8,9.3],"52.5|90|-120":[4.6,10.9,25.2,44.9,58.0,61.1,58.7,47.6,32.6,16.4,5.8,3.1],"52.5|90|-150":[3.5,6.5,15.0,27.6,40.4,43.8,41.5,31.7,18.8,9.5,4.2,2.6],"52.5|90|-30":[29.1,45.5,66.3,82.5,78.5,73.2,74.0,77.3,74.2,58.4,34.1,27.5],"52.5|90|-60":[20.1,34.1,54.5,76.1,80.5,78.1,76.7,73.6,64.5,45.1,23.4,18.3],"52.5|90|-90":[10.8,21.5,40.3,63.4,73.7,73.9,71.3,63.9,49.9,29.5,12.7,8.8],"52.5|90|0":[32.5,50.6,72.5,81.9,73.7,67.6,70.0,75.3,77.1,65.0,38.7,30.8],"52.5|90|120":[4.4,10.3,26.3,44.2,57.0,62.9,59.5,49.0,33.2,16.6,5.8,3.1],"52.5|90|150":[3.5,6.5,15.4,27.8,40.7,46.6,43.5,32.7,19.7,9.5,4.2,2.6],"52.5|90|180":[3.5,6.4,13.0,19.8,29.7,35.0,32.1,23.4,14.9,8.9,4.2,2.6],"52.5|90|30":[28.3,44.5,67.6,79.6,75.2,71.9,73.5,75.2,72.3,58.2,34.3,26.8],"52.5|90|60":[18.8,32.6,56.2,73.0,76.8,77.0,75.8,72.9,62.3,44.4,23.9,17.3],"52.5|90|90":[9.9,20.2,41.3,60.0,69.5,73.8,71.3,63.0,48.6,29.7,13.2,8.1],"53.5|0|0":[12.7,27.7,62.3,104.0,127.2,133.5,126.5,105.2,76.0,42.0,16.5,9.2],"53.5|10|-120":[10.7,24.2,56.8,98.6,123.5,130.1,122.5,100.8,71.0,37.2,13.9,7.6],"53.5|10|-150":[9.3,21.3,53.0,94.5,120.9,128.7,120.9,97.9,66.7,33.1,11.9,6.6],"53.5|10|-30":[16.8,33.9,69.8,111.5,131.5,135.7,129.0,110.5,84.1,50.2,21.4,12.7],"53.5|10|-60":[15.1,31.3,66.3,108.4,129.7,134.3,127.3,108.1,80.9,46.8,19.4,11.2],"53.5|10|-90":[12.9,27.8,61.6,103.7,126.8,132.2,124.9,104.6,76.2,42.1,16.6,9.3],"53.5|10|0":[17.3,34.9,71.2,112.5,131.9,136.1,129.7,111.2,85.1,51.3,22.2,13.3],"53.5|10|120":[10.7,24.1,57.4,97.7,122.3,130.1,123.2,100.5,70.0,36.8,13.9,7.6],"53.5|10|150":[9.3,21.3,53.3,94.0,120.2,128.7,121.4,97.8,66.1,33.0,11.9,6.6],"53.5|10|180":[8.8,20.1,51.6,92.8,119.8,128.2,120.6,96.8,64.9,31.4,11.2,6.3],"53.5|10|30":[16.6,33.9,70.2,111.0,130.8,135.5,129.4,110.3,83.7,50.0,21.4,12.7],"53.5|10|60":[14.8,31.3,67.0,107.5,128.5,134.2,127.9,107.8,80.0,46.5,19.3,11.2],"53.5|10|90":[12.7,27.8,62.4,102.7,125.4,132.1,125.6,104.2,75.1,41.7,16.6,9.4],"53.5|20|-120":[9.7,21.8,51.8,92.2,117.7,124.2,116.3,95.3,66.0,33.4,12.4,6.9],"53.5|20|-150":[8.4,16.7,43.5,82.9,111.8,120.9,112.7,88.4,56.5,25.6,9.9,6.4],"53.5|20|-30":[20.5,39.2,75.5,116.9,133.6,135.8,129.6,113.8,90.2,57.0,25.8,16.0],"53.5|20|-60":[17.3,34.4,69.4,111.2,130.7,133.6,126.8,109.7,84.6,50.8,21.8,13.1],"53.5|20|-90":[13.2,28.2,61.0,102.7,124.9,129.4,122.1,103.2,76.0,42.4,16.9,9.6],"53.5|20|0":[21.5,41.0,78.3,118.3,134.1,136.2,130.6,114.9,92.1,59.2,27.2,17.2],"53.5|20|120":[9.6,21.7,52.7,90.4,115.2,124.0,117.5,94.4,64.1,32.8,12.3,6.9],"53.5|20|150":[8.4,16.6,44.0,81.8,110.5,120.9,113.6,88.1,55.4,25.4,9.8,6.4],"53.5|20|180":[8.5,14.8,39.7,79.1,109.6,120.1,112.1,86.1,51.9,21.9,9.9,6.4],"53.5|20|30":[20.1,39.0,76.3,115.9,132.2,135.4,130.1,113.3,89.3,56.6,25.7,16.1],"53.5|20|60":[16.8,34.2,70.5,109.6,128.2,133.2,127.6,108.8,82.9,50.1,21.7,13.2],"53.5|20|90":[12.9,28.1,62.2,100.6,122.0,129.1,123.0,102.2,73.9,41.6,16.8,9.7],"53.5|30|-120":[9.1,20.2,47.9,86.1,111.0,116.9,109.4,89.6,61.5,30.7,11.4,6.4],"53.5|30|-150":[7.9,14.7,36.2,70.6,100.2,110.2,101.9,77.6,47.4,21.5,9.4,5.9],"53.5|30|-30":[23.6,43.3,79.5,119.7,133.6,134.1,128.4,115.1,94.4,62.2,29.4,18.9],"53.5|30|-60":[19.0,36.7,71.1,112.6,130.1,131.3,124.7,110.0,86.8,53.6,23.8,14.7],"53.5|30|-90":[13.5,28.4,60.1,101.0,122.1,125.9,118.6,101.1,75.4,42.4,17.1,9.8],"53.5|30|0":[25.1,45.9,83.4,121.6,133.6,134.1,129.2,116.3,96.9,65.4,31.4,20.5],"53.5|30|120":[8.9,20.0,48.9,83.7,107.5,116.4,110.8,88.2,59.3,30.1,11.3,6.4],"53.5|30|150":[7.9,14.6,36.6,69.0,98.1,110.2,103.1,76.9,46.2,21.3,9.4,5.9],"53.5|30|180":[7.9,14.3,29.4,63.1,96.6,109.1,100.9,73.0,38.5,19.1,9.4,5.9],"53.5|30|30":[23.0,43.1,80.7,118.3,131.4,133.3,128.7,114.1,93.1,61.7,29.2,18.9],"53.5|30|60":[18.3,36.4,72.8,110.0,126.5,130.8,125.9,108.4,84.3,52.8,23.6,14.8],"53.5|30|90":[12.9,28.2,61.6,98.2,118.0,125.0,119.5,99.6,72.5,41.5,16.9,9.9],"53.5|40|-120":[8.4,18.8,44.4,80.3,104.1,109.7,102.4,83.9,57.5,28.4,10.6,5.9],"53.5|40|-150":[7.2,13.4,31.5,60.3,87.3,97.0,89.2,67.4,40.8,19.2,8.6,5.4],"53.5|40|-30":[26.0,46.3,81.8,120.1,130.9,129.7,124.6,114.0,96.5,65.8,32.0,21.1],"53.5|40|-60":[20.2,38.1,71.8,112.1,127.1,127.6,121.3,108.3,87.5,55.3,25.1,15.8],"53.5|40|-90":[13.5,28.2,58.6,98.1,118.2,121.1,114.0,98.1,73.9,41.9,16.9,9.9],"53.5|40|0":[27.9,49.6,86.6,122.2,130.5,129.2,125.3,115.2,99.4,69.9,34.7,23.2],"53.5|40|120":[8.1,18.6,45.5,77.6,100.0,109.0,103.8,82.5,55.3,27.9,10.4,5.9],"53.5|40|150":[7.2,13.3,31.8,58.8,84.6,96.9,90.6,66.8,40.1,19.2,8.6,5.4],"53.5|40|180":[7.2,13.1,26.1,46.7,80.9,95.0,86.9,58.4,30.7,18.0,8.6,5.4],"53.5|40|30":[25.2,46.0,83.1,118.5,128.2,128.6,125.2,113.0,94.9,65.2,31.8,21.2],"53.5|40|60":[19.3,37.8,73.5,109.0,122.9,126.3,122.4,106.6,84.4,54.1,24.8,15.9],"53.5|40|90":[12.8,27.9,60.3,94.9,113.3,120.0,115.2,96.2,70.6,40.7,16.8,10.0],"53.5|50|-120":[7.6,17.3,40.8,74.3,96.6,101.8,94.8,77.8,53.1,26.1,9.6,5.3],"53.5|50|-150":[6.4,11.9,27.8,52.4,76.2,84.2,77.9,59.1,35.7,17.1,7.7,4.8],"53.5|50|-30":[27.6,48.0,82.1,118.2,126.0,123.3,118.9,111.0,96.4,67.7,33.9,22.7],"53.5|50|-60":[20.9,38.5,70.7,109.2,122.6,122.0,116.0,105.1,86.3,55.7,25.7,16.5],"53.5|50|-90":[13.2,27.6,56.2,94.1,112.7,114.9,108.0,93.7,71.2,40.6,16.5,9.7],"53.5|50|0":[29.9,52.0,87.7,120.0,124.7,121.9,118.9,111.8,99.7,72.6,37.0,25.2],"53.5|50|120":[7.3,17.1,42.0,71.8,92.5,101.2,96.7,76.7,51.2,25.6,9.4,5.3],"53.5|50|150":[6.4,11.9,28.1,51.5,73.9,84.2,79.5,59.1,35.5,17.1,7.7,4.8],"53.5|50|180":[6.4,11.7,23.6,37.7,64.1,78.4,71.1,46.4,27.9,16.1,7.7,4.8],"53.5|50|30":[26.8,47.8,83.6,116.0,122.7,122.0,119.2,109.4,94.4,67.0,33.6,22.8],"53.5|50|60":[19.8,38.2,72.8,105.6,117.5,120.5,116.9,102.7,82.7,54.3,25.4,16.6],"53.5|50|90":[12.4,27.1,58.2,90.5,107.4,113.8,109.5,91.7,67.9,39.5,16.3,9.8],"53.5|60|-120":[6.7,15.7,37.0,67.8,88.2,93.1,86.6,70.9,48.4,23.6,8.6,4.7],"53.5|60|-150":[5.6,10.4,24.2,45.6,66.4,73.4,68.1,51.4,31.2,15.0,6.6,4.1],"53.5|60|-30":[28.6,48.6,80.6,113.5,118.3,114.3,110.8,105.5,94.1,68.0,34.8,23.7],"53.5|60|-60":[21.0,38.1,68.2,104.3,115.4,114.1,108.7,99.7,83.4,54.8,25.8,16.7],"53.5|60|-90":[12.6,26.4,53.1,88.7,105.2,107.2,100.7,87.8,67.5,38.7,15.8,9.3],"53.5|60|0":[31.1,53.0,86.7,115.2,116.3,112.1,110.1,105.9,97.6,73.5,38.3,26.5],"53.5|60|120":[6.4,15.4,38.3,65.6,84.5,93.1,88.6,70.5,46.8,23.2,8.3,4.7],"53.5|60|150":[5.6,10.4,24.5,45.2,64.9,74.1,70.0,52.1,31.1,14.9,6.7,4.1],"53.5|60|180":[5.6,10.2,20.8,32.7,52.0,62.8,57.3,39.2,24.5,14.1,6.6,4.1],"53.5|60|30":[27.6,48.3,82.2,111.0,114.7,112.8,111.0,103.7,91.8,67.2,34.5,23.8],"53.5|60|60":[19.8,37.8,70.6,100.7,110.1,112.5,109.6,97.3,79.7,53.3,25.4,16.9],"53.5|60|90":[11.7,25.9,55.0,85.1,100.1,106.1,102.3,86.2,64.1,37.5,15.4,9.4],"53.5|70|-120":[5.8,13.9,33.0,60.6,79.2,83.5,77.6,63.5,43.4,20.9,7.5,4.0],"53.5|70|-150":[4.7,8.9,20.8,39.2,57.2,63.5,58.8,44.2,26.8,12.8,5.6,3.5],"53.5|70|-30":[28.8,47.9,77.2,106.3,108.1,103.0,100.4,97.9,89.7,66.6,34.8,24.1],"53.5|70|-60":[20.7,36.9,64.5,97.7,106.5,104.3,99.4,92.5,78.9,52.7,25.1,16.5],"53.5|70|-90":[11.8,24.5,49.2,81.9,96.5,97.8,91.8,80.8,62.4,36.1,14.7,8.7],"53.5|70|0":[31.5,52.8,83.7,107.6,105.5,100.0,98.9,97.5,93.2,72.6,38.6,27.0],"53.5|70|120":[5.4,13.6,34.1,58.9,76.0,84.1,79.9,63.4,42.2,20.5,7.2,4.0],"53.5|70|150":[4.7,8.8,21.1,39.1,56.4,64.2,60.8,45.4,27.0,12.7,5.6,3.5],"53.5|70|180":[4.7,8.7,17.9,28.0,43.5,51.1,47.4,33.4,21.1,12.1,5.6,3.5],"53.5|70|30":[27.7,47.6,78.9,103.6,104.3,101.5,100.6,95.7,87.1,65.7,34.5,24.2],"53.5|70|60":[19.3,36.5,67.0,93.7,101.1,102.8,100.6,90.2,74.9,51.2,24.8,16.7],"53.5|70|90":[10.9,24.2,51.0,78.2,91.7,97.3,93.8,79.0,59.1,34.7,14.4,8.9],"53.5|80|-120":[4.9,12.0,28.6,53.6,69.5,73.1,67.8,55.7,37.8,18.3,6.3,3.3],"53.5|80|-150":[3.9,7.4,17.5,33.4,48.5,54.1,50.1,37.3,22.6,10.8,4.7,2.8],"53.5|80|-30":[28.2,46.1,72.0,96.7,96.1,90.2,88.3,87.9,83.0,63.5,34.0,23.8],"53.5|80|-60":[19.8,34.8,59.6,88.9,95.0,92.3,88.5,83.9,72.7,49.1,23.9,15.9],"53.5|80|-90":[10.8,22.5,44.2,73.6,86.0,86.9,81.3,72.1,56.6,33.0,13.5,8.0],"53.5|80|0":[31.0,51.2,78.6,97.4,92.2,85.8,85.7,87.0,86.5,69.8,37.9,26.9],"53.5|80|120":[4.5,11.7,29.9,51.8,67.1,74.2,70.8,56.0,36.8,17.8,6.2,3.3],"53.5|80|150":[3.9,7.4,17.8,33.3,48.2,54.8,52.0,39.0,22.8,10.7,4.7,2.8],"53.5|80|180":[3.9,7.3,15.1,23.5,36.4,42.7,39.6,28.0,17.8,10.1,4.7,2.8],"53.5|80|30":[27.1,45.7,73.8,94.0,92.1,88.6,88.5,85.9,80.4,62.6,33.6,23.9],"53.5|80|60":[18.3,34.2,61.7,84.8,89.9,91.2,89.6,81.2,68.5,47.9,23.6,16.1],"53.5|80|90":[9.6,21.8,46.5,70.6,81.7,86.8,83.9,71.4,53.7,31.6,13.1,8.2],"53.5|90|-120":[4.1,10.2,24.4,45.6,59.0,62.4,58.2,47.1,32.5,15.5,5.2,2.6],"53.5|90|-150":[3.1,6.1,14.4,27.5,40.9,44.9,41.5,31.2,18.7,8.8,3.8,2.2],"53.5|90|-30":[26.9,43.1,65.1,85.2,81.4,74.8,74.0,76.6,74.7,58.8,32.2,22.8],"53.5|90|-60":[18.4,32.0,53.2,78.4,83.0,80.0,76.4,73.1,64.9,44.9,22.0,14.9],"53.5|90|-90":[9.7,20.1,39.1,64.9,75.4,75.9,71.0,63.4,49.9,28.8,11.7,7.1],"53.5|90|0":[29.8,48.3,71.6,84.7,76.4,68.9,70.3,74.4,77.5,65.2,36.3,26.0],"53.5|90|120":[3.7,9.8,25.6,44.7,57.4,63.6,60.6,48.4,31.9,15.2,5.1,2.6],"53.5|90|150":[3.1,6.0,14.7,27.7,40.9,46.8,44.1,32.5,19.1,8.8,3.8,2.2],"53.5|90|180":[3.1,6.0,12.4,19.4,29.9,35.4,32.5,23.2,14.8,8.3,3.8,2.2],"53.5|90|30":[25.8,42.7,67.0,82.3,77.3,73.4,74.0,73.9,72.0,57.9,31.9,22.9],"53.5|90|60":[16.9,31.4,55.6,75.0,78.2,78.7,77.0,71.5,61.1,43.3,21.8,15.1],"53.5|90|90":[8.5,19.5,40.6,61.3,70.3,74.9,72.5,62.0,47.0,28.2,11.6,7.1],"54.5|0|0":[10.4,23.9,60.5,106.0,130.8,134.8,128.4,104.1,72.6,37.6,13.4,7.1],"54.5|10|-120":[8.6,20.6,54.5,99.0,125.0,129.8,124.0,98.9,66.8,33.2,11.1,5.7],"54.5|10|-150":[7.3,18.0,50.5,94.7,122.5,128.4,122.1,95.9,62.6,29.4,9.4,4.8],"54.5|10|-30":[14.5,29.8,68.5,114.2,135.4,137.1,131.6,109.7,80.7,45.5,17.9,10.4],"54.5|10|-60":[12.8,27.3,64.7,110.3,132.7,135.0,129.6,106.9,77.2,42.3,16.0,9.0],"54.5|10|-90":[10.6,24.1,59.7,104.8,128.8,132.3,126.8,103.0,72.2,37.9,13.5,7.2],"54.5|10|0":[15.1,30.6,70.1,115.8,136.6,138.2,132.4,110.8,82.1,46.5,18.6,11.0],"54.5|10|120":[8.6,20.5,55.5,99.5,126.3,131.8,124.6,99.5,66.9,32.7,11.1,5.7],"54.5|10|150":[7.3,17.9,51.0,95.0,123.3,129.6,122.5,96.3,62.7,29.1,9.4,4.8],"54.5|10|180":[6.9,16.9,49.1,93.2,121.9,128.4,121.6,95.0,61.0,27.8,8.8,4.7],"54.5|10|30":[14.4,29.6,69.0,114.5,136.0,138.1,131.9,110.0,80.8,45.2,17.8,10.5],"54.5|10|60":[12.7,27.2,65.7,110.8,133.8,136.8,130.2,107.5,77.3,41.8,15.9,9.1],"54.5|10|90":[10.6,23.9,60.8,105.4,130.2,134.4,127.5,103.6,72.3,37.3,13.4,7.3],"54.5|20|-120":[7.7,18.4,49.3,91.3,117.2,122.3,117.2,92.6,61.2,29.8,9.8,5.1],"54.5|20|-150":[6.5,13.9,40.6,81.2,111.2,119.0,112.9,85.5,51.8,22.5,7.8,4.7],"54.5|20|-30":[18.2,34.8,74.8,120.2,137.6,137.4,132.7,113.2,87.0,52.0,22.0,13.6],"54.5|20|-60":[15.0,30.2,68.1,113.1,133.1,133.8,129.3,108.4,80.6,46.2,18.4,10.8],"54.5|20|-90":[11.0,24.4,59.0,103.0,125.7,128.3,123.8,101.1,71.5,38.3,13.8,7.5],"54.5|20|0":[19.4,36.4,77.8,122.8,139.6,139.0,133.8,115.0,89.4,54.0,23.2,14.8],"54.5|20|120":[7.6,18.2,50.8,92.0,119.4,126.0,118.4,93.5,61.2,29.0,9.8,5.1],"54.5|20|150":[6.5,13.8,41.5,81.8,112.8,121.4,113.8,86.3,51.9,22.2,7.8,4.7],"54.5|20|180":[6.7,12.4,36.7,77.8,110.1,119.1,112.1,83.5,47.7,19.1,7.9,4.7],"54.5|20|30":[18.0,34.5,75.9,120.7,138.7,138.9,133.0,113.7,87.1,51.5,21.8,13.8],"54.5|20|60":[14.8,29.9,69.8,113.9,134.8,136.9,130.1,109.1,80.8,45.2,18.1,11.1],"54.5|20|90":[10.9,24.1,60.9,103.8,127.8,132.2,124.7,102.0,71.5,37.2,13.7,7.7],"54.5|30|-120":[7.1,17.0,45.2,84.1,108.8,113.6,109.6,86.4,56.4,27.4,9.1,4.7],"54.5|30|-150":[6.2,12.2,33.4,67.3,97.3,106.5,101.0,73.8,42.6,18.9,7.5,4.4],"54.5|30|-30":[21.4,38.7,79.2,123.5,137.8,135.6,131.8,114.7,91.2,57.1,25.3,16.4],"54.5|30|-60":[16.7,32.5,70.0,114.4,131.8,131.0,127.4,108.7,82.7,49.1,20.2,12.3],"54.5|30|-90":[11.3,24.6,58.0,100.8,121.6,123.8,120.1,98.8,70.5,38.4,14.1,7.7],"54.5|30|0":[23.0,41.1,83.5,127.0,139.8,137.3,132.8,116.8,94.6,60.0,27.2,18.1],"54.5|30|120":[7.0,16.7,47.0,85.0,111.6,118.5,111.0,87.2,56.5,26.5,9.0,4.7],"54.5|30|150":[6.2,12.2,34.2,68.0,99.5,110.1,102.3,74.7,42.6,18.8,7.5,4.4],"54.5|30|180":[6.2,12.0,27.0,60.0,95.1,106.7,99.7,69.6,34.3,17.0,7.5,4.4],"54.5|30|30":[21.0,38.4,80.8,124.2,138.9,137.6,131.9,115.1,91.4,56.4,25.1,16.6],"54.5|30|60":[16.4,32.0,72.5,115.2,134.1,135.2,128.4,109.3,82.8,47.8,19.9,12.7],"54.5|30|90":[11.0,24.1,60.6,101.7,124.3,128.5,121.0,99.8,70.5,37.0,13.8,8.0],"54.5|40|-120":[6.6,15.7,41.8,77.5,100.7,105.2,102.1,80.4,52.3,25.4,8.4,4.3],"54.5|40|-150":[5.6,11.2,29.0,56.3,82.5,91.6,87.3,63.4,36.4,16.9,6.8,4.0],"54.5|40|-30":[23.9,41.6,81.9,124.3,134.9,131.1,128.2,113.8,93.5,60.7,27.9,18.6],"54.5|40|-60":[18.0,33.9,70.8,113.8,128.3,126.8,124.0,107.0,83.3,50.8,21.6,13.4],"54.5|40|-90":[11.4,24.4,56.6,97.4,116.8,118.2,115.3,95.5,68.8,38.1,14.1,7.7],"54.5|40|0":[25.9,44.7,87.2,128.2,137.1,132.8,129.1,116.1,97.5,64.4,30.3,20.7],"54.5|40|120":[6.4,15.4,43.7,78.6,103.8,110.7,103.6,81.5,52.5,24.5,8.2,4.4],"54.5|40|150":[5.6,11.1,29.7,57.1,85.0,96.1,88.8,64.3,36.7,16.9,6.8,4.0],"54.5|40|180":[5.6,10.9,24.4,42.5,77.4,91.1,84.4,54.4,27.4,15.9,6.8,4.0],"54.5|40|30":[23.4,41.2,83.8,125.2,136.3,133.4,128.5,114.5,93.7,59.7,27.6,18.9],"54.5|40|60":[17.6,33.3,73.6,114.7,131.0,131.1,124.7,107.9,83.3,49.1,21.1,13.9],"54.5|40|90":[11.0,23.8,59.5,98.6,119.8,123.6,116.3,96.6,68.9,36.4,13.8,8.1],"54.5|50|-120":[6.0,14.4,38.3,71.1,92.4,96.4,94.1,74.3,48.1,23.3,7.6,3.9],"54.5|50|-150":[5.0,9.9,25.6,48.5,70.7,77.9,75.4,55.2,31.8,15.1,6.0,3.5],"54.5|50|-30":[25.6,43.4,82.6,122.5,129.8,124.5,122.4,110.8,93.5,62.8,29.8,20.3],"54.5|50|-60":[18.8,34.4,70.0,110.8,123.2,120.6,118.6,103.6,82.0,51.4,22.3,14.1],"54.5|50|-90":[11.2,23.9,54.3,92.9,110.6,111.3,109.1,91.1,66.1,37.0,13.8,7.7],"54.5|50|0":[28.1,47.0,88.7,126.5,131.4,125.5,122.7,112.8,98.1,67.2,32.5,22.8],"54.5|50|120":[5.8,14.1,40.4,72.5,96.1,102.5,96.2,75.8,48.6,22.5,7.4,3.9],"54.5|50|150":[5.0,9.9,26.2,49.6,73.7,82.8,77.3,56.6,32.3,15.0,6.0,3.5],"54.5|50|180":[5.0,9.8,22.0,34.6,59.2,73.2,67.5,42.9,24.9,14.2,6.0,3.5],"54.5|50|30":[25.1,42.9,84.8,123.2,131.1,126.9,122.5,111.2,93.7,61.6,29.3,20.6],"54.5|50|60":[18.2,33.7,73.3,111.8,125.9,125.3,119.2,104.3,82.1,49.3,21.7,14.7],"54.5|50|90":[10.8,23.1,57.5,94.2,114.0,117.3,110.6,92.3,66.4,35.2,13.4,8.0],"54.5|60|-120":[5.3,13.0,34.6,64.6,83.8,87.3,85.7,67.5,43.7,21.0,6.8,3.4],"54.5|60|-150":[4.3,8.7,22.4,42.1,61.1,67.1,65.5,48.0,27.7,13.2,5.2,3.0],"54.5|60|-30":[26.7,44.1,81.3,117.7,121.7,115.3,114.1,105.4,91.3,63.2,30.8,21.3],"54.5|60|-60":[19.1,34.1,67.6,105.6,115.6,112.3,111.0,98.2,79.2,50.8,22.4,14.5],"54.5|60|-90":[10.8,22.8,51.3,87.3,102.8,103.0,101.4,85.2,62.4,35.3,13.3,7.4],"54.5|60|0":[29.4,48.1,88.1,121.8,122.9,115.7,113.7,107.1,96.3,68.1,33.9,24.1],"54.5|60|120":[5.1,12.7,36.8,66.1,87.8,93.9,87.9,69.6,44.4,20.4,6.5,3.4],"54.5|60|150":[4.3,8.6,22.9,43.3,64.3,72.4,67.7,49.8,28.4,13.1,5.2,3.0],"54.5|60|180":[4.3,8.5,19.3,30.0,47.8,57.5,53.9,36.3,21.8,12.5,5.2,3.0],"54.5|60|30":[26.1,43.5,83.8,118.4,123.0,117.7,114.0,105.7,91.5,61.8,30.3,21.7],"54.5|60|60":[18.4,33.4,71.3,106.9,118.4,117.1,111.8,99.1,79.3,48.5,21.8,15.1],"54.5|60|90":[10.3,22.1,54.5,88.7,106.6,109.3,103.2,86.8,62.7,33.4,12.8,7.8],"54.5|70|-120":[4.6,11.4,30.9,57.6,74.8,77.8,76.6,60.3,39.0,18.6,5.9,2.9],"54.5|70|-150":[3.6,7.4,19.3,36.1,52.4,57.6,56.3,41.2,23.8,11.3,4.4,2.5],"54.5|70|-30":[27.1,43.6,78.1,110.3,110.9,103.6,103.5,97.7,87.1,62.1,30.9,21.8],"54.5|70|-60":[18.8,33.1,64.1,98.6,106.2,102.1,101.4,91.0,74.7,48.9,22.0,14.4],"54.5|70|-90":[10.2,21.2,47.5,80.3,93.8,93.5,92.4,78.3,57.6,33.0,12.5,7.0],"54.5|70|0":[30.0,48.0,85.3,114.1,111.6,103.3,102.2,98.8,92.1,67.4,34.3,24.8],"54.5|70|120":[4.2,11.2,32.9,59.4,79.0,84.8,79.0,62.7,40.0,18.0,5.7,2.9],"54.5|70|150":[3.6,7.3,19.7,37.4,55.9,62.6,58.8,43.4,24.5,11.2,4.4,2.5],"54.5|70|180":[3.6,7.2,16.6,25.6,40.2,47.3,44.8,30.9,18.8,10.7,4.4,2.5],"54.5|70|30":[26.4,43.0,80.7,110.9,112.2,106.0,103.3,97.8,87.2,60.6,30.4,22.2],"54.5|70|60":[18.2,32.3,67.9,99.8,109.0,107.0,102.5,92.0,74.9,46.5,21.4,15.1],"54.5|70|90":[9.7,20.6,50.7,81.6,97.9,100.1,94.4,79.7,58.0,31.0,11.9,7.4],"54.5|80|-120":[3.9,9.8,26.7,50.7,65.3,67.6,66.7,52.9,34.0,16.3,5.0,2.3],"54.5|80|-150":[3.0,6.1,16.1,30.7,44.1,49.0,47.9,34.8,20.1,9.4,3.6,2.0],"54.5|80|-30":[26.7,42.0,73.0,100.2,98.2,90.3,90.8,87.7,80.6,59.3,30.3,21.6],"54.5|80|-60":[18.1,31.3,59.2,89.5,94.3,89.8,90.3,82.4,68.8,45.7,21.1,13.9],"54.5|80|-90":[9.4,19.4,42.7,71.9,83.2,82.4,81.7,69.8,52.1,30.2,11.4,6.4],"54.5|80|0":[29.7,46.7,80.4,103.5,97.6,88.7,88.6,88.2,85.7,64.9,33.8,24.8],"54.5|80|120":[3.5,9.6,28.9,52.2,69.9,74.7,70.0,55.3,34.9,15.7,4.8,2.4],"54.5|80|150":[3.0,6.1,16.6,31.9,47.7,53.4,50.2,37.4,20.6,9.4,3.6,2.0],"54.5|80|180":[3.0,6.0,13.9,21.5,33.6,39.1,37.3,25.9,15.8,8.9,3.6,2.0],"54.5|80|30":[26.0,41.5,75.7,101.0,99.3,92.5,90.7,88.0,80.7,57.8,29.8,22.1],"54.5|80|60":[17.3,30.3,62.7,90.5,97.3,94.8,91.1,83.0,68.7,43.5,20.4,14.6],"54.5|80|90":[8.7,18.5,46.2,73.8,87.5,89.3,84.3,72.1,52.7,28.3,10.9,6.8],"54.5|90|-120":[3.2,8.4,22.9,43.0,55.2,56.9,56.3,44.7,29.1,13.8,4.1,1.9],"54.5|90|-150":[2.4,5.0,13.3,25.1,37.2,40.5,39.7,29.0,16.6,7.7,2.9,1.6],"54.5|90|-30":[25.6,39.4,66.1,88.1,82.9,74.5,76.1,76.2,72.4,55.0,28.8,20.9],"54.5|90|-60":[16.9,28.8,52.9,78.7,81.9,77.2,77.6,71.7,61.1,41.8,19.4,13.1],"54.5|90|-90":[8.4,17.4,37.7,63.2,72.5,71.4,71.2,61.1,45.8,26.4,10.0,5.7],"54.5|90|0":[28.7,44.1,73.5,90.3,81.0,71.1,72.6,75.5,77.0,60.7,32.4,24.1],"54.5|90|120":[2.9,8.0,24.6,45.1,59.8,64.1,59.9,48.0,30.3,13.4,4.0,1.9],"54.5|90|150":[2.4,5.0,13.8,26.5,40.3,45.7,42.4,31.1,17.3,7.7,2.9,1.6],"54.5|90|180":[2.4,4.9,11.5,17.7,27.5,32.2,30.7,21.5,13.1,7.3,2.9,1.6],"54.5|90|30":[24.9,38.8,69.0,88.8,83.5,76.4,75.8,75.9,72.5,53.5,28.3,21.3],"54.5|90|60":[16.1,27.8,56.7,80.1,84.8,82.0,79.1,73.2,61.3,39.4,18.9,13.8],"54.5|90|90":[7.7,16.5,40.5,64.1,75.5,76.9,72.8,62.7,46.2,25.2,9.7,6.0]};
+</script>
+<script>
+/* ───────── Ertragsprognose, Eigenverbrauch, Autarkie ─────────
+   Ertrag: PVGIS 5.3 (EU-Kommission, SARAH3, 2005–2023), 1 kWp, 14 % Systemverluste, ohne Horizont.
+   Eingebettetes Raster (15a_yield_data.js): Breite 47,5–54,5° (Schritt 1°) × Neigung 0–90° (10°) × Ausrichtung
+   −150…180° (30°, PVGIS-Konvention: 0 = Süd, −90 = Ost, +90 = West), Monatswerte kWh/kWp. Dazwischen wird
+   linear interpoliert. Verschattung ist NICHT enthalten.
+   Eigenverbrauch: stündliche Jahressimulation mit typischem Haushaltsprofil (an H0 angelehnt), sonnigen und
+   trüben Tagen je Monat und Speicher (Wirkungsgrad je Richtung 95 %). Das ist eine Schätzung. */
+const YLD_LATS=[47.5,48.5,49.5,50.5,51.5,52.5,53.5,54.5], YLD_TILTS=[0,10,20,30,40,50,60,70,80,90], YLD_ASP=[-150,-120,-90,-60,-30,0,30,60,90,120,150,180];
+const MDAYS=[31,28,31,30,31,30,31,31,30,31,30,31];
+function yldCell(li,ti,ai){ /* Monatswerte kWh/kWp an einem Rasterpunkt */
+  const t=YLD_TILTS[ti], a=t===0?0:YLD_ASP[ai]; const v=YIELD_GRID[YLD_LATS[li]+"|"+t+"|"+a]; return v||null;
+}
+function pvgisMonthly(lat,tilt,aspect){
+  const cl=(x,a,b)=>Math.max(a,Math.min(b,x));
+  const lf=(cl(lat,47.5,54.5)-47.5), l0=Math.min(6,Math.floor(lf)), lw=lf-l0;
+  const tf=cl(tilt,0,90)/10, t0=Math.min(8,Math.floor(tf)), tw=tf-t0;
+  let a=((aspect%360)+540)%360-180; if(a<=-180) a+=360;          /* (−180, 180] */
+  let af=(a+150)/30; if(af<0) af+=12;                             /* −180…−150 liegt zwischen 180 (Index 11) und −150 (0) */
+  const a0=Math.floor(af)%12, a1=(a0+1)%12, aw=af-Math.floor(af);
+  const out=new Array(12).fill(0);
+  for(const [li,wl] of [[l0,1-lw],[l0+1,lw]]) for(const [ti,wt] of [[t0,1-tw],[t0+1,tw]]) for(const [ai,wa] of [[a0,1-aw],[a1,aw]]){
+    const w=wl*wt*wa; if(!w) continue; const c=yldCell(li,ti,ai); if(!c) continue; for(let m=0;m<12;m++) out[m]+=w*c[m];
+  }
+  return out;
+}
+/* Haushaltsprofil: Stundenanteile (Werktag, an H0 angelehnt) und Monatsfaktoren */
+const LOAD_H=[0.55,0.45,0.40,0.38,0.38,0.42,0.60,0.85,0.90,0.85,0.82,0.85,0.95,0.90,0.80,0.75,0.80,0.95,1.20,1.35,1.30,1.15,0.95,0.72];
+const LOAD_M=[1.18,1.10,1.02,0.95,0.90,0.86,0.86,0.88,0.93,1.00,1.10,1.20];
+/* Tagestypen (Ertragsfaktor, Anteil der Tage): Winter (Jan, Feb, Okt–Dez) stark gestreut mit vielen fast ertragslosen Tagen.
+   Kalibriert gegen den Unabhängigkeitsrechner der HTW Berlin (4.500 kWh, Süd): 5 kWp 28 %, 10 kWp 33 %, 10 kWp + 5 kWh 58 %,
+   10 kWp + 10 kWh 70 %, 20 kWp + 15 kWh 78 % Autarkie → Modell 29 / 33 / 60 / 68 / 77 %. */
+const DAYS_WINTER=[[0.03,0.3],[0.3,0.3],[1.2,0.2],[3.0,0.2]], DAYS_SUMMER=[[0.08,0.2],[0.4,0.2],[0.9,0.2],[1.45,0.2],[2.17,0.2]];
+const SIM_KDIRECT=0.85, SIM_STANDBY=0.6, SIM_ETA=0.92; /* Lastspitzen im Stundenmittel, Eigenverbrauch Speichersystem kWh/Tag, Wirkungsgrad je Richtung */
+function pvDayShape(lat,m,aspect){ /* 24 Stundenanteile (Summe 1) */
+  const n=[17,47,75,105,135,162,198,228,258,288,318,344][m], dec=23.44*Math.sin(2*Math.PI*(284+n)/365)*Math.PI/180, phi=lat*Math.PI/180;
+  const ws=Math.acos(Math.max(-1,Math.min(1,-Math.tan(phi)*Math.tan(dec))))*180/Math.PI, half=ws/15;
+  const noon=12.3+(m>=3&&m<=9?1:0)+Math.max(-2.2,Math.min(2.2,aspect/180*2.6)); /* Sommerzeit, Ost/West verschiebt die Spitze */
+  const sh=new Array(24).fill(0); let s=0;
+  for(let h=0;h<24;h++){ const x=(h+0.5-(noon-half))/(2*half); if(x>0&&x<1){ sh[h]=Math.pow(Math.sin(Math.PI*x),1.4); s+=sh[h]; } }
+  return s?sh.map(v=>v/s):sh;
+}
+function yieldFaces(){
+  const M=modOf(); if(!M||!MODS.length) return [];
+  return P.faces.map((f,fi)=>{ const n=MODS.filter(c=>c.fi===fi).length; if(!n) return null;
+    const kwp=n*M.wp/1000, az=azimuthOf(f), asp=az-180, spec=pvgisMonthly(P.lat||51,f.pitch||0,asp);
+    return {f,n,kwp,az,asp,monthly:spec.map(v=>v*kwp),spec:spec.reduce((a,b)=>a+b,0)}; }).filter(Boolean);
+}
+function batUsable(){ return (P.bats||[]).reduce((a,b)=>{ const B=LIB.batteries.find(x=>x.id===b.batId); return a+(B?(+B.kwh||0)*(+b.qty||1):0); },0); }
+/* Jahressimulation; cons in kWh/Jahr, cap in kWh */
+function simulate(faces,cons,cap,lat){
+  let pvT=0,self=0,feed=0,grid=0,soc=0; const eta=SIM_ETA, pmax=Math.max(0.5,cap*0.5);
+  const loadSum=LOAD_H.reduce((a,b)=>a+b,0), mSum=LOAD_M.reduce((a,f,i)=>a+f*MDAYS[i],0);
+  for(let m=0;m<12;m++){
+    const lh=LOAD_H.map(v=>cons*LOAD_M[m]/mSum*v/loadSum);        /* kWh je Stunde an einem Tag dieses Monats */
+    const pvH=new Array(24).fill(0);
+    faces.forEach(fc=>{ const sh=pvDayShape(lat,m,fc.asp), d=fc.monthly[m]/MDAYS[m]; for(let h=0;h<24;h++) pvH[h]+=d*sh[h]; });
+    /* Tage in fester, gemischter Reihenfolge – der Speicher läuft über die Tage hinweg durch */
+    const seq=[]; (m<=1||m>=9?DAYS_WINTER:DAYS_SUMMER).forEach(([f,w])=>{ const n=Math.round(w*MDAYS[m]); for(let k=0;k<n;k++) seq.push(f); });
+    seq.sort((a,b)=>((a*7919)%1)-((b*7919)%1)); const norm=seq.reduce((a,b)=>a+b,0)/seq.length, dayW=MDAYS[m]/seq.length;
+    for(const f0 of seq){ const fac=f0/norm;
+      for(let h=0;h<24;h++){
+        const pv=pvH[h]*fac, l=lh[h], direct=Math.min(pv,l)*SIM_KDIRECT; let sur=pv-direct, def=l-direct, fromBat=0;
+        if(cap>0){ if(sur>0){ const ch=Math.min(sur,pmax,(cap-soc)/eta); soc+=ch*eta; sur-=ch; }
+          if(def>0){ fromBat=Math.min(def,pmax,soc*eta); soc-=fromBat/eta; def-=fromBat; } soc=Math.max(0,soc-SIM_STANDBY/24); }
+        pvT+=pv*dayW; self+=(direct+fromBat)*dayW; feed+=sur*dayW; grid+=def*dayW;
+      }
+    }
+  }
+  return {pv:pvT,self,feed,grid,cons,evq:pvT?self/pvT:0,aut:cons?self/cons:0};
+}
+function yieldCfg(){ const c=P.yieldCfg=P.yieldCfg||{}; if(!(c.cons>0)){ const v=P.vo&&P.vo.val&&+P.vo.val.verbrauch; c.cons=v>100?v:4500; } if(!(c.price>0)) c.price=0.32; if(!(c.feed>=0)) c.feed=0.078; return c; }
+function yieldResult(){
+  const faces=yieldFaces(); if(!faces.length) return null;
+  const c=yieldCfg(), cap=batUsable(), sim=simulate(faces,c.cons,cap,P.lat||51), sim0=cap>0?simulate(faces,c.cons,0,P.lat||51):null;
+  const kwp=faces.reduce((a,f)=>a+f.kwp,0), monthly=new Array(12).fill(0); faces.forEach(f=>f.monthly.forEach((v,i)=>monthly[i]+=v));
+  const save=sim.self*c.price+sim.feed*c.feed, net=P.offer&&typeof offerTotals==="function"?offerTotals().net:0;
+  return {faces,kwp,monthly,year:monthly.reduce((a,b)=>a+b,0),cap,sim,sim0,save,net,payback:net&&save?net/save:null,cfg:c};
+}
+function yieldSideHtml(){
+  const r=yieldResult();
+  if(!r) return `<div class="sec"><h2>Ertragsprognose</h2><div class="hint">Erst Dachflächen und Module belegen.</div></div>`;
+  const kwh=v=>fmt(v,0).replace(/\B(?=(\d{3})+(?!\d))/g,".")+" kWh", pct=v=>fmt(v*100,0)+" %", mx=Math.max(...r.monthly,1);
+  const mn=["J","F","M","A","M","J","J","A","S","O","N","D"], c=r.cfg;
+  return `<div class="sec"><h2>Ertragsprognose</h2>
+    <div class="kpis" style="grid-template-columns:1fr 1fr;margin:0"><div class="kpi sun"><b>${kwh(r.year)}</b><span>Ertrag pro Jahr</span></div><div class="kpi"><b>${fmt(r.year/r.kwp,0)}</b><span>kWh je kWp</span></div></div>
+    <div class="bars" aria-label="Monatsertrag">${r.monthly.map((v,i)=>`<div style="height:${Math.max(2,v/mx*100)}%" title="${kwh(v)}"><span>${mn[i]}</span></div>`).join("")}</div>
+    <div class="stat">${r.faces.map(f=>`<span>${esc(f.f.name)} · ${compass(f.az)} ${fmt(f.f.pitch||0,0)}°</span><b>${kwh(f.monthly.reduce((a,b)=>a+b,0))}</b>`).join("")}</div>
+    <div class="hint">PVGIS-Daten der EU (2005–2023) für ${fmt(P.lat||51,1)}° N, 14 % Systemverluste. Verschattung durch Gauben, Kamine oder Bäume ist nicht eingerechnet.</div></div>
+  <div class="sec"><h2>Eigenverbrauch &amp; Autarkie</h2>
+    <div class="grid2">${num("yCons","Jahresverbrauch (kWh)",c.cons,'data-y="cons" min="500"',100)}${num("yPrice","Strompreis (€/kWh)",c.price,'data-y="price" min="0"',0.01)}</div>
+    ${num("yFeed","Einspeisevergütung (€/kWh)",c.feed,'data-y="feed" min="0"',0.001)}
+    <div class="kpis" style="grid-template-columns:1fr 1fr;margin:0"><div class="kpi"><b>${pct(r.sim.aut)}</b><span>Autarkie${r.cap?" mit "+fmt(r.cap,1)+" kWh Speicher":""}</span></div><div class="kpi"><b>${pct(r.sim.evq)}</b><span>Eigenverbrauch</span></div></div>
+    <div class="stat"><span>Selbst genutzt</span><b>${kwh(r.sim.self)}</b><span>Eingespeist</span><b>${kwh(r.sim.feed)}</b><span>Netzbezug</span><b>${kwh(r.sim.grid)}</b>
+      ${r.sim0?`<span>Autarkie ohne Speicher</span><b>${pct(r.sim0.aut)}</b>`:""}<span>Ersparnis pro Jahr</span><b>${eur(r.save)}</b>${r.payback?`<span>Amortisation (Angebot netto)</span><b>${fmt(r.payback,1)} Jahre</b>`:""}</div>
+    <div class="hint">Schätzung mit einem typischen Haushaltsprofil, ohne Wärmepumpe und E-Auto. Der tatsächliche Wert hängt stark vom Verbrauchsverhalten ab.</div></div>`;
+}
+side.addEventListener("change",e=>{
+  const t=e.target; if(!P||!t.dataset.y) return; const c=yieldCfg(), v=parseFloat(t.value);
+  if(t.dataset.y==="cons"&&v>100) c.cons=Math.min(v,200000); else if(t.dataset.y==="price"&&v>=0) c.price=Math.min(v,2); else if(t.dataset.y==="feed"&&v>=0) c.feed=Math.min(v,1);
+  scheduleSave(); renderSide();
+});
+</script>
+<script>
+/* ───────── Vor-Ort-Aufnahme: Checkliste und Fotos ─────────
+   Checkliste in P.vo = {chk:{id:true}, val:{id:Wert}, notes:""}.
+   Fotos: Beschreibung in P.photos = [{id, cat, cap, ts}] (klein, reist mit dem Projekt),
+   Bilddaten getrennt unter „photo/<Projekt-id>/<Foto-id>“ und auf GitHub als photos/<Projekt>/<Foto>.jpg.
+   So lädt nicht jede Projektversion alle Bilder erneut hoch. */
+const VO_ITEMS=[
+  {grp:"Dach",id:"deckung",l:"Dacheindeckung / Ziegeltyp",t:"text",ph:"z. B. Frankfurter Pfanne, Biber"},
+  {grp:"Dach",id:"sparren",l:"Sparrenabstand gemessen (m)",t:"num"},
+  {grp:"Dach",id:"sparrenq",l:"Sparrenquerschnitt",t:"text",ph:"z. B. 8/16"},
+  {grp:"Dach",id:"neigung",l:"Dachneigung gemessen (°)",t:"num"},
+  {grp:"Dach",id:"dachok",l:"Dach und Lattung in gutem Zustand",t:"check"},
+  {grp:"Dach",id:"gerust",l:"Gerüst / Absturzsicherung",t:"sel",opts:["unklar","nicht nötig","Gerüst nötig","Dachfanggerüst nötig","Hubsteiger"]},
+  {grp:"Elektro",id:"netz",l:"Netzform",t:"sel",opts:["unklar","TN-C-S","TN-S","TT"]},
+  {grp:"Elektro",id:"zs",l:"Zählerschrank: Platz für PV-Komponenten",t:"sel",opts:["unklar","ausreichend","knapp","neuer Zählerschrank nötig"]},
+  {grp:"Elektro",id:"zaehler",l:"Zählernummer",t:"text"},
+  {grp:"Elektro",id:"spd",l:"Überspannungsschutz vorhanden",t:"check"},
+  {grp:"Elektro",id:"pas",l:"Potentialausgleichsschiene vorhanden",t:"check"},
+  {grp:"Elektro",id:"hak",l:"Hausanschluss-Sicherung (A)",t:"num"},
+  {grp:"Aufstellung",id:"wrort",l:"Wechselrichter-Standort",t:"text",ph:"Keller, Garage, Dachboden …"},
+  {grp:"Aufstellung",id:"lan",l:"Internet / LAN am Standort",t:"check"},
+  {grp:"Aufstellung",id:"speicherort",l:"Platz für Speicher (frostfrei, trocken)",t:"check"},
+  {grp:"Aufstellung",id:"weg",l:"Leitungsweg Dach → WR geklärt",t:"check"},
+  {grp:"Aufstellung",id:"wb",l:"Wallbox gewünscht / Standort",t:"text"},
+  {grp:"Kunde",id:"verbrauch",l:"Jahresverbrauch Strom (kWh)",t:"num"},
+  {grp:"Kunde",id:"wp",l:"Wärmepumpe vorhanden / geplant",t:"check"},
+  {grp:"Kunde",id:"eauto",l:"E-Auto vorhanden / geplant",t:"check"}
+];
+const PHOTO_CATS=["Dach","Dachboden / Sparren","Zählerschrank","Hausanschluss","WR-Standort","Leitungsweg","Sonstiges"];
+function voEnsure(){ P.vo=P.vo&&typeof P.vo==="object"?P.vo:{}; P.vo.chk=P.vo.chk||{}; P.vo.val=P.vo.val||{}; if(!Array.isArray(P.photos)) P.photos=[]; return P.vo; }
+function voDone(){ const v=voEnsure(); return VO_ITEMS.filter(i=>i.t==="check"?v.chk[i.id]:(v.val[i.id]!=null&&v.val[i.id]!==""&&v.val[i.id]!=="unklar")).length; }
+function vorortSideHtml(){
+  const v=voEnsure(); let grp="", h="";
+  VO_ITEMS.forEach(i=>{
+    if(i.grp!==grp){ if(grp) h+=`</div></div>`; grp=i.grp; h+=`<div class="sec"><h2>${esc(grp)}</h2><div class="checklist">`; }
+    const val=v.val[i.id]??"";
+    if(i.t==="check") h+=`<label class="row"><input type="checkbox" data-vo="chk" data-id="${i.id}" ${v.chk[i.id]?"checked":""}><span>${esc(i.l)}</span></label>`;
+    else if(i.t==="sel") h+=`<label class="f">${esc(i.l)}<select data-vo="val" data-id="${i.id}">${i.opts.map(o=>`<option${o===val?" selected":""}>${esc(o)}</option>`).join("")}</select></label>`;
+    else h+=`<label class="f">${esc(i.l)}<input type="${i.t==="num"?"number":"text"}" step="any" data-vo="val" data-id="${i.id}" value="${esc(val)}" placeholder="${esc(i.ph||"")}"></label>`;
+  });
+  h+=`</div></div>`;
+  const photos=P.photos.map(ph=>`<figure data-ph="${esc(ph.id)}"><img alt="${esc(ph.cat+(ph.cap?": "+ph.cap:""))}" data-phview="${esc(ph.id)}"><figcaption>${esc(ph.cat)}${ph.cap?" · "+esc(ph.cap):""}</figcaption><button type="button" class="dng" data-phdel="${esc(ph.id)}" aria-label="Foto löschen">×</button></figure>`).join("");
+  return `<div class="sec"><h2>Vor-Ort-Termin</h2><div class="hint">${voDone()} von ${VO_ITEMS.length} Punkten erfasst. Werte wie Sparrenabstand, Dachneigung und Jahresverbrauch kannst du unten mit einem Klick in die Planung übernehmen.</div>
+      <button type="button" data-vo="apply">Werte in die Planung übernehmen</button></div>
+    <div class="sec"><h2>Fotos</h2>
+      <div class="grid2"><label class="f">Kategorie<select id="phCat">${PHOTO_CATS.map(c=>`<option${c===UI.phCat?" selected":""}>${esc(c)}</option>`).join("")}</select></label>
+        <label class="f">Notiz (optional)<input id="phCap" type="text" placeholder="z. B. Zähler links"></label></div>
+      <input id="phIn" type="file" accept="image/*" capture="environment" multiple hidden>
+      <div class="row"><button type="button" class="pri" data-vo="shoot">Foto aufnehmen / hinzufügen</button><span class="hint">${P.photos.length} Foto${P.photos.length===1?"":"s"}</span></div>
+      ${photos?`<div class="photos">${photos}</div>`:`<div class="hint">Noch keine Fotos. Auf iPad und iPhone öffnet sich direkt die Kamera.</div>`}</div>
+    ${h}
+    <div class="sec"><h2>Besonderheiten</h2><textarea data-vo="notes" rows="4" placeholder="Was muss man beim Aufbau wissen?">${esc(v.notes||"")}</textarea></div>`;
+}
+/* Bilder nachladen, nachdem die Seitenleiste gezeichnet wurde */
+async function voLoadThumbs(){
+  for(const img of document.querySelectorAll("#sideBody [data-phview]")){
+    const d=await S.get("photo/"+P.id+"/"+img.dataset.phview); if(d&&d.data&&img.isConnected) img.src=d.data;
+  }
+}
+function voShrink(file){
+  return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onerror=rej;
+    fr.onload=()=>{ const im=new Image(); im.onerror=()=>rej(new Error("Bild nicht lesbar"));
+      im.onload=()=>{ const k=Math.min(1,1600/Math.max(im.naturalWidth,im.naturalHeight)), c=document.createElement("canvas");
+        c.width=Math.round(im.naturalWidth*k); c.height=Math.round(im.naturalHeight*k); c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+        res(c.toDataURL("image/jpeg",0.78)); };
+      im.src=fr.result; };
+    fr.readAsDataURL(file); });
+}
+side.addEventListener("input",e=>{
+  const t=e.target; if(!P||UI.tab!=="vorort"||!t.dataset.vo) return; const v=voEnsure();
+  if(t.dataset.vo==="val"){ const x=t.type==="number"?(t.value===""?"":parseFloat(t.value)):t.value; if(x===""||x==null) delete v.val[t.dataset.id]; else v.val[t.dataset.id]=x; scheduleSave(); }
+  else if(t.dataset.vo==="notes"){ v.notes=t.value; scheduleSave(); }
+});
+side.addEventListener("change",async e=>{
+  const t=e.target; if(!P||UI.tab!=="vorort") return; const v=voEnsure();
+  if(t.dataset.vo==="chk"){ v.chk[t.dataset.id]=t.checked; scheduleSave(); renderNav(); }
+  else if(t.dataset.vo==="val"&&t.tagName==="SELECT"){ v.val[t.dataset.id]=t.value; scheduleSave(); renderNav(); }
+  else if(t.id==="phIn"&&t.files&&t.files.length){
+    const cat=$("#phCat").value, cap=$("#phCap").value.trim(); let n=0; UI.phCat=cat;
+    for(const f of t.files){
+      try{ const data=await voShrink(f), id=uid("ph"); await S.set("photo/"+P.id+"/"+id,{data}); P.photos.push({id,cat,cap,ts:new Date().toISOString()}); n++; }
+      catch(err){ toast("Foto konnte nicht gelesen werden"); }
+    }
+    t.value=""; if(n){ changed(); renderSide(); toast(n+" Foto"+(n===1?"":"s")+" gespeichert"); }
+  }
+});
+side.addEventListener("click",async e=>{
+  if(!P||UI.tab!=="vorort") return; const b=e.target.closest("[data-vo],[data-phdel],[data-phview]"); if(!b) return;
+  if(b.dataset.vo==="shoot") $("#phIn").click();
+  else if(b.dataset.vo==="apply") voApply();
+  else if(b.dataset.phdel){ if(!confirm("Foto löschen?")) return; const id=b.dataset.phdel; P.photos=P.photos.filter(p=>p.id!==id); await S.del("photo/"+P.id+"/"+id); changed(); renderSide(); }
+  else if(b.dataset.phview){ const ph=P.photos.find(p=>p.id===b.dataset.phview); if(!ph||!b.src) return;
+    const m=modal(ph.cat+(ph.cap?" · "+ph.cap:""),`<img src="${b.src}" alt="" style="width:100%;border-radius:10px"><div class="hint">${esc(fmtDate(ph.ts))}</div>`,"Schließen",()=>true); m.querySelector('[data-m="cancel"]').remove(); m.querySelector(".mbox").style.width="min(900px,100%)"; }
+});
+/* Aufgenommene Werte in die Planung übernehmen (nur was erfasst ist) */
+function voApply(){
+  const v=voEnsure(), got=[];
+  const spar=+v.val.sparren; if(spar>0.2&&spar<2){ ensureSub(); P.sub.spar=spar; got.push("Sparrenabstand"); }
+  const pitch=+v.val.neigung; if(pitch>0&&pitch<80&&P.faces.length){ P.faces.forEach(f=>f.pitch=pitch); got.push("Dachneigung (alle Flächen)"); }
+  const cons=+v.val.verbrauch; if(cons>100){ P.yieldCfg=Object.assign(P.yieldCfg||{},{cons}); got.push("Jahresverbrauch"); }
+  if(got.length){ changed(); renderSide(); toast("Übernommen: "+got.join(", ")); } else toast("Noch nichts zum Übernehmen erfasst");
+}
+
+/* ───────── Fotos mit GitHub abgleichen ───────── */
+async function photoSync(){
+  const st=SYNC.state.__ph=SYNC.state.__ph||{};
+  for(const {id:pid,data:d} of await S.list("projects")){
+    if(!d||d.demo) continue;
+    const metas=Array.isArray(d.photos)?d.photos:[], want=new Set(metas.map(m=>m.id));
+    for(const m of metas){
+      const key=pid+"/"+m.id, loc=await S.get("photo/"+key);
+      if(loc&&loc.data&&!st[key]){
+        try{ const r=await gh("/contents/photos/"+key+".jpg",{method:"PUT",body:JSON.stringify({message:"Foto "+(m.cat||""),content:loc.data.split(",")[1]})}); if(r) st[key]=(await r.json()).content.sha; }
+        catch(e){ const r=await gh("/contents/photos/"+key+".jpg"); if(r) st[key]=(await r.json()).sha; else throw e; } /* existiert schon (anderes Gerät) */
+      } else if(!loc){
+        const r=await gh("/contents/photos/"+key+".jpg"); if(r){ const j=await r.json(); if(j.content){ await S.set("photo/"+key,{data:"data:image/jpeg;base64,"+String(j.content).replace(/\n/g,"")}); st[key]=j.sha; } }
+      }
+    }
+    for(const key of Object.keys(st).filter(k=>k.startsWith(pid+"/"))){
+      if(want.has(key.slice(pid.length+1))) continue;
+      try{ await gh("/contents/photos/"+key+".jpg",{method:"DELETE",body:JSON.stringify({message:"Foto gelöscht",sha:st[key]})}); }catch(e){}
+      delete st[key]; await S.del("photo/"+key);
+    }
+  }
+}
 </script>
 <script>
 /* ───────── Bibliothek ───────── */
