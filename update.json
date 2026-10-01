@@ -1,11 +1,11 @@
 {
   "app": {
-    "version": "2026.10.01.1",
+    "version": "2026.10.01.2",
     "file": "Dachplaner-PV.html",
-    "notes": "Projektmappe: alle PDFs (Kundenblatt, Preisaufstellung, Pläne, Netzanmeldung, Schaltplan, Prüfprotokoll DC, Packliste) als ein Dokument unter „Export“, Teile per Haken wählbar. Neu: SMA Sunny Tripower Hybrid X 5–15, BYD Battery-Box HVS+ und HVM+."
+    "notes": "Projektmappe: alle PDFs (Kundenblatt, Preisaufstellung, Pläne, Netzanmeldung, Schaltplan, Prüfprotokoll DC, Packliste) als ein Dokument unter „Export“, Teile per Haken wählbar. Neu: SMA Sunny Tripower Hybrid X 5–15, BYD Battery-Box HVS+ und HVM+. Die Pläne in der Mappe nehmen A4 quer, falls kein Format gewählt ist."
   },
   "library": {
-    "version": "2026.10.01.1",
+    "version": "2026.10.01.2",
     "file": "library.json",
     "notes": "Neu: SMA Sunny Tripower Hybrid X 5/6/8/10/12/15, BYD Battery-Box HVS+ 5.1–12.8 und HVM+ 8.3–22.1 mit Shop-Preisen."
   }

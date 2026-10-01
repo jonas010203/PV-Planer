@@ -2803,7 +2803,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.10.01.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.1";
+const APP_VERSION="2026.10.01.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -4724,7 +4724,7 @@ async function exportPdf(into){
   const btn=$("#pdfBtn"); if(btn){ btn.disabled=true; btn.textContent="Erstelle …"; }
   try{
     await new Promise(r=>setTimeout(r,30));
-    const fm=$("#pdfFmt").value, withImg=$("#pdfImg")?$("#pdfImg").checked:true;
+    const fm=$("#pdfFmt")?$("#pdfFmt").value:"a4", withImg=$("#pdfImg")?$("#pdfImg").checked:true;
     const [W,H]=fm==="a3"?[420,297]:[297,210];
     const doc=pdfDoc(J,into,"landscape",fm);
     const hasSub=!!(P.sub&&P.sub.on&&SUB), N=hasSub?5:4; let pn=1;
