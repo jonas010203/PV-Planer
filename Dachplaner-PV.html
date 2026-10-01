@@ -816,6 +816,8 @@ function buildInverters(){
   [15,20,25].forEach(p=>L.push(inv("inv-sun-sh"+p+"t","Sungrow","SH"+p+"T",p,1000,150,950,[M2(32,40,2),M2(32,40,2),M2(16,20,1)],HYB(100,700,50))));
   // Huawei SUN2000-3…10KTL-M1 (Datenblatt solar.huawei.com): 1100 V, MPPT 140–980 V, 2 MPPT je 13,5 A / 19,5 A, LUNA2000 600–980 V
   [[3,"i-hua-3ktl"],[4,"i-hua-4ktl"],[5,"i-hua-5ktl"],[6,"i-hua-6ktl"],[8,"i-hua-8ktl"],[10,"i-hua-10ktl"]].forEach(([p,id])=>L.push(inv(id,"Huawei","SUN2000-"+p+"KTL-M1",p,1100,140,980,[M2(13.5,19.5,1),M2(13.5,19.5,1)],Object.assign(HYB(600,980,25),{src:"Datenblatt (solar.huawei.com)"}))));
+  // SMA Sunny Tripower Hybrid X 5–15 (STPHxx-60, ab 06/2026; Handbuch manuals.sma.de): 1000 V, MPP bis 850 V, 3 MPPT je 18 A / 24 A, Batterie 80–600 V / 50 A
+  [[5,100],[6,120],[8,160],[10,200],[12,240],[15,300]].forEach(([p,mn])=>L.push(inv("inv-sma-stphx"+p,"SMA","Sunny Tripower Hybrid X "+p,p,1000,mn,850,[M2(18,24,1),M2(18,24,1),M2(18,24,1)],Object.assign(HYB(80,600,50),{src:"Datenblatt (manuals.sma.de)"}))));
   return L;
 }
 function bat(id,brand,name,kwh,vmin,vmax,imax,extra){ return Object.assign({id,brand,name:`${brand} ${name}`,kwh,vmin,vmax,imax,ok:true,src:"Datenblatt"},extra||{}); }
@@ -829,6 +831,9 @@ function buildBatteries(){
   // BYD Battery-Box HVB (2–10 Module à 2,97 kWh, 50 A)
   [[2,"5.9",5.94,80,115.2],[3,"8.9",8.91,120,172.8],[4,"11.8",11.88,160,230.4],[5,"14.8",14.85,200,288],[6,"17.8",17.82,240,345.6],[7,"20.7",20.79,280,403.2],[8,"23.7",23.76,320,460.8],[9,"26.7",26.72,360,518.4],[10,"29.6",29.69,400,576]]
     .forEach(([m,n,k,a,b])=>L.push(bat("bat-byd-hvb"+m,"BYD","Battery-Box HVB "+n,k,a,b,50)));
+  // BYD Battery-Box HVS+ (4. Generation, 2–5 Module à 2,56 kWh, 25 A) und HVM+ (3–8 Module à 2,76 kWh, 50 A)
+  [[5.12,"5.1",160,230.4],[7.68,"7.7",240,345.6],[10.24,"10.2",320,460.8],[12.8,"12.8",400,576]].forEach(([k,n,a,b])=>L.push(bat("bat-byd-hvsp"+n,"BYD","Battery-Box HVS+ "+n,k,a,b,25)));
+  [[8.28,"8.3",120,172.8],[11.04,"11.0",160,230.4],[13.8,"13.8",200,288],[16.56,"16.6",240,345.6],[19.32,"19.3",280,403.2],[22.08,"22.1",320,460.8]].forEach(([k,n,a,b])=>L.push(bat("bat-byd-hvmp"+n,"BYD","Battery-Box HVM+ "+n,k,a,b,50)));
   // SMA Home Storage (2–5 Module à 3,28 kWh, 36 A)
   [[2,"6.5",6.56,180,216],[3,"9.8",9.84,270,324],[4,"13.1",13.12,360,432],[5,"16.4",16.4,450,540]].forEach(([m,n,k,a,b])=>L.push(bat("bat-sma-hs"+m,"SMA","Home Storage "+n,k,a,b,36,{src:"Datenblatt (sma.de)"})));
   // Huawei LUNA2000 (dreiphasig 600–980 V)
@@ -839,6 +844,7 @@ function buildBatteries(){
 const MAXDC={
   "inv-sma-sb15":3.0,"inv-sma-sb25":5.0,"inv-sma-sb3":5.5,"inv-sma-sb3.6":5.5,"inv-sma-sb4":7.5,"inv-sma-sb5":7.5,"inv-sma-sb6":9.0,
   "inv-sma-sbse3.6":7.2,"inv-sma-sbse4":8.0,"inv-sma-sbse5":10.0,"inv-sma-sbse6":12.0,
+  "inv-sma-stphx5":7.5,"inv-sma-stphx6":9.0,"inv-sma-stphx8":12.0,"inv-sma-stphx10":15.0,"inv-sma-stphx12":18.0,"inv-sma-stphx15":22.5,
   "inv-sma-stpx12":18.0,"inv-sma-stpx15":22.5,"inv-sma-stpx20":30.0,"inv-sma-stpx25":37.5,
   "inv-fro-primo50":7.5,"inv-fro-primo60":9.0,"inv-fro-primo82":12.3,
   "inv-fro-gen24-3":4.5,"inv-fro-gen24-4":6.0,"inv-fro-gen24-5":7.5,"inv-fro-gen24-6":9.0,"inv-fro-gen24-8":12.0,"inv-fro-gen24-10":15.0,
@@ -2017,14 +2023,7 @@ function renderSide(){
     h=`<div class="sec"><h2>Schriftfeld</h2>
       ${txt("pName","Projekt",P.name,'data-p="name"')}${txt("pKunde","Kunde",P.kunde,'data-p="kunde"')}${txt("pAdr","Anlagenadresse",P.adresse,'data-p="adresse"')}
       <div class="grid2">${txt("pBear","Bearbeiter",P.bearbeiter,'data-p="bearbeiter"')}${txt("pDat","Datum",P.datum,'data-p="datum"')}</div></div>
-    <div class="sec"><h2>PDF</h2>
-      <label class="f">Format<select id="pdfFmt"><option value="a4">A4 quer</option><option value="a3">A3 quer</option></select></label>
-      <label class="row"><input id="pdfImg" type="checkbox" checked> Luftbild als Hintergrund</label>
-      <div class="hint">Seiten: Belegungsplan, Stringplan, Stringtabelle mit Spannungsprüfung, Stückliste.</div>
-      <button id="pdfBtn" class="pri" data-act="pdf" type="button">PDF erstellen</button></div>
-    <div class="sec"><h2>Packliste für die Baustelle</h2>
-      <div class="hint">Alle Materialpositionen aus dem Angebot, nach Bereich sortiert, mit Kästchen zum Abhaken (A4 hoch). Gibt es noch kein Angebot, wird es aus dem Plan erzeugt.</div>
-      <button data-act="packlist" type="button">Packliste erstellen</button></div>
+    ${pdfPartsHtml()}
     <div class="sec"><h2>Übersicht</h2><div class="stat"><span>Module</span><b>${MODS.length}</b><span>Leistung</span><b>${fmt(M2?MODS.length*M2.wp/1000:0,2)} kWp</b><span>Flächen</span><b>${P.faces.length}</b><span>Strings</span><b>${P.strings.length}</b></div></div>
     <div class="sec"><button data-act="home" type="button">Zur Projektübersicht</button></div>`;
   }
@@ -2112,6 +2111,7 @@ side.addEventListener("click",e=>{
     case "clearStr": { const s=selStr(); if(s){ s.mods=[]; changed(); renderSide(); } break; }
     case "delStr": { P.strings=P.strings.filter(s=>s.id!==UI.selString); UI.selString=P.strings[0]?.id||null; changed(); renderSide(); break; }
     case "pdf": exportPdf(); break;
+    case "pdfAll": exportAllPdf(); break;
     case "packlist": exportPackList(); break;
     case "netzPdf": exportNetzPdf(); break;
     case "slpPdf": exportSlpPdf(); break;
@@ -2162,7 +2162,7 @@ function artPrice(a,qty,oi){
 const artOf=id=>ARTS.find(a=>a.id===id)||null;
 /* Geprüfte Zuordnung Bibliotheksgerät → Shop-Artikel (nur exakt gleiches Modell und gleiche Größe, 30.09.2026).
    Ohne Eintrag: Richtpreis-Artikel rp-<id>; erst danach die alte Namenssuche. */
-const SHOP_MAP={"inv-sma-stpse5": "sma-sunny-tripower-smart-energy-6-0-stp5-0-3se-40", "inv-sma-stpse6": "sma-sunny-tripower-10-0-smart-energy-stp10-0-3se-40-kopie", "inv-sma-stpse8": "sma-sunny-tripower-8-0-smart-energy-stp8-0-3se-40", "inv-fro-gen24-6": "fronius-symo-gen24-6-0-plus-sc-hybrid-wechselrichter", "inv-fro-gen24-8": "fronius-gen24-8-0-plus-hybrid-wechselrichter", "inv-fro-gen24-10": "fronius-symo-gen24-10-0-plus-sc-hybrid-wechselrichter-10kw", "inv-sun-sh5": "sungrow-hybrid-sh5-0rt", "inv-sun-sh6": "sungrow-hybrid-sh6-0rt", "inv-sun-sh8": "sungrow-sh8-0rt-20-v11-hybrid-wechselrichter", "inv-sun-sh10": "sungrow-hybrid-sh10-0rt", "inv-sun-sh15t": "sungrow-hybrid-sh15t-inkl-smartmeter-v11", "inv-sun-sh20t": "sungrow-hybrid-sh20t-inkl-smartmeter-v11", "inv-sun-sh25t": "sungrow-hybrid-sh25t-inkl-smartmeter-v11", "inv-fro-verto15": "fronius-verto-plus-15", "inv-fro-verto17.5": "fronius-verto-plus-17-5", "inv-fro-verto20": "fronius-verto-plus-20", "inv-fro-verto25": "fronius-verto-plus-25", "inv-fro-verto30": "fronius-verto-plus-30", "inv-fro-verto33.3": "fronius-verto-plus-33", "i-hua-5ktl": "huawei-sun2000-5ktl-m1-hc", "i-hua-6ktl": "huawei-sun2000-6ktl-m1-hybrid-wechselrichter-6kw", "i-hua-8ktl": "huawei-sun2000-8ktl-m1-hc", "i-hua-10ktl": "huawei-sun2000-10ktl-m1-hc", "bat-byd-hvs5.1": "byd-hvs-5-1-battery-box-premium", "bat-byd-hvs7.7": "byd-hvs-7-7-battery-box-premium", "bat-byd-hvs10.2": "byd-hvs-10-2-battery-box-premium", "bat-byd-hvs12.8": "byd-hvs-12-8-battery-box-premium", "bat-byd-hvm8.3": "byd-battery-box-premium-hvm-8-3", "bat-byd-hvm11.0": "byd-battery-box-premium-hvm-11-0", "bat-byd-hvm13.8": "byd-hvm-13-8-battery-box-premium", "bat-byd-hvm16.6": "byd-hvm-16-6-battery-box-premium", "bat-byd-hvm19.3": "byd-hvm-19-3-battery-box-premium", "bat-byd-hvm22.1": "byd-hvm-22-1-battery-box-premium", "bat-sun-sbr096": "sungrow-sbr096-batteriespeicher-1", "bat-sun-sbh100": "sungrow-sbh100-batteriespeicher-10kwh", "bat-sun-sbh150": "sungrow-sbh150-batteriespeicher-15kwh", "bat-sun-sbh200": "sungrow-sbh200-batteriespeicher-20kwh", "bat-sun-sbh250": "sungrow-sbh250-batteriespeicher-25kwh", "bat-sun-sbh300": "sungrow-sbh300-batteriespeicher-30kwh", "bat-sun-sbh350": "sungrow-sbh350-batteriespeicher-35kwh", "bat-sun-sbh400": "sungrow-sbh400-batteriespeicher-40kwh", "bat-byd-hvb2": "byd-battery-box-hvb-5-9-kwh-speicher", "bat-byd-hvb3": "byd-battery-box-hvb-8-9-kwh-speicher", "bat-byd-hvb4": "byd-battery-box-hvb-11-8-kwh-speicher", "bat-byd-hvb5": "byd-battery-box-hvb-14-8-kwh-speicher", "bat-byd-hvb6": "byd-battery-box-hvb-17-8-kwh-speicher", "bat-byd-hvb7": "byd-battery-box-hvb-20-7-kwh-speicher", "bat-byd-hvb8": "byd-battery-box-hvb-23-7-kwh-speicher", "bat-byd-hvb9": "byd-battery-box-hvb-26-7-kwh-speicher", "bat-byd-hvb10": "byd-battery-box-hvb-29-6-kwh-speicher", "bat-sma-hs2": "sma-home-storage-6-5-batteriespeicher", "bat-sma-hs3": "sma-home-storage-9-8-batteriespeicher", "bat-sma-hs4": "sma-home-storage-13-1-batteriespeicher", "bat-sma-hs5": "sma-home-storage-16-4-batteriespeicher", "bat-hua-luna5-s0": "huawei-luna2000-5-s0-speicherbatterie", "bat-hua-luna10-s0": "huawei-luna2000-10-so-batteriespeicher", "bat-hua-luna15-s0": "huawei-luna2000-15-s0-speicherbatterie", "bat-hua-luna7-s1": "huawei-luna2000-7-s1-batteriespeicher-6-9-kwh-speicher", "bat-hua-luna14-s1": "huawei-luna2000-14-s1-batteriespeicher-13-8-kwh-speicher", "bat-hua-luna21-s1": "huawei-luna2000-21-s1-batteriespeicher-20-7-kwh-speicher", "mod-trina-vertexstsmneg9r28-465": "trina-solar-465w-black-frame-tsm-465neg9r-28-vertex-s", "mod-trina-vertexstsmneg9r28-470": "trina-solar-470w-black-frame-tsm-470-neg9r-28-vertex-s"};
+const SHOP_MAP={"inv-sma-stphx5": "sma-sunny-tripower-hybrid-x-5-stph5-60", "inv-sma-stphx6": "sma-sunny-tripower-hybrid-x-6-stph6-60", "inv-sma-stphx8": "sma-sunny-tripower-hybrid-x-8-stph8-60", "inv-sma-stphx10": "sma-sunny-tripower-hybrid-x-10-stph10-60", "inv-sma-stphx12": "sma-sunny-tripower-hybrid-x-12-stph12-60", "inv-sma-stphx15": "sma-sunny-tripower-hybrid-x-15-stph15-60", "bat-byd-hvsp5.1": "byd-battery-box-premium-hvs-plus-5-1", "bat-byd-hvsp7.7": "byd-battery-box-premium-hvs-7-7", "bat-byd-hvsp10.2": "byd-battery-box-premium-hvs-plus-10-2", "bat-byd-hvsp12.8": "byd-battery-box-premium-hvs-plus-12-8", "bat-byd-hvmp8.3": "byd-hvm-8-3-battery-box", "bat-byd-hvmp11.0": "byd-hvm-11-0-battery-box", "bat-byd-hvmp13.8": "byd-hvm-13-8-battery-box", "bat-byd-hvmp16.6": "byd-hvm-16-6-battery-box", "bat-byd-hvmp19.3": "byd-hvm-19-3-battery-box", "bat-byd-hvmp22.1": "byd-hvm-22-1-battery-box", "inv-sma-stpse5": "sma-sunny-tripower-smart-energy-6-0-stp5-0-3se-40", "inv-sma-stpse6": "sma-sunny-tripower-10-0-smart-energy-stp10-0-3se-40-kopie", "inv-sma-stpse8": "sma-sunny-tripower-8-0-smart-energy-stp8-0-3se-40", "inv-fro-gen24-6": "fronius-symo-gen24-6-0-plus-sc-hybrid-wechselrichter", "inv-fro-gen24-8": "fronius-gen24-8-0-plus-hybrid-wechselrichter", "inv-fro-gen24-10": "fronius-symo-gen24-10-0-plus-sc-hybrid-wechselrichter-10kw", "inv-sun-sh5": "sungrow-hybrid-sh5-0rt", "inv-sun-sh6": "sungrow-hybrid-sh6-0rt", "inv-sun-sh8": "sungrow-sh8-0rt-20-v11-hybrid-wechselrichter", "inv-sun-sh10": "sungrow-hybrid-sh10-0rt", "inv-sun-sh15t": "sungrow-hybrid-sh15t-inkl-smartmeter-v11", "inv-sun-sh20t": "sungrow-hybrid-sh20t-inkl-smartmeter-v11", "inv-sun-sh25t": "sungrow-hybrid-sh25t-inkl-smartmeter-v11", "inv-fro-verto15": "fronius-verto-plus-15", "inv-fro-verto17.5": "fronius-verto-plus-17-5", "inv-fro-verto20": "fronius-verto-plus-20", "inv-fro-verto25": "fronius-verto-plus-25", "inv-fro-verto30": "fronius-verto-plus-30", "inv-fro-verto33.3": "fronius-verto-plus-33", "i-hua-5ktl": "huawei-sun2000-5ktl-m1-hc", "i-hua-6ktl": "huawei-sun2000-6ktl-m1-hybrid-wechselrichter-6kw", "i-hua-8ktl": "huawei-sun2000-8ktl-m1-hc", "i-hua-10ktl": "huawei-sun2000-10ktl-m1-hc", "bat-byd-hvs5.1": "byd-hvs-5-1-battery-box-premium", "bat-byd-hvs7.7": "byd-hvs-7-7-battery-box-premium", "bat-byd-hvs10.2": "byd-hvs-10-2-battery-box-premium", "bat-byd-hvs12.8": "byd-hvs-12-8-battery-box-premium", "bat-byd-hvm8.3": "byd-battery-box-premium-hvm-8-3", "bat-byd-hvm11.0": "byd-battery-box-premium-hvm-11-0", "bat-byd-hvm13.8": "byd-hvm-13-8-battery-box-premium", "bat-byd-hvm16.6": "byd-hvm-16-6-battery-box-premium", "bat-byd-hvm19.3": "byd-hvm-19-3-battery-box-premium", "bat-byd-hvm22.1": "byd-hvm-22-1-battery-box-premium", "bat-sun-sbr096": "sungrow-sbr096-batteriespeicher-1", "bat-sun-sbh100": "sungrow-sbh100-batteriespeicher-10kwh", "bat-sun-sbh150": "sungrow-sbh150-batteriespeicher-15kwh", "bat-sun-sbh200": "sungrow-sbh200-batteriespeicher-20kwh", "bat-sun-sbh250": "sungrow-sbh250-batteriespeicher-25kwh", "bat-sun-sbh300": "sungrow-sbh300-batteriespeicher-30kwh", "bat-sun-sbh350": "sungrow-sbh350-batteriespeicher-35kwh", "bat-sun-sbh400": "sungrow-sbh400-batteriespeicher-40kwh", "bat-byd-hvb2": "byd-battery-box-hvb-5-9-kwh-speicher", "bat-byd-hvb3": "byd-battery-box-hvb-8-9-kwh-speicher", "bat-byd-hvb4": "byd-battery-box-hvb-11-8-kwh-speicher", "bat-byd-hvb5": "byd-battery-box-hvb-14-8-kwh-speicher", "bat-byd-hvb6": "byd-battery-box-hvb-17-8-kwh-speicher", "bat-byd-hvb7": "byd-battery-box-hvb-20-7-kwh-speicher", "bat-byd-hvb8": "byd-battery-box-hvb-23-7-kwh-speicher", "bat-byd-hvb9": "byd-battery-box-hvb-26-7-kwh-speicher", "bat-byd-hvb10": "byd-battery-box-hvb-29-6-kwh-speicher", "bat-sma-hs2": "sma-home-storage-6-5-batteriespeicher", "bat-sma-hs3": "sma-home-storage-9-8-batteriespeicher", "bat-sma-hs4": "sma-home-storage-13-1-batteriespeicher", "bat-sma-hs5": "sma-home-storage-16-4-batteriespeicher", "bat-hua-luna5-s0": "huawei-luna2000-5-s0-speicherbatterie", "bat-hua-luna10-s0": "huawei-luna2000-10-so-batteriespeicher", "bat-hua-luna15-s0": "huawei-luna2000-15-s0-speicherbatterie", "bat-hua-luna7-s1": "huawei-luna2000-7-s1-batteriespeicher-6-9-kwh-speicher", "bat-hua-luna14-s1": "huawei-luna2000-14-s1-batteriespeicher-13-8-kwh-speicher", "bat-hua-luna21-s1": "huawei-luna2000-21-s1-batteriespeicher-20-7-kwh-speicher", "mod-trina-vertexstsmneg9r28-465": "trina-solar-465w-black-frame-tsm-465neg9r-28-vertex-s", "mod-trina-vertexstsmneg9r28-470": "trina-solar-470w-black-frame-tsm-470-neg9r-28-vertex-s"};
 function devArt(id){ const m=SHOP_MAP[id]; return (m&&artOf(m))||artOf("rp-"+id)||null; }
 
 function findArt(cat,tokens){
@@ -2346,9 +2346,7 @@ function offerSideHtml(){
     <label class="f">Bevorzugter Hersteller für LS, FI und Schutzgeräte<select id="ofPref" data-of="pref">${["Eaton","Hager","egal"].map(b=>`<option${b===SET.pref?" selected":""}>${b}</option>`).join("")}</select></label>
     <button data-oa2="applyrate" type="button">Stundensatz auf alle Arbeitspositionen anwenden</button>
     <div class="hint">Einkaufspreise sind Netto-Tagespreise aus den Shops. Verkaufspreis = Einkauf plus Aufschlag.</div></div>
-  <div class="sec"><h2>PDF</h2>
-    <div class="hint">Einfache Preisliste: Artikelnummer, Bezeichnung, Menge, Einzelpreis, Gesamtpreis und Summe.</div>
-    <button class="pri" id="ofPdf" data-oa2="pdf" type="button">PDF erstellen</button></div>`;
+  <div class="sec"><div class="hint">Die Preisaufstellung als PDF gibt es am Ende unter „Export“ in der Projektmappe.</div></div>`;
 }
 side.addEventListener("input",e=>{
   const t=e.target; if(!P||UI.tab!=="angebot") return;
@@ -2377,13 +2375,13 @@ side.addEventListener("click",e=>{
 });
 
 /* ───────── PDF: einfache Preisliste ───────── */
-async function offerPdf(){
+async function offerPdf(into){
   const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
   const o=ensureOffer(), t=offerTotals();
   const btn=$("#ofPdf"); if(btn){ btn.disabled=true; btn.textContent="Erstelle …"; }
   try{
     await new Promise(r=>setTimeout(r,20));
-    const doc=new J({orientation:"portrait",unit:"mm",format:"a4"}), L=18, R=192, T=s=>pdfTxt(s);
+    const doc=pdfDoc(J,into,"portrait","a4"), L=18, R=192, T=s=>pdfTxt(s);
     const X={pos:L,art:L+9,name:L+41,qty:R-34,unit:R-23,total:R};
     doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.text("Preisaufstellung",L,22);
     doc.setFont("helvetica","normal"); doc.setFontSize(10);
@@ -2407,11 +2405,12 @@ async function offerPdf(){
     if(y>268){ doc.addPage(); y=22; }
     y+=3; doc.setDrawColor(20); doc.setLineWidth(0.4); doc.line(R-64,y-4.4,R,y-4.4);
     doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Summe",R-64,y); doc.text(T(eur(t.net)),R-1,y,{align:"right"});
-    const n=doc.getNumberOfPages(); if(n>1) for(let p=1;p<=n;p++){ doc.setPage(p); doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(120); doc.text(`Seite ${p}/${n}`,R,290,{align:"right"}); doc.setTextColor(20); }
+    const p0=doc.__p0||1, n=doc.getNumberOfPages()-p0+1; if(n>1) for(let k=1;k<=n;k++){ doc.setPage(p0+k-1); doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(120); doc.text(`Seite ${k}/${n}`,R,290,{align:"right"}); doc.setTextColor(20); }
+    if(into) return true;
     const name=("Preisaufstellung_"+(P.name||"Projekt")).replace(/[^\wäöüÄÖÜß-]+/g,"_")+".pdf";
     const dl=await (window.claude?.use?.("downloads")??null);
     if(dl){ await dl.save({filename:name,data:doc.output("blob")}); toast("PDF bereit"); } else await saveFile(name,doc.output("blob"));
-  }catch(e){ if(e&&e.code==="declined") toast("Speichern abgebrochen"); else { toast("PDF fehlgeschlagen"); console.error(e); } }
+  }catch(e){ if(into) throw e; if(e&&e.code==="declined") toast("Speichern abgebrochen"); else { toast("PDF fehlgeschlagen"); console.error(e); } }
   finally{ if(btn){ btn.disabled=false; btn.textContent="PDF erstellen"; } }
 }
 </script>
@@ -2804,7 +2803,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.09.30.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.09.30.2";
+const APP_VERSION="2026.10.01.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.1";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -3724,12 +3723,12 @@ function itemGroup(it){
   if(/Schutz und Verteilung/.test(c)) return "AC";
   return "Sonstiges";
 }
-async function exportPackList(){
+async function exportPackList(into){
   const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
   ensureOffer(); if(!P.offer.items.some(i=>i.auto)){ offerFromPlan(); changed(); }
   const items=P.offer.items.filter(i=>i.t!=="labor"&&(+i.qty||0)>0);
-  if(!items.length){ toast("Keine Materialpositionen im Angebot"); return; }
-  const doc=new J({orientation:"portrait",unit:"mm",format:"a4"}), W=210, L=14, R=W-14;
+  if(!items.length) return pdfSkip(into,"Packliste: keine Materialpositionen im Angebot");
+  const doc=pdfDoc(J,into,"portrait","a4"), W=210, L=14, R=W-14;
   const pdfTxt=s=>String(s??"").replace(/→/g,"->").replace(/[–—]/g,"-").replace(/[„“”]/g,'"').replace(/…/g,"...");
   let y=16, page=1;
   const head=()=>{ doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.setTextColor(20); doc.text("Packliste",L,y);
@@ -3763,6 +3762,7 @@ async function exportPackList(){
   }
   need(40); doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(10,106,134); doc.text("Notizen / Nachbestellen",L,y); y+=4;
   doc.setDrawColor(200); doc.setLineWidth(0.2); for(let i=0;i<6&&y<284;i++){ y+=6; doc.line(L,y,R,y); }
+  if(into) return true;
   const name=("Packliste_"+(P.name||"Projekt")).replace(/[^\wäöüÄÖÜß-]+/g,"_")+".pdf";
   try{
     const dl=await (window.claude?.use?.("downloads")??null);
@@ -4151,16 +4151,19 @@ function netzSideHtml(){
     <div class="grid2"><label class="f">Geplante Inbetriebnahme<input type="date" data-nz="ibn" value="${esc(c.ibn||"")}"></label>${num("nzBest","Vorhandene Erzeugung (kW)",c.bestand||0,'data-nz="bestand" min="0"',0.01)}</div>
     <div class="stat"><span>Modulleistung (MaStR brutto)</span><b>${fmt(d.kwp,2)} kWp</b><span>Wechselrichter (netto)</span><b>${fmt(d.sAC,2)} kVA</b>${d.bats.length?`<span>Speicher</span><b>${fmt(d.bats.reduce((a,x)=>a+x.kwh,0),2)} kWh</b>`:""}</div>
     <div class="chk">${d.checks.map(([l,t])=>`<span class="${l}">${esc(t)}</span><span class="${l}">${l==="ok"?"✓":l==="warn"?"!":"✗"}</span>`).join("")}</div>
-    <div class="row"><button type="button" class="pri" data-act="netzPdf">Anlagendaten (PDF)</button><button type="button" data-act="slpPdf">Übersichtsschaltplan (PDF)</button><button type="button" data-act="dcPdf">Prüfprotokoll DC</button></div>
+    <div class="hint">Anlagendaten, Übersichtsschaltplan und Prüfprotokoll DC sind Teil der Projektmappe oben.</div>
     <div class="hint">Arbeitshilfe zum Übertragen ins Portal des Netzbetreibers und ins Marktstammdatenregister. Maßgeblich bleiben dessen Formulare.</div></div>`;
 }
+/* Projektmappe: abgewählte Teile merken (gilt für alle Projekte) */
+side.addEventListener("change",e=>{ const k=e.target.dataset.pp; if(!k) return; const off=new Set(SET.pdfOff||[]);
+  if(e.target.checked) off.delete(k); else off.add(k); SET.pdfOff=[...off]; saveSettings(); });
 side.addEventListener("change",e=>{ const t=e.target; if(!P||!t.dataset.nz) return; const c=netzCfg(), k=t.dataset.nz;
   c[k]=k==="bestand"?Math.max(0,parseFloat(t.value)||0):t.value; scheduleSave(); renderSide(); });
 
 /* ───────── PDF 1: Anlagendaten für Netzanmeldung und Marktstammdatenregister ───────── */
-async function exportNetzPdf(){
+async function exportNetzPdf(into){
   const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
-  const d=netzData(), c=d.cfg, nb=NB[c.nb]||NB.other, doc=new J({orientation:"portrait",unit:"mm",format:"a4"}), L=16, R=194;
+  const d=netzData(), c=d.cfg, nb=NB[c.nb]||NB.other, doc=pdfDoc(J,into,"portrait","a4"), L=16, R=194;
   let y=18, page=1;
   const T=pdfTxt, need=h=>{ if(y+h>282){ doc.addPage(); page++; y=18; } };
   const H=t=>{ need(14); y+=3; doc.setFillColor(11,110,128); doc.rect(L,y-4.2,2,5.2,"F"); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(20); doc.text(T(t),L+4,y); y+=5; };
@@ -4201,7 +4204,8 @@ async function exportNetzPdf(){
     doc.setFont("helvetica","normal"); doc.setTextColor(20); doc.text(lines,L+9,y); y+=lines.length*4.4+1.4; });
   need(10); doc.setFont("helvetica","italic"); doc.setFontSize(7.5); doc.setTextColor(120);
   doc.text(doc.splitTextToSize(T("Arbeitshilfe aus dem Dachplaner PV. Maßgeblich sind die Formulare und Vorgaben des Netzbetreibers sowie VDE-AR-N 4105. Leistungsangaben im MaStR müssen mit dem Inbetriebsetzungsprotokoll übereinstimmen (2 Nachkommastellen)."),R-L),L,y+4);
-  const n=doc.getNumberOfPages(); for(let p=1;p<=n;p++){ doc.setPage(p); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(140); doc.text(`Seite ${p}/${n}`,R,290,{align:"right"}); }
+  const p0=doc.__p0||1, n=doc.getNumberOfPages()-p0+1; for(let k=1;k<=n;k++){ doc.setPage(p0+k-1); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(140); doc.text(`Seite ${k}/${n}`,R,290,{align:"right"}); }
+  if(into) return true;
   await netzSave(doc,"Anlagendaten_Netzanmeldung_");
 }
 async function netzSave(doc,prefix){
@@ -4231,10 +4235,10 @@ function slpSymbols(doc){
     box:(x,y,w,h,dash)=>{ lw(0.3); if(dash) doc.setLineDashPattern([2,1.2],0); doc.rect(x,y,w,h); doc.setLineDashPattern([],0); }
   };
 }
-async function exportSlpPdf(){
+async function exportSlpPdf(into){
   const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
-  const d=netzData(), c=d.cfg, nb=NB[c.nb]||NB.other; if(!d.wrs.length){ toast("Kein Wechselrichter im Projekt"); return; }
-  const doc=new J({orientation:"landscape",unit:"mm",format:"a4"}), W=297, H=210, s=slpSymbols(doc);
+  const d=netzData(), c=d.cfg, nb=NB[c.nb]||NB.other; if(!d.wrs.length) return pdfSkip(into,"Übersichtsschaltplan: kein Wechselrichter im Projekt");
+  const doc=pdfDoc(J,into,"landscape","a4"), W=297, H=210, s=slpSymbols(doc);
   doc.setDrawColor(20); doc.setLineWidth(0.5); doc.rect(8,8,W-16,H-16);
   s.label("Übersichtsschaltplan PV-Anlage (einpolige Darstellung)",14,16,12,null,true);
   s.label(`${fmt(d.kwp,2)} kWp · ${fmt(d.sAC,2)} kVA${d.bats.length?" · Speicher "+fmt(d.bats.reduce((a,x)=>a+x.kwh,0),1)+" kWh":""} · Netz ${c.netzform} 400/230 V · ${nb.kurz}`,14,21.5,8.5);
@@ -4295,14 +4299,15 @@ async function exportSlpPdf(){
   s.box(96,H-44,26,7); s.label("PA-Schiene",109,H-39.7,6.3,{align:"center"},true); s.earth(109,H-37); s.label("Montagegestell / WR / Speicher: H07V-K 16 mm² bzw. 6 mm²",125,H-39.7,6);
   /* Schriftfeld */
   titleBlock(doc,W,H,"Übersichtsschaltplan",1,1);
+  if(into) return true;
   await netzSave(doc,"Uebersichtsschaltplan_");
 }
 
 /* ───────── PDF 3: Prüfprotokoll DC nach DIN EN 62446-1 ───────── */
-async function exportDcPdf(){
+async function exportDcPdf(into){
   const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
-  const M=modOf(), strs=P.strings.filter(s=>s.mods.length); if(!M||!strs.length){ toast("Erst Strings anlegen"); return; }
-  const doc=new J({orientation:"landscape",unit:"mm",format:"a4"}), W=297, H=210, L=12, T=pdfTxt;
+  const M=modOf(), strs=P.strings.filter(s=>s.mods.length); if(!M||!strs.length) return pdfSkip(into,"Prüfprotokoll DC: noch keine Strings angelegt");
+  const doc=pdfDoc(J,into,"landscape","a4"), W=297, H=210, L=12, T=pdfTxt;
   doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.text(T("Prüfprotokoll DC-Seite (nach DIN EN 62446-1)"),L,18);
   doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(90);
   doc.text(T(`${P.name||""} · ${P.adresse||""} · Modul: ${M.name} · Sollwerte bei STC (25 °C) und für -10 °C Zelltemperatur`),L,23.5); doc.setTextColor(20);
@@ -4326,6 +4331,7 @@ async function exportDcPdf(){
   doc.setFont("helvetica","normal"); doc.setFontSize(8.5);
   [["Messgerät / Kalibrierung",L],["Datum",L+100],["Prüfer (Name, Unterschrift)",L+160]].forEach(([t,xx])=>{ doc.setDrawColor(120); doc.line(xx,y+8,xx+(t.startsWith("Prüfer")?110:90),y+8); doc.setTextColor(110); doc.setFontSize(7); doc.text(T(t),xx,y+11.5); });
   doc.setTextColor(20);
+  if(into) return true;
   await netzSave(doc,"Pruefprotokoll_DC_");
 }
 </script>
@@ -4366,15 +4372,15 @@ function checkSideHtml(){
   return `<div class="sec"><h2>Planungscheck</h2>
     ${!L.length?`<div class="pill ok" style="align-self:flex-start">Alles geprüft – keine Hinweise</div>`:`<div class="row">${n.bad?`<span class="pill bad">${n.bad} Fehler</span>`:""}${n.warn?`<span class="pill warn">${n.warn} Hinweis${n.warn===1?"":"e"}</span>`:""}${!n.bad&&!n.warn?`<span class="pill ok">keine Fehler</span>`:""}</div>
     <div class="list">${L.map(x=>`<div data-goto="${x.tab}" title="Zum Schritt ${esc(lab[x.tab]||x.tab)}"><span class="pill ${x.lv==="info"?"":x.lv}" style="flex:none">${esc(lab[x.tab]||x.tab)}</span><span style="flex:1;white-space:normal;font-size:13px">${esc(x.txt)}</span></div>`).join("")}</div>`}
-    <button type="button" data-act="custPdf">Kundenblatt (PDF)</button></div>`;
+    </div>`;
 }
 side.addEventListener("click",e=>{ const g=e.target.closest("[data-goto]"); if(!g||!P) return; const t=g.dataset.goto; if(t!=="export") setTab(t); });
 
 /* ───────── Kundenblatt ───────── */
-async function exportCustPdf(){
+async function exportCustPdf(into){
   const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
-  const M=modOf(); if(!M||!MODS.length){ toast("Erst Module belegen"); return; }
-  const doc=new J({orientation:"portrait",unit:"mm",format:"a4"}), W=210, L=14, R=196, T=pdfTxt, r=yieldResult();
+  const M=modOf(); if(!M||!MODS.length) return pdfSkip(into,"Kundenblatt: noch keine Module belegt");
+  const doc=pdfDoc(J,into,"portrait","a4"), W=210, L=14, R=196, T=pdfTxt, r=yieldResult();
   const firm=(SET.firma&&SET.firma.name)||"";
   doc.setFillColor(11,110,128); doc.rect(0,0,W,34,"F"); doc.setFillColor(242,169,0); doc.rect(0,34,W,1.6,"F");
   doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.text(T("Ihre Photovoltaikanlage"),L,16);
@@ -4407,6 +4413,7 @@ async function exportCustPdf(){
   const y1=col(L,"Komponenten",comp), y2=eco.length?col(L+96,"Wirtschaftlichkeit (Schätzung)",eco):y; y=Math.max(y1,y2)+4;
   doc.setFont("helvetica","italic"); doc.setFontSize(7); doc.setTextColor(120);
   doc.text(doc.splitTextToSize(T("Ertrag nach PVGIS (EU-Kommission, 2005–2023) ohne Verschattung; Eigenverbrauch und Autarkie geschätzt mit typischem Haushaltsprofil. Tatsächliche Werte hängen von Wetter und Verbrauchsverhalten ab. CO2 mit 363 g/kWh (Strommix Deutschland, Umweltbundesamt)."),R-L),L,Math.min(y,284));
+  if(into) return true;
   await netzSave(doc,"Kundenblatt_");
 }
 </script>
@@ -4542,6 +4549,53 @@ $("#lib").addEventListener("click",async e=>{
 </script>
 <script>
 /* ───────── PDF-Export ───────── */
+/* ───────── Projektmappe: alle PDFs in einem Dokument ─────────
+   Jede PDF-Funktion erzeugt entweder ein eigenes Dokument oder hängt (into) ihre Seiten an die Mappe an.
+   addPage() ohne Angaben nimmt dann das Format des aktuellen Abschnitts, nicht das der ersten Seite;
+   __p0 ist die erste Seite des Abschnitts (für „Seite x/y“ je Abschnitt). */
+function pdfDoc(J,into,orientation,format){
+  if(!into) return new J({orientation,unit:"mm",format});
+  if(!into.__addPage) into.__addPage=into.addPage;
+  into.addPage=function(f,o){ return into.__addPage.call(this,f??format,o??orientation); };
+  into.addPage(); if(into.__fresh){ into.deletePage(1); into.__fresh=false; }
+  into.__p0=into.getNumberOfPages(); return into;
+}
+function pdfSkip(into,msg){ if(into) into.__skipped.push(msg); else toast(msg); return false; }
+const PDF_PARTS=[
+  ["cust","Kundenblatt (Ertrag, Wirtschaftlichkeit)",()=>exportCustPdf],
+  ["offer","Preisaufstellung",()=>offerPdf],
+  ["plan","Belegungsplan, Stringplan, Stringtabelle, Stückliste",()=>exportPdf],
+  ["netz","Anlagendaten Netzanmeldung",()=>exportNetzPdf],
+  ["slp","Übersichtsschaltplan",()=>exportSlpPdf],
+  ["dc","Prüfprotokoll DC",()=>exportDcPdf],
+  ["pack","Packliste Baustelle",()=>exportPackList]];
+const pdfPartOn=k=>!(SET.pdfOff||[]).includes(k);
+function pdfPartsHtml(){
+  return `<div class="sec"><h2>Projektmappe (PDF)</h2>
+    <div class="hint">Alle Unterlagen in einem PDF. Haken weg bei allem, was diesmal nicht hinein soll. Für ein einzelnes Dokument nur dieses anhaken.</div>
+    ${PDF_PARTS.map(([k,t])=>`<label class="row"><input type="checkbox" data-pp="${k}"${pdfPartOn(k)?" checked":""}> ${esc(t)}</label>`).join("")}
+    <div class="grid2"><label class="f">Format der Pläne<select id="pdfFmt"><option value="a4">A4 quer</option><option value="a3">A3 quer</option></select></label>
+      <label class="row" style="align-self:end"><input id="pdfImg" type="checkbox" checked> Luftbild als Hintergrund</label></div>
+    <button id="pdfAllBtn" class="pri" data-act="pdfAll" type="button">Projektmappe erstellen</button></div>`;
+}
+async function exportAllPdf(){
+  const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
+  const parts=PDF_PARTS.filter(([k])=>pdfPartOn(k)); if(!parts.length){ toast("Bitte mindestens einen Teil anhaken"); return; }
+  const btn=$("#pdfAllBtn"); if(btn){ btn.disabled=true; btn.textContent="Erstelle …"; }
+  try{
+    await new Promise(r=>setTimeout(r,30));
+    const doc=new J({orientation:"portrait",unit:"mm",format:"a4"}); doc.__fresh=true; doc.__skipped=[];
+    for(const [k,t,fn] of parts){
+      try{ await fn()(doc); }catch(e){ doc.__skipped.push(t+": Fehler beim Erstellen"); console.error(e); }
+    }
+    if(doc.__fresh){ toast("Nichts zum Ausgeben. "+doc.__skipped.join(" · ")); return; }
+    const name=("Projektmappe_"+(P.name||"Projekt")).replace(/[^\wäöüÄÖÜß-]+/g,"_")+".pdf";
+    const dl=await (window.claude?.use?.("downloads")??null);
+    if(dl) await dl.save({filename:name,data:doc.output("blob")}); else await saveFile(name,doc.output("blob"));
+    toast(doc.__skipped.length?"Projektmappe bereit. Ausgelassen: "+doc.__skipped.join(" · "):"Projektmappe bereit");
+  }catch(e){ if(e&&e.code==="declined") toast("Speichern abgebrochen"); else { toast("PDF fehlgeschlagen"); console.error(e); } }
+  finally{ if(btn){ btn.disabled=false; btn.textContent="Projektmappe erstellen"; } }
+}
 const pdfTxt=s=>String(s??"").replace(/≤/g,"<=").replace(/≥/g,">=").replace(/✓/g,"ok").replace(/✗/g,"X").replace(/→/g,"->").replace(/Ω/g,"Ohm").replace(/Δ/g,"d").replace(/≈/g,"ca.").replace(/[−]/g,"-");
 function planBounds(){
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
@@ -4665,25 +4719,27 @@ function bomPage(doc,W,H,n,N){
     row([f.name,f.pitch+" Grad",`${compass(azimuthOf(f))} (${Math.round(azimuthOf(f))} Grad)`,String(n2),fmt(M?n2*M.wp/1000:0,2),fmt(Math.abs(A)/2,1)],w2); });
   titleBlock(doc,W,H,"Stückliste",n,N);
 }
-async function exportPdf(){
+async function exportPdf(into){
   const J=window.jspdf&&window.jspdf.jsPDF; if(!J){ toast("PDF-Bibliothek nicht geladen"); return; }
   const btn=$("#pdfBtn"); if(btn){ btn.disabled=true; btn.textContent="Erstelle …"; }
   try{
     await new Promise(r=>setTimeout(r,30));
     const fm=$("#pdfFmt").value, withImg=$("#pdfImg")?$("#pdfImg").checked:true;
     const [W,H]=fm==="a3"?[420,297]:[297,210];
-    const doc=new J({orientation:"landscape",unit:"mm",format:fm});
+    const doc=pdfDoc(J,into,"landscape",fm);
     const hasSub=!!(P.sub&&P.sub.on&&SUB), N=hasSub?5:4; let pn=1;
     planPage(doc,W,H,false,withImg,"Belegungsplan",pn++,N);
     if(hasSub){ doc.addPage(); planPage(doc,W,H,false,withImg,"Montageplan Unterbau",pn++,N,true); }
     doc.addPage(); planPage(doc,W,H,true,withImg,"Stringplan",pn++,N);
     doc.addPage(); tablePage(doc,W,H,pn++,N);
     doc.addPage(); bomPage(doc,W,H,pn,N);
+    if(into) return true;
     const name=(P.name||"Projekt").replace(/[^\wäöüÄÖÜß-]+/g,"_")+"_Belegung_Strings.pdf";
     const dl=await (window.claude?.use?.("downloads")??null);
     if(dl){ await dl.save({filename:name,data:doc.output("blob")}); toast("PDF bereit"); }
     else { await saveFile(name,doc.output("blob")); }
   }catch(e){
+    if(into) throw e;
     if(e&&e.code==="declined") toast("Speichern abgebrochen"); else { toast("PDF-Export fehlgeschlagen"); console.error(e); }
   }finally{ if(btn){ btn.disabled=false; btn.textContent="PDF erstellen"; } }
 }

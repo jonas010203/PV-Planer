@@ -1,12 +1,12 @@
 {
   "app": {
-    "version": "2026.09.30.2",
+    "version": "2026.10.01.1",
     "file": "Dachplaner-PV.html",
-    "notes": "Netzanmeldung: Anlagendaten für Netzbetreiber und Marktstammdatenregister (N-ERGIE, Bayernwerk, Stadtwerke Neumarkt), automatischer Übersichtsschaltplan, Prüfprotokoll DC nach DIN EN 62446. Planungscheck mit allen Hinweisen und Kundenblatt fürs Beratungsgespräch. Ertragsprognose mit EEG-Vergütung und Abregelung nach Solarspitzengesetz. Neue Geräte: Fronius Primo 3.0–4.6, Symo Advanced 17.5/20, Verto 25–33.3 (mit/ohne Plus), SMA STP 3.0–6.0, Huawei SUN2000-3…10KTL-M1 mit LUNA2000, BYD HVB, SMA Home Storage, Jinko 54HL4R-V/-B, LONGi LR4-72HPH. Preise: geprüfte Zuordnung zu Shop-Artikeln und Online-Richtpreise für alle Module, Wechselrichter und Speicher – keine 0-€-Positionen mehr im Angebot."
+    "notes": "Projektmappe: alle PDFs (Kundenblatt, Preisaufstellung, Pläne, Netzanmeldung, Schaltplan, Prüfprotokoll DC, Packliste) als ein Dokument unter „Export“, Teile per Haken wählbar. Neu: SMA Sunny Tripower Hybrid X 5–15, BYD Battery-Box HVS+ und HVM+."
   },
   "library": {
-    "version": "2026.09.30.2",
+    "version": "2026.10.01.1",
     "file": "library.json",
-    "notes": "147 Richtpreise (Module, Wechselrichter, Speicher) und 20 Wechselrichter, 19 Speicher, 18 Modulgrößen neu aus Datenblättern."
+    "notes": "Neu: SMA Sunny Tripower Hybrid X 5/6/8/10/12/15, BYD Battery-Box HVS+ 5.1–12.8 und HVM+ 8.3–22.1 mit Shop-Preisen."
   }
 }
