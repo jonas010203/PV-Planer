@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.10.03.1",
+    "version": "2026.10.03.2",
     "file": "Dachplaner-PV.html",
-    "notes": "Drag & Drop: Bild oder PDF aufs Fenster ziehen wird zum Luftbild (vorhandenes nach Rückfrage ersetzt), im Schritt „Vor Ort“ werden Bilder als Fotos gespeichert, auf der Projektübersicht werden Projektdateien importiert."
+    "notes": "Traufe frei wählbar: Auswahlliste mit allen Kanten, Länge und Ausrichtung. Neue Dreiecke (Walmseiten) bekommen automatisch die längste Kante als Traufe, bestehende werden im Dach-Schritt und im Planungscheck markiert. Drag & Drop für Luftbild, Fotos und Projektdateien."
   },
   "library": {
     "version": "2026.10.01.2",

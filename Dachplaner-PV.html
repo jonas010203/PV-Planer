@@ -1299,6 +1299,18 @@ function baseDims(f){
   const vs=poly.map(q=>q[1]);
   return {eave:Math.hypot(poly[0][0]-poly[1][0],poly[0][1]-poly[1][1]),raf:Math.max(...vs)-Math.min(...vs)};
 }
+/* Traufe = Kante pts[0]→pts[1]. Kantenlängen im Grundriss (Luftbild, ohne Neigung) */
+function faceEdges(f){ const n=f.pts.length, s=P.scale||0.02;
+  return f.pts.map((a,k)=>{ const b=f.pts[(k+1)%n]; return Math.hypot(b[0]-a[0],b[1]-a[1])*s; }); }
+const longestEdge=f=>{ const L=faceEdges(f); return L.indexOf(Math.max(...L)); };
+/* Bei Walm-Dreiecken ist die Traufe immer die längste Kante (die Grate laufen schräg zur Firstspitze) */
+const eaveSuspect=f=>f.pts.length===3&&longestEdge(f)!==0;
+/* Kante k zur Traufe machen. Rasterversatz, abgewählte Plätze und vorgegebene Maße gehören zur alten Traufe → zurücksetzen */
+function setEave(f,k){
+  const n=f.pts.length; k=((k%n)+n)%n; if(!k) return false;
+  f.pts=[...f.pts.slice(k),...f.pts.slice(0,k)]; f.tog=[]; f.offU=0; f.offV=0; delete f.kU; delete f.kV;
+  return true;
+}
 let GEO=[];   // je Fläche
 let MODS=[];  // alle aktiven Module, nummeriert
 function recompute(){
@@ -1745,7 +1757,9 @@ function onClick(w,s,e){
 function finishFace(){
   if(UI.draft.length<3){ UI.draft=[]; return; }
   const f={id:uid("f"),name:"Fläche "+(P.faces.length+1),pts:UI.draft.slice(),pitch:35,orient:"p",edge:0.3,gap:0.02,offU:0,offV:0,tog:[]};
+  const auto=f.pts.length===3&&setEave(f,longestEdge(f));
   P.faces.push(f); UI.selFace=f.id; UI.selObst=null; UI.draft=[]; UI.tool="select"; changed(true); renderSide();
+  if(auto) toast("Dreieck: längste Kante als Traufe gesetzt – unter „Traufe“ änderbar");
 }
 function deleteSelected(){
   if(UI.selFace){
@@ -1945,7 +1959,7 @@ function renderSide(){
       <button data-act="tool" data-id="select" class="${UI.tool==="select"?"on":""}" type="button">Auswählen</button>
       <button data-act="tool" data-id="face" class="${UI.tool==="face"?"on":""}" type="button">Dachfläche</button>
       <button data-act="tool" data-id="obst" class="${UI.tool==="obst"?"on":""}" type="button">Hindernis</button></div>
-      ${UI.tool==="face"?`<div class="hint">Ecken der Dachfläche klicken. Die <b>erste Kante ist die Traufe</b> (orange). Doppelklick oder Enter schließt die Fläche.</div>`:""}
+      ${UI.tool==="face"?`<div class="hint">Ecken der Dachfläche klicken. Die <b>erste Kante ist die Traufe</b> (orange), bei Dreiecken automatisch die längste. Änderbar unter „Traufe“. Doppelklick oder Enter schließt die Fläche.</div>`:""}
       ${!P.scale?`<div class="banner">Maßstab fehlt – erst unter „Karte“ setzen.</div>`:""}</div>
     <div class="sec"><h2>Dachflächen</h2><div class="list">${P.faces.map(x=>`<div class="${x.id===UI.selFace?"sel":""}" data-act="selFace" data-id="${x.id}"><span class="grow">${esc(x.name)}</span><span class="mono hint">${x.pitch}° · ${compass(azimuthOf(x))}</span></div>`).join("")||`<div class="hint">Noch keine Fläche.</div>`}</div></div>`;
     if(f) h+=`<div class="sec"><h2>Fläche bearbeiten</h2>
@@ -1958,7 +1972,8 @@ function renderSide(){
       ${num("fDimH","Tiefe von oben, z. B. Bayernatlas (m)",(dimNow(f).raf*Math.cos(rad(f.pitch||0))).toFixed(2),'data-f="dimH" min="0.5"',0.01)}
       <div class="hint">Karten wie der Bayernatlas messen waagerecht. Die Traufe kannst du direkt übernehmen, die Dachtiefe trägst du hier ein. Die Sparrenlänge rechnet das Programm über die Dachneigung selbst aus.</div>
       ${(f.kU||f.kV)?`<button data-act="resetDims" type="button">Maße auf Bildmaßstab zurücksetzen</button>`:""}
-      <div class="row"><button data-act="rotEave" type="button">Andere Kante als Traufe</button><button data-act="delFace" class="dng" type="button">Fläche löschen</button></div>
+      ${eaveSelHtml(f)}
+      <div class="row"><button data-act="delFace" class="dng" type="button">Fläche löschen</button></div>
       <div id="faceStat">${faceStatHtml()}</div></div>`;
     if(o) h+=`<div class="sec"><h2>Hindernis bearbeiten</h2>${txt("oName","Name",o.name,'data-o="name"')}<div class="grid2">${num("oMargin","Abstand rundherum (m)",o.margin,'data-o="margin" min="0"',0.05)}${num("oHeight","Höhe über Dachfläche (m)",o.height||0,'data-o="height" min="0" max="5"',0.1)}</div><div class="hint">Höhe wird für die Verschattungsschätzung unten gebraucht, 0 m = wirft keinen Schatten.</div><button data-act="delObst" class="dng" type="button">Hindernis löschen</button></div>`;
     h+=shadeSideHtml();
@@ -2083,7 +2098,8 @@ side.addEventListener("click",e=>{
     case "selFace": UI.selFace=id; UI.selObst=null; renderSide(); draw(); break;
     case "delFace": deleteSelected(); break;
     case "delObst": deleteSelected(); break;
-    case "rotEave": { const f=selFace(); if(f){ f.pts.push(f.pts.shift()); f.tog=[]; changed(); renderSide(); } break; }
+    case "rotEave": { const f=selFace(); if(f) applyEave(f,1); break; }
+    case "eaveLong": { const f=P.faces.find(x=>x.id===b.dataset.id)||selFace(); if(f) applyEave(f,longestEdge(f)); break; }
     case "resetTog": { const f=selFace(); if(f){ f.tog=[]; changed(); renderSide(); } break; }
     case "scaleSet": {
       const px=scalePx(), L=parseFloat(String($("#scaleLen").value).replace(",","."));
@@ -2130,6 +2146,22 @@ async function loadImageFile(file){
     fitView(); changed(); renderSide(); toast((isPdf?"PDF-Seite":"Bild")+" geladen. Jetzt Maßstab setzen.");
   }catch(e){ toast(isPdf?("PDF konnte nicht gelesen werden: "+e.message):"Bild konnte nicht gelesen werden"); }
 }
+/* Traufe wählen: jede Kante mit Länge und der Ausrichtung, die sich damit ergäbe */
+function eaveSelHtml(f){
+  const L=faceEdges(f), lg=longestEdge(f);
+  const opts=L.map((l,k)=>{ const t={...f,pts:[...f.pts.slice(k),...f.pts.slice(0,k)]}, a=azimuthOf(t);
+    return `<option value="${k}"${k?"":" selected"}>Kante ${k+1}: ${fmt(l,2)} m · ${compass(a)} ${Math.round(a)}°${k===lg?" · längste":""}</option>`; }).join("");
+  return `<label class="f">Traufe (untere Kante, an ihr richtet sich das Modulraster aus)<select id="fEave" data-eave="1">${opts}</select></label>
+    ${eaveSuspect(f)?`<div class="banner">Bei einem Dreieck (Walmseite) ist die Traufe fast immer die längste Kante. Gerade ist es eine der Schrägen, deshalb liegen die Module schräg. <button type="button" data-act="eaveLong" data-id="${f.id}">Längste Kante als Traufe</button></div>`:""}`;
+}
+function applyEave(f,k){
+  const keys=new Set((GEO[P.faces.indexOf(f)]||{cells:[]}).cells.map(c=>c.key)), inStr=P.strings.some(s=>s.mods.some(m=>keys.has(m)));
+  const go=()=>{ if(setEave(f,k)){ changed(true); renderSide(); toast("Traufe geändert: "+compass(azimuthOf(f))+" "+Math.round(azimuthOf(f))+"°. Belegung neu prüfen."); } else renderSide(); };
+  if(inStr) modal("Traufe ändern?",`<div class="hint">Das Modulraster von „${esc(f.name)}“ wird neu aufgebaut. Die Module dieser Fläche fallen dabei aus ihren Strings und müssen neu zugeordnet werden.</div>`,"Ändern",()=>{ go(); return true; });
+  else go();
+}
+side.addEventListener("change",e=>{ const t=e.target; if(!t.dataset.eave||!P) return; const f=selFace(); if(!f) return;
+  const k=+t.value; t.value="0"; applyEave(f,k); });
 /* ───────── Kopfleiste ───────── */
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 
@@ -2805,7 +2837,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.10.03.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.2";
+const APP_VERSION="2026.10.03.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -3261,6 +3293,11 @@ function runSelfTests(){
     const save=P; P=P||{}; const a=P.tmin,b=P.tmax; P.tmin=-10; P.tmax=70; const r=stringRange(inv,M); P.tmin=a; P.tmax=b; if(!save) P=null;
     /* 36,18 V · (1+0,0025·35) = 39,35 V → 1000/39,35 = 25,4; U_MPP kalt 30,69 · 1,0875 = 33,38 V → 950/33,38 = 28,5 → max 25 */
     return r.max===25&&r.min>=1; });
+  test("Walm-Dreieck: längste Kante wird Traufe, Ausrichtung Süd",()=>{
+    const save=P; P=P||{scale:0.03}; const f={pts:[[0,100],[50,50],[100,100]],pitch:35,tog:["1,0"],offU:0.5,offV:0.2,kU:1.2};
+    const sus=eaveSuspect(f), moved=setEave(f,longestEdge(f)), a=azimuthOf(f), after=eaveSuspect(f); if(!save) P=null;
+    /* Spitze oben, Traufe unten waagerecht → Fläche fällt nach unten = Süd (180°) */
+    return sus&&moved&&f.pts[0][0]===100&&f.pts[1][0]===0&&Math.round(a)===180&&!after&&!f.tog.length&&f.offU===0&&f.kU===undefined; });
   test("Drag & Drop erkennt Bild, PDF und Projektdatei",()=>{
     const f=(name,type)=>({name,type});
     return isImgFile(f("dach.png","image/png"))&&isImgFile(f("IMG_1.HEIC",""))&&isPdfFile(f("Lageplan.PDF",""))&&isPdfFile(f("x","application/pdf"))
@@ -4355,6 +4392,7 @@ function planCheck(){
   const out=[], add=(lv,tab,txt)=>out.push({lv,tab,txt}), M=modOf();
   if(!P.scale) add("bad","karte","Maßstab fehlt – Längen, Flächen und Kabelwege stimmen nicht");
   if(!P.faces.length) add("bad","dach","Noch keine Dachfläche gezeichnet");
+  P.faces.filter(eaveSuspect).forEach(f=>add("warn","dach",`${f.name}: Dreieck, aber die Traufe ist nicht die längste Kante – Module liegen dadurch schräg`));
   if(!MODS.length) add("bad","module","Noch keine Module belegt");
   const used=new Set(P.strings.flatMap(s=>s.mods)), rest=MODS.filter(m=>!used.has(m.key)).length;
   if(rest) add("warn","strings",`${rest} Modul${rest===1?"":"e"} keinem String zugeordnet`);
