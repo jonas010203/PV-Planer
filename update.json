@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.10.01.2",
+    "version": "2026.10.03.1",
     "file": "Dachplaner-PV.html",
-    "notes": "Projektmappe: alle PDFs (Kundenblatt, Preisaufstellung, Pläne, Netzanmeldung, Schaltplan, Prüfprotokoll DC, Packliste) als ein Dokument unter „Export“, Teile per Haken wählbar. Neu: SMA Sunny Tripower Hybrid X 5–15, BYD Battery-Box HVS+ und HVM+. Die Pläne in der Mappe nehmen A4 quer, falls kein Format gewählt ist."
+    "notes": "Drag & Drop: Bild oder PDF aufs Fenster ziehen wird zum Luftbild (vorhandenes nach Rückfrage ersetzt), im Schritt „Vor Ort“ werden Bilder als Fotos gespeichert, auf der Projektübersicht werden Projektdateien importiert."
   },
   "library": {
     "version": "2026.10.01.2",

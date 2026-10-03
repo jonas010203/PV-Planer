@@ -581,6 +581,8 @@ details summary{cursor:pointer;font-weight:500}
 .pnote{font-size:13px;color:var(--muted);border-left:3px solid var(--sun);padding-left:9px;max-height:3.4em;overflow:hidden}
 .pact{margin-top:auto;gap:6px;padding-top:4px}
 .pact button{padding:4px 10px;font-size:12.5px;min-height:30px}
+.dropzone{position:fixed;inset:12px;z-index:50;border:3px dashed var(--accent);border-radius:var(--r);background:color-mix(in srgb,var(--panel) 82%,transparent);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-size:20px;font-weight:600;color:var(--accent);pointer-events:none}
+.dropzone[hidden]{display:none}
 .mback{position:fixed;inset:0;background:rgba(8,20,26,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
 .mbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;width:min(560px,100%);max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:12px;box-shadow:var(--sh2)}
 .mbox h3{font-size:17px}
@@ -2803,7 +2805,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.10.01.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.2";
+const APP_VERSION="2026.10.03.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -3259,6 +3261,10 @@ function runSelfTests(){
     const save=P; P=P||{}; const a=P.tmin,b=P.tmax; P.tmin=-10; P.tmax=70; const r=stringRange(inv,M); P.tmin=a; P.tmax=b; if(!save) P=null;
     /* 36,18 V · (1+0,0025·35) = 39,35 V → 1000/39,35 = 25,4; U_MPP kalt 30,69 · 1,0875 = 33,38 V → 950/33,38 = 28,5 → max 25 */
     return r.max===25&&r.min>=1; });
+  test("Drag & Drop erkennt Bild, PDF und Projektdatei",()=>{
+    const f=(name,type)=>({name,type});
+    return isImgFile(f("dach.png","image/png"))&&isImgFile(f("IMG_1.HEIC",""))&&isPdfFile(f("Lageplan.PDF",""))&&isPdfFile(f("x","application/pdf"))
+      &&!isImgFile(f("Lageplan.pdf","application/pdf"))&&isProjFile(f("Projekt_A.dachplaner.json",""))&&!isProjFile(f("dach.png","image/png")); });
   test("Phasen: Sunny Boy/Primo 1-phasig, Tripower/Symo/Sungrow 3-phasig",()=>
     invPhases({name:"SMA Sunny Boy 5.0"})===1&&invPhases({name:"Fronius Primo 8.2-1"})===1&&invPhases({name:"SMA Sunny Tripower X 15"})===3&&invPhases({name:"Sungrow SH10RT"})===3);
   test("Spannungsfall-Formel (Kupfer, Hin- und Rückleiter)",()=>{
@@ -4030,12 +4036,7 @@ side.addEventListener("change",async e=>{
   if(t.dataset.vo==="chk"){ v.chk[t.dataset.id]=t.checked; scheduleSave(); renderNav(); }
   else if(t.dataset.vo==="val"&&t.tagName==="SELECT"){ v.val[t.dataset.id]=t.value; scheduleSave(); renderNav(); }
   else if(t.id==="phIn"&&t.files&&t.files.length){
-    const cat=$("#phCat").value, cap=$("#phCap").value.trim(); let n=0; UI.phCat=cat;
-    for(const f of t.files){
-      try{ const data=await voShrink(f), id=uid("ph"); await S.set("photo/"+P.id+"/"+id,{data}); P.photos.push({id,cat,cap,ts:new Date().toISOString()}); n++; }
-      catch(err){ toast("Foto konnte nicht gelesen werden"); }
-    }
-    t.value=""; if(n){ changed(); renderSide(); toast(n+" Foto"+(n===1?"":"s")+" gespeichert"); }
+    const files=[...t.files]; t.value=""; await voAddPhotos(files);
   }
 });
 side.addEventListener("click",async e=>{
@@ -4046,6 +4047,16 @@ side.addEventListener("click",async e=>{
   else if(b.dataset.phview){ const ph=P.photos.find(p=>p.id===b.dataset.phview); if(!ph||!b.src) return;
     const m=modal(ph.cat+(ph.cap?" · "+ph.cap:""),`<img src="${b.src}" alt="" style="width:100%;border-radius:10px"><div class="hint">${esc(fmtDate(ph.ts))}</div>`,"Schließen",()=>true); m.querySelector('[data-m="cancel"]').remove(); m.querySelector(".mbox").style.width="min(900px,100%)"; }
 });
+/* Fotos speichern (Dateiauswahl, Kamera oder Drag & Drop); Kategorie und Notiz aus der Seitenleiste */
+async function voAddPhotos(files){
+  const cat=$("#phCat")?$("#phCat").value:(UI.phCat||PHOTO_CATS[0]), cap=$("#phCap")?$("#phCap").value.trim():""; let n=0; UI.phCat=cat;
+  for(const f of files){
+    try{ const data=await voShrink(f), id=uid("ph"); await S.set("photo/"+P.id+"/"+id,{data}); P.photos.push({id,cat,cap,ts:new Date().toISOString()}); n++; }
+    catch(err){ toast("Foto konnte nicht gelesen werden"); }
+  }
+  if(n){ changed(); renderSide(); toast(n+" Foto"+(n===1?"":"s")+" gespeichert"); }
+  return n;
+}
 /* Aufgenommene Werte in die Planung übernehmen (nur was erfasst ist) */
 function voApply(){
   const v=voEnsure(), got=[];
@@ -4415,6 +4426,53 @@ async function exportCustPdf(into){
   doc.text(doc.splitTextToSize(T("Ertrag nach PVGIS (EU-Kommission, 2005–2023) ohne Verschattung; Eigenverbrauch und Autarkie geschätzt mit typischem Haushaltsprofil. Tatsächliche Werte hängen von Wetter und Verbrauchsverhalten ab. CO2 mit 363 g/kWh (Strommix Deutschland, Umweltbundesamt)."),R-L),L,Math.min(y,284));
   if(into) return true;
   await netzSave(doc,"Kundenblatt_");
+}
+</script>
+<script>
+/* ───────── Drag & Drop ─────────
+   Dateien einfach aufs Fenster ziehen:
+   - Projektübersicht: .dachplaner.json → Projekt importieren
+   - Schritt „Vor Ort“: Bilder → Fotos (Kategorie/Notiz aus der Seitenleiste)
+   - alle anderen Schritte: Bild oder PDF → Luftbild (ein vorhandenes wird nur nach Rückfrage ersetzt) */
+const DROP={depth:0,el:null};
+const isPdfFile=f=>f.type==="application/pdf"||/\.pdf$/i.test(f.name||"");
+const isImgFile=f=>/^image\//.test(f.type)||/\.(jpe?g|png|webp|gif|heic|bmp)$/i.test(f.name||"");
+const isProjFile=f=>/\.json$/i.test(f.name||"")||f.type==="application/json";
+function dropHint(){
+  if(VIEW!=="project") return "Projektdatei (.dachplaner.json) hier ablegen zum Importieren";
+  if(!P) return "";
+  if(UI.tab==="vorort") return "Bilder hier ablegen – sie werden als Fotos gespeichert";
+  return IMG?"Bild oder PDF hier ablegen – ersetzt das Luftbild":"Bild oder PDF hier ablegen – wird das Luftbild";
+}
+function dropShow(on){
+  if(on&&!DROP.el){ DROP.el=document.createElement("div"); DROP.el.className="dropzone"; document.body.appendChild(DROP.el); }
+  if(DROP.el){ DROP.el.textContent=dropHint(); DROP.el.hidden=!on||!DROP.el.textContent; }
+}
+const hasFiles=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files");
+window.addEventListener("dragenter",e=>{ if(!hasFiles(e)) return; e.preventDefault(); DROP.depth++; dropShow(true); });
+window.addEventListener("dragover",e=>{ if(!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect="copy"; });
+window.addEventListener("dragleave",e=>{ if(!hasFiles(e)) return; DROP.depth=Math.max(0,DROP.depth-1); if(!DROP.depth) dropShow(false); });
+window.addEventListener("drop",e=>{
+  if(!hasFiles(e)) return; e.preventDefault(); DROP.depth=0; dropShow(false);
+  if(document.querySelector(".mback")) return;   // offener Dialog: nichts nebenbei laden
+  handleDroppedFiles([...e.dataTransfer.files]);
+});
+async function handleDroppedFiles(files){
+  if(!files.length) return;
+  if(VIEW!=="project"){
+    const pj=files.filter(isProjFile); if(!pj.length){ toast("Hier lassen sich nur Projektdateien (.dachplaner.json) ablegen"); return; }
+    for(const f of pj) await importProjectFile(f); return;
+  }
+  if(!P) return;
+  if(UI.tab==="vorort"){
+    const imgs=files.filter(isImgFile); if(!imgs.length){ toast("Für Fotos bitte Bilddateien ablegen"); return; }
+    await voAddPhotos(imgs); return;
+  }
+  const f=files.find(x=>isImgFile(x)||isPdfFile(x)); if(!f){ toast("Bitte ein Bild oder PDF ablegen"); return; }
+  if(files.length>1) toast("Mehrere Dateien – es wird nur „"+(f.name||"die erste")+"“ als Luftbild genommen");
+  const go=async()=>{ if(UI.tab!=="karte") setTab("karte"); await loadImageFile(f); };
+  if(IMG) modal("Luftbild ersetzen?",`<div class="hint">„${esc(f.name||"Datei")}“ ersetzt das aktuelle Luftbild. Der Maßstab muss danach neu gesetzt werden, die Dachflächen bleiben liegen.</div>`,"Ersetzen",()=>{ go(); return true; });
+  else await go();
 }
 </script>
 <script>
