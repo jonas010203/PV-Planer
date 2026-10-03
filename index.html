@@ -2312,15 +2312,30 @@ function itemRowHtml(it,i){
     <td class="mono c-sum">${eur(lineSum(it))}</td>
     <td><button type="button" data-oa="del" class="dng sm" aria-label="Position entfernen">×</button></td></tr>`;
 }
+/* Neu zeichnen, ohne dass die Liste nach oben springt: Scrollposition und aktives Feld bleiben erhalten */
 function renderOffer(){
-  const el=$("#offer"); if(!P) return; const o=ensureOffer(), t=offerTotals();
+  const el=$("#offer"); if(!P) return;
+  const same=renderOffer.pid===P.id; renderOffer.pid=P.id;   // anderes Projekt: oben anfangen
+  const sx=el.querySelector(".ofscroll"), keep=same?{top:el.scrollTop,left:el.scrollLeft,tx:sx?sx.scrollLeft:0,wy:window.scrollY}:{top:0,left:0,tx:0,wy:window.scrollY};
+  const ae=document.activeElement, tr=ae&&el.contains(ae)&&ae.closest("tr[data-id]");
+  const foc=tr&&ae.dataset.ok?{row:tr.dataset.id,k:ae.dataset.ok,s:ae.selectionStart,e:ae.selectionEnd}:null;
+  renderOfferNow();
+  el.scrollTop=keep.top; el.scrollLeft=keep.left; const sx2=el.querySelector(".ofscroll"); if(sx2) sx2.scrollLeft=keep.tx;
+  if(Math.abs(window.scrollY-keep.wy)>1) window.scrollTo(0,keep.wy);
+  if(foc){ const f=el.querySelector(`tr[data-id="${CSS.escape(foc.row)}"] [data-ok="${foc.k}"]`);
+    if(f){ f.focus({preventScroll:true}); try{ if(foc.s!=null) f.setSelectionRange(foc.s,foc.e); }catch(e){} } }
+}
+function renderOfferNow(){
+  const el=$("#offer"); const o=ensureOffer(), t=offerTotals();
+  /* Artikelauswahl dort öffnen, wo gerade gescrollt ist (sonst springt die Liste nach oben); solange sie offen ist, steht die Liste still */
+  const pickAt=`style="top:${el.scrollTop}px;bottom:auto;height:${el.clientHeight}px"`; el.style.overflow=OFS.pick?"hidden":"";
   const cats=[...new Set(ARTS.map(a=>a.cat))].sort();
   el.innerHTML=`<div class="ofwrap"><h1>Preisaufstellung ${esc(P.name)}</h1>
     <div class="hint" style="margin-bottom:10px">Einkaufspreise: Solarhandel24, netto (Gewerbe), Stand ${esc(SHOP_DATE)}, Tagespreise ohne Gewähr. Verkaufspreis = Einkauf + Aufschlag. Alle Felder sind änderbar.</div>
     <div class="ofscroll"><table class="otbl"><thead><tr><th>Pos</th><th>Bezeichnung</th><th>Menge</th><th>Einheit</th><th>EK netto</th><th>Aufschlag %</th><th>VK netto</th><th>Summe</th><th></th></tr></thead>
       <tbody>${o.items.map(itemRowHtml).join("")||`<tr><td colspan="9" class="hint" style="padding:16px">Noch keine Positionen. „Aus Plan übernehmen“ in der Seitenleiste legt Module, Wechselrichter, Speicher, Kabel und Arbeit an.</td></tr>`}</tbody></table></div>
     <div class="ofsum"><div class="stat"><span><b>Summe</b></span><b id="tNet">${eur(t.net)}</b><span>Einkauf (intern)</span><b id="tEk">${eur(t.ek)}</b><span>Rohertrag (intern)</span><b id="tProfit">${eur(t.profit)}</b></div></div>
-    <div id="ofPicker" class="ofpick" ${OFS.pick?"":"hidden"}><div class="card"><div class="row"><b style="flex:1">Artikel wählen</b><button type="button" data-oa="closepick">Schließen</button></div>
+    <div id="ofPicker" class="ofpick" ${OFS.pick?pickAt:"hidden"}><div class="card"><div class="row"><b style="flex:1">Artikel wählen</b><button type="button" data-oa="closepick">Schließen</button></div>
       <div class="grid2" style="margin:8px 0"><input id="ofQ" type="text" placeholder="Suchen: Hager, FI, SingleRail …" value="${esc(OFS.q)}"><select id="ofCat"><option value="">Alle Kategorien</option>${cats.map(c=>`<option${c===OFS.cat?" selected":""}>${esc(c)}</option>`).join("")}</select></div>
       <div class="row" style="margin-bottom:8px"><label class="f" style="flex:1">Hersteller<select id="ofBrand"><option value="">Alle Hersteller</option>${[...new Set(ARTS.filter(a=>!OFS.cat||a.cat===OFS.cat).map(a=>a.brand))].sort().map(b=>`<option${b===OFS.brand?" selected":""}>${esc(b)}</option>`).join("")}</select></label></div>
       <div class="list" id="ofList" style="max-height:52vh;overflow:auto">${pickListHtml()}</div></div></div></div>`;
@@ -2365,7 +2380,7 @@ $("#offer").addEventListener("change",e=>{
 $("#offer").addEventListener("click",e=>{
   const b=e.target.closest("[data-oa]"); if(!b) return; const a=b.dataset.oa;
   if(a==="del"){ const id=b.closest("tr").dataset.id; P.offer.items=P.offer.items.filter(x=>x.id!==id); renderOffer(); offerChanged(); }
-  else if(a==="pick"){ OFS.pick=b.closest("tr").dataset.id; OFS.q=""; renderOffer(); const q=$("#ofQ"); if(q) q.focus(); }
+  else if(a==="pick"){ OFS.pick=b.closest("tr").dataset.id; OFS.q=""; renderOffer(); const q=$("#ofQ"); if(q) q.focus({preventScroll:true}); }
   else if(a==="closepick"){ OFS.pick=null; renderOffer(); }
   else if(a==="choose"){
     const art=artOf(b.dataset.id); if(!art) return;
@@ -2408,7 +2423,7 @@ side.addEventListener("change",e=>{
 side.addEventListener("click",e=>{
   const b=e.target.closest("[data-oa2]"); if(!b||!P) return; const a=b.dataset.oa2, o=ensureOffer();
   if(a==="plan"){ const n=offerFromPlan(); renderOffer(); scheduleSave(); renderNav(); toast(n+" Positionen aus dem Plan übernommen"); }
-  else if(a==="addart"){ OFS.pick="new"; OFS.q=""; renderOffer(); const q=$("#ofQ"); if(q) q.focus(); }
+  else if(a==="addart"){ OFS.pick="new"; OFS.q=""; renderOffer(); const q=$("#ofQ"); if(q) q.focus({preventScroll:true}); }
   else if(a==="addfree"){ o.items.push(newItem({t:"free",name:"Neue Position",ekFix:0})); renderOffer(); scheduleSave(); }
   else if(a==="addlabor"){ o.items.push(newItem({t:"labor",name:"Arbeitsleistung",qty:1,unit:"h",vkFix:o.rate})); renderOffer(); scheduleSave(); }
   else if(a==="applyrate"){ o.items.forEach(it=>{ if(it.t==="labor") it.vkFix=o.rate; }); renderOffer(); scheduleSave(); }
@@ -2845,7 +2860,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.10.03.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.2";
+const APP_VERSION="2026.10.03.3", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,

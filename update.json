@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.10.03.2",
+    "version": "2026.10.03.3",
     "file": "Dachplaner-PV.html",
-    "notes": "Traufe frei wählbar: Auswahlliste mit allen Kanten, Länge und Ausrichtung. Neue Dreiecke (Walmseiten) bekommen automatisch die längste Kante als Traufe, bestehende werden im Dach-Schritt und im Planungscheck markiert. Drag & Drop für Luftbild, Fotos und Projektdateien."
+    "notes": "Angebot: die Liste springt beim Ändern von Menge, Preis, Aufschlag, Option oder beim Löschen nicht mehr nach oben, der Cursor bleibt im Feld. Traufe frei wählbar, Dreiecke automatisch mit längster Kante als Traufe."
   },
   "library": {
     "version": "2026.10.01.2",
