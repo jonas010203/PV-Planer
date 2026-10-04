@@ -2438,31 +2438,21 @@ async function offerPdf(into){
   const btn=$("#ofPdf"); if(btn){ btn.disabled=true; btn.textContent="Erstelle …"; }
   try{
     await new Promise(r=>setTimeout(r,20));
-    const doc=pdfDoc(J,into,"portrait","a4"), L=18, R=192, T=s=>pdfTxt(s);
-    const X={pos:L,art:L+9,name:L+41,qty:R-34,unit:R-23,total:R};
-    doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.text("Preisaufstellung",L,22);
-    doc.setFont("helvetica","normal"); doc.setFontSize(10);
-    const info=[P.name,P.kunde,P.adresse].map(x=>(x||"").trim()).filter(Boolean).join("  ·  "); if(info) doc.text(T(info),L,29);
-    let y=40;
-    const head=()=>{ doc.setFillColor(232,236,238); doc.rect(L,y-4.6,R-L,6.6,"F"); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
-      doc.text("Pos",X.pos+1,y); doc.text("Art.-Nr.",X.art,y); doc.text("Bezeichnung",X.name,y); doc.text("Menge",X.qty,y,{align:"right"}); doc.text("Einzelpreis",X.unit+1,y,{align:"right"}); doc.text("Gesamt",X.total-1,y,{align:"right"}); y+=6.8; doc.setFont("helvetica","normal"); };
-    head();
-    o.items.forEach((it,i)=>{
-      const nameL=doc.splitTextToSize(T(it.name),X.qty-X.name-14), artL=doc.splitTextToSize(T(artNo(it)),X.name-X.art-2);
-      const noteL=it.note?doc.splitTextToSize(T(it.note),X.qty-X.name-14):[];
-      const h=Math.max(nameL.length,artL.length)*4.1+noteL.length*3.5+2.4;
-      if(y+h>276){ doc.addPage(); y=22; head(); }
-      doc.setFontSize(8.8);
-      doc.text(String(i+1),X.pos+1,y); artL.forEach((l,k)=>doc.text(l,X.art,y+k*4.1)); nameL.forEach((l,k)=>doc.text(l,X.name,y+k*4.1));
-      const q=+it.qty||0; doc.text(T(fmt(q,q%1?2:0)+" "+(it.unit||"")),X.qty+9,y,{align:"right"});
-      doc.text(T(eur(effVk(it))),X.unit+11,y,{align:"right"}); doc.text(T(eur(lineSum(it))),X.total-1,y,{align:"right"});
-      if(noteL.length){ doc.setFont("helvetica","italic"); doc.setFontSize(7.5); doc.setTextColor(150,90,0); noteL.forEach((l,k)=>doc.text(l,X.name,y+nameL.length*4.1+k*3.5)); doc.setTextColor(20); doc.setFont("helvetica","normal"); doc.setFontSize(8.8); }
-      y+=h; doc.setDrawColor(215); doc.setLineWidth(0.15); doc.line(L,y-3.2,R,y-3.2);
-    });
-    if(y>268){ doc.addPage(); y=22; }
-    y+=3; doc.setDrawColor(20); doc.setLineWidth(0.4); doc.line(R-64,y-4.4,R,y-4.4);
-    doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Summe",R-64,y); doc.text(T(eur(t.net)),R-1,y,{align:"right"});
-    const p0=doc.__p0||1, n=doc.getNumberOfPages()-p0+1; if(n>1) for(let k=1;k<=n;k++){ doc.setPage(p0+k-1); doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(120); doc.text(`Seite ${k}/${n}`,R,290,{align:"right"}); doc.setTextColor(20); }
+    const doc=pdfDoc(J,into,"portrait","a4"), L=16, R=194, p0=doc.__p0||1;
+    const sub=[P.name,P.kunde,P.adresse].map(x=>(x||"").trim()).filter(Boolean).join("  ·  ")+"  ·  Stand "+new Date().toLocaleDateString("de-DE");
+    let y=pdfHead(doc,L,R,"Preisaufstellung",sub);
+    const cols=[{h:"Pos",w:8},{h:"Art.-Nr.",w:26},{h:"Bezeichnung",w:0},{h:"Menge",w:19,al:"r"},{h:"Einzelpreis",w:23,al:"r"},{h:"Gesamt",w:25,al:"r",bold:true}];
+    const rows=o.items.map((it,i)=>{ const q=+it.qty||0;
+      return {c:[String(i+1),artNo(it),it.name,fmt(q,q%1?2:0)+" "+(it.unit||""),eur(effVk(it)),eur(lineSum(it))],note:it.note||""}; });
+    y=pdfTable(doc,cols,rows,{x:L,y,w:R-L,fs:8.6,pad:1.3,bottom:276,newPage:()=>{ doc.addPage(); return 20; }});
+    /* Summenblock rechts */
+    if(y+20>276){ doc.addPage(); y=20; }
+    y+=5; const bw=78, bx=R-bw;
+    doc.setFillColor(...PC.acc); doc.roundedRect(bx,y,bw,13,1.5,1.5,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(255); doc.text("Summe",bx+4,y+8.4);
+    doc.setFontSize(13); doc.text(pdfTxt(eur(t.net)),R-4,y+8.6,{align:"right"});
+    doc.setFont("helvetica","normal"); doc.setFontSize(7.5); pdfInk(doc,PC.mut); doc.text(`${o.items.length} Positionen`,L,y+8.4); pdfInk(doc);
+    pdfFoot(doc,p0,L,R,(P.name||"Projekt")+"  ·  Preisaufstellung");
     if(into) return true;
     const name=("Preisaufstellung_"+(P.name||"Projekt")).replace(/[^\wäöüÄÖÜß-]+/g,"_")+".pdf";
     const dl=await (window.claude?.use?.("downloads")??null);
@@ -2860,7 +2850,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.10.03.3", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.2";
+const APP_VERSION="2026.10.04.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.01.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -3811,22 +3801,24 @@ async function exportPackList(into){
   const groups=new Map(order.map(g=>[g,[]])); items.forEach(it=>{ const g=itemGroup(it); (groups.get(g)||groups.get("Sonstiges")).push(it); });
   for(const [g,list] of groups){
     if(!list.length) continue;
-    need(12); doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(10,106,134); doc.text(g,L,y); y+=5;
+    need(12); doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...PC.acc); doc.text(g,L,y); y+=5;
     list.forEach(it=>{
-      const a=it.art&&artOf(it.art), nm=doc.splitTextToSize(pdfTxt(it.name),R-L-36-28);
-      const note=it.note?doc.splitTextToSize(pdfTxt(it.note),R-L-36-28):[];
+      /* erst Schrift einstellen, dann umbrechen (splitTextToSize misst mit der aktuellen Schrift) */
+      const a=it.art&&artOf(it.art), sku=pdfTxt(a&&a.sku?a.sku:""); doc.setFontSize(8); const skuW=sku?doc.getTextWidth(sku)+4:0;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9.5); const nm=doc.splitTextToSize(pdfTxt(it.name),R-L-36-Math.max(24,skuW));
+      doc.setFontSize(7.5); const nt=/^Preis eintragen/.test(it.note||"")?"":it.note; const note=nt?doc.splitTextToSize(pdfTxt(nt),R-L-36-Math.max(24,skuW)):[];
       const h=Math.max(6,nm.length*4+note.length*3.4+2); need(h);
       doc.setDrawColor(60); doc.setLineWidth(0.3); doc.rect(L,y-3.4,4,4);
       doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(20);
       doc.text(fmt(+it.qty,Number.isInteger(+it.qty)?0:2),L+17,y,{align:"right"});
       doc.setFont("helvetica","normal"); doc.text(pdfTxt(it.unit||""),L+19,y); doc.text(nm,L+36,y);
-      doc.setFontSize(8); doc.setTextColor(110); doc.text(pdfTxt(a&&a.sku?a.sku:""),R,y,{align:"right"});
+      doc.setFontSize(8); doc.setTextColor(110); doc.text(sku,R,y,{align:"right"});
       if(note.length){ doc.setFontSize(7.5); doc.text(note,L+36,y+nm.length*4-0.6); }
       y+=h; doc.setDrawColor(225); doc.setLineWidth(0.1); doc.line(L+6,y-2.6,R,y-2.6);
     });
     y+=3;
   }
-  need(40); doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(10,106,134); doc.text("Notizen / Nachbestellen",L,y); y+=4;
+  need(40); doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...PC.acc); doc.text("Notizen / Nachbestellen",L,y); y+=4;
   doc.setDrawColor(200); doc.setLineWidth(0.2); for(let i=0;i<6&&y<284;i++){ y+=6; doc.line(L,y,R,y); }
   if(into) return true;
   const name=("Packliste_"+(P.name||"Projekt")).replace(/[^\wäöüÄÖÜß-]+/g,"_")+".pdf";
@@ -4238,9 +4230,11 @@ async function exportNetzPdf(into){
   let y=18, page=1;
   const T=pdfTxt, need=h=>{ if(y+h>282){ doc.addPage(); page++; y=18; } };
   const H=t=>{ need(14); y+=3; doc.setFillColor(11,110,128); doc.rect(L,y-4.2,2,5.2,"F"); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(20); doc.text(T(t),L+4,y); y+=5; };
-  const KV=(k,v,bold)=>{ const lines=doc.splitTextToSize(T(v==null||v===""?"–":String(v)),R-L-72); need(lines.length*4.6+1.5);
-    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(95); doc.text(T(k),L+2,y);
-    doc.setFont("helvetica",bold?"bold":"normal"); doc.setTextColor(20); doc.text(lines,L+72,y); y+=lines.length*4.6+1.2;
+  /* Schrift vor dem Umbrechen setzen; lange Bezeichnungen links ebenfalls umbrechen statt in den Wert zu laufen */
+  const KV=(k,v,bold)=>{ doc.setFont("helvetica",bold?"bold":"normal"); doc.setFontSize(9); const lines=doc.splitTextToSize(T(v==null||v===""?"–":String(v)),R-L-72);
+    doc.setFont("helvetica","normal"); const kl=doc.splitTextToSize(T(k),66), n=Math.max(lines.length,kl.length); need(n*4.6+1.5);
+    doc.setTextColor(95); doc.text(kl,L+2,y,{lineHeightFactor:1.15});
+    doc.setFont("helvetica",bold?"bold":"normal"); doc.setTextColor(20); doc.text(lines,L+72,y,{lineHeightFactor:1.15}); y+=n*4.6+1.2;
     doc.setDrawColor(228); doc.setLineWidth(0.1); doc.line(L+2,y-3.4,R,y-3.4); };
   doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.setTextColor(20); doc.text(T("Anlagendaten Netzanmeldung / Marktstammdatenregister"),L,y);
   doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(95); y+=6; doc.text(T(`${P.name||"Projekt"} · Stand ${new Date().toLocaleDateString("de-DE")} · Netzbetreiber: ${nb.name}`),L,y); y+=4;
@@ -4363,11 +4357,13 @@ async function exportSlpPdf(into){
   /* Zähler, Smart Meter, HAK, Netz */
   const zY=(yMin+yMax)/2, zX=236; s.line(busX,zY,zX-6,zY); s.meter(zX,zY,6);
   s.label("Zweirichtungszähler",zX,zY+10,6.3,{align:"center"},true); s.label(c.zaehler?"Nr. "+c.zaehler:"(Messstellenbetreiber)",zX,zY+13.2,6,{align:"center"});
-  const mp=meterPick(); if(mp.art||mp.incl){ s.box(busX+4,zY-19,26,9,true); s.label(mp.art?mp.art.name.replace(/^Sungrow |^SMA |^Fronius |^Huawei /,""):"Smart Meter (Lieferumfang WR)",busX+17,zY-13.3,5.5,{align:"center"}); s.dashed(busX+17,zY-10,busX+17,zY); }
+  const mp=meterPick(); if(mp.art||mp.incl){ const ml=mp.art?mp.art.name.replace(/^Sungrow |^SMA |^Fronius |^Huawei /,""):"Smart Meter (Lieferumfang WR)";
+    doc.setFont("helvetica","normal"); doc.setFontSize(5.5); const mw=Math.max(26,doc.getTextWidth(pdfTxt(ml))+6);
+    s.box(busX+6,zY-19,mw,9,true); s.label(ml,busX+6+mw/2,zY-13.3,5.5,{align:"center"}); s.dashed(busX+17,zY-10,busX+17,zY); }
   s.line(zX+6,zY,252,zY); s.fuse(256,zY); s.line(258,zY,266,zY); s.label("HAK"+(P.vo&&P.vo.val&&P.vo.val.hak?" "+P.vo.val.hak+" A":""),256,zY+9,6.3,{align:"center"});
   s.label("Netz",267,zY-2,7,{align:"left"},true); s.label(nb.kurz,267,zY+2,6); s.label("400/230 V",267,zY+5.2,6);
   /* PA-Schiene */
-  s.box(96,H-44,26,7); s.label("PA-Schiene",109,H-39.7,6.3,{align:"center"},true); s.earth(109,H-37); s.label("Montagegestell / WR / Speicher: H07V-K 16 mm² bzw. 6 mm²",125,H-39.7,6);
+  s.box(96,H-56,26,7); s.label("PA-Schiene",109,H-51.7,6.3,{align:"center"},true); s.earth(109,H-49); s.label("Montagegestell / WR / Speicher: H07V-K 16 mm² bzw. 6 mm²",125,H-51.7,6);
   /* Schriftfeld */
   titleBlock(doc,W,H,"Übersichtsschaltplan",1,1);
   if(into) return true;
@@ -4400,7 +4396,7 @@ async function exportDcPdf(into){
   chk.forEach((t,i)=>{ const cy=y+i*6.2; doc.rect(L,cy-3,3.3,3.3); doc.text(T(t),L+5.5,cy); });
   y+=chk.length*6.2+6;
   doc.setFont("helvetica","normal"); doc.setFontSize(8.5);
-  [["Messgerät / Kalibrierung",L],["Datum",L+100],["Prüfer (Name, Unterschrift)",L+160]].forEach(([t,xx])=>{ doc.setDrawColor(120); doc.line(xx,y+8,xx+(t.startsWith("Prüfer")?110:90),y+8); doc.setTextColor(110); doc.setFontSize(7); doc.text(T(t),xx,y+11.5); });
+  [["Messgerät / Kalibrierung",L,85],["Datum",L+95,45],["Prüfer (Name, Unterschrift)",L+150,W-L-(L+150)]].forEach(([t,xx,ww])=>{ doc.setDrawColor(120); doc.setLineWidth(0.25); doc.line(xx,y+8,xx+ww,y+8); doc.setTextColor(110); doc.setFontSize(7); doc.text(T(t),xx,y+11.5); });
   doc.setTextColor(20);
   if(into) return true;
   await netzSave(doc,"Pruefprotokoll_DC_");
@@ -4473,7 +4469,7 @@ async function exportCustPdf(into){
     const mx=Math.max(...r.monthly), ch=30, cw=(R-L)/12, mn=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
     r.monthly.forEach((v,i)=>{ const h=v/mx*ch, x=L+i*cw+1.5; doc.setFillColor(242,169,0); doc.rect(x,y+ch-h+2,cw-3,h,"F");
       doc.setFontSize(6.5); doc.setTextColor(95); doc.text(fmt(v,0),x+(cw-3)/2,y+ch-h+0.8,{align:"center"}); doc.text(T(mn[i]),x+(cw-3)/2,y+ch+6,{align:"center"}); });
-    y+=ch+11; }
+    y+=ch+17; }
   /* Komponenten + Wirtschaftlichkeit */
   const col=(x,title,rows)=>{ let yy=y; doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(20); doc.text(T(title),x,yy); yy+=5.5;
     rows.forEach(([k,v])=>{ doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(95); doc.text(T(k),x,yy); doc.setTextColor(20);
@@ -4534,6 +4530,70 @@ async function handleDroppedFiles(files){
   const go=async()=>{ if(UI.tab!=="karte") setTab("karte"); await loadImageFile(f); };
   if(IMG) modal("Luftbild ersetzen?",`<div class="hint">„${esc(f.name||"Datei")}“ ersetzt das aktuelle Luftbild. Der Maßstab muss danach neu gesetzt werden, die Dachflächen bleiben liegen.</div>`,"Ersetzen",()=>{ go(); return true; });
   else await go();
+}
+</script>
+<script>
+/* ───────── PDF-Stil: gemeinsame Farben, Kopf, Fußzeile und Tabellen ─────────
+   Wichtig bei jsPDF: splitTextToSize misst mit der GERADE eingestellten Schrift. Deshalb setzt pdfTable
+   Schriftart und -größe immer vor dem Umbrechen – sonst laufen Texte in die Nachbarspalte. */
+const PC={ink:[19,33,42],mut:[96,110,118],line:[214,222,221],acc:[11,110,128],sun:[242,169,0],zebra:[245,248,248],head:[229,238,239],
+  ok:[29,127,76],warn:[176,104,0],bad:[180,39,30]};
+const pdfInk=(doc,c=PC.ink)=>doc.setTextColor(...c);
+/* Seitenkopf (Hochformat): farbige Linie, Titel, Untertitel. Gibt die y-Position darunter zurück */
+function pdfHead(doc,L,R,title,sub,y=14){
+  doc.setFillColor(...PC.acc); doc.rect(L,y,R-L,1.1,"F"); doc.setFillColor(...PC.sun); doc.rect(L,y,22,1.1,"F");
+  doc.setFont("helvetica","bold"); doc.setFontSize(17); pdfInk(doc); doc.text(pdfTxt(title),L,y+10);
+  let yy=y+10;
+  if(sub){ doc.setFont("helvetica","normal"); doc.setFontSize(9); pdfInk(doc,PC.mut);
+    doc.splitTextToSize(pdfTxt(sub),R-L).forEach(l=>{ yy+=4.6; doc.text(l,L,yy); }); }
+  pdfInk(doc); return yy+7;
+}
+/* Fußzeile auf allen Seiten ab p0: Linie, links Projekt + Dokument, rechts „Seite x/y“ */
+function pdfFoot(doc,p0,L,R,label,Hp=297){
+  const n=doc.getNumberOfPages()-p0+1;
+  for(let k=1;k<=n;k++){ doc.setPage(p0+k-1);
+    doc.setDrawColor(...PC.line); doc.setLineWidth(0.2); doc.line(L,Hp-13,R,Hp-13);
+    doc.setFont("helvetica","normal"); doc.setFontSize(7.5); pdfInk(doc,PC.mut);
+    doc.text(pdfTxt(label),L,Hp-9); doc.text(`Seite ${k}/${n}`,R,Hp-9,{align:"right"}); }
+  pdfInk(doc);
+}
+/* Tabelle mit Zeilenumbruch je Zelle, Zebrastreifen und Seitenumbruch (Kopfzeile wird wiederholt).
+   cols: [{h:"Titel", w:mm (0 = Rest), al:"l"|"r"|"c", bold}]
+   rows: [{c:[Zelltexte], note, noteCol, noteC:[r,g,b], bold, bar:[r,g,b] (Farbstreifen links), color:[r,g,b] je Zeile}]
+   o: {x,y,w,fs,lh,pad,bottom,newPage:()=>y,zebra} – gibt die y-Position nach der Tabelle zurück */
+function pdfTable(doc,cols,rows,o){
+  const x0=o.x, W=o.w, fs=o.fs||8.8, lh=o.lh||fs*0.43, pad=o.pad??1.7, bottom=o.bottom||282;
+  const fixed=cols.reduce((a,c)=>a+(c.w||0),0), flex=cols.filter(c=>!c.w).length||1;
+  const ws=cols.map(c=>c.w||Math.max(10,(W-fixed)/flex)), xs=ws.map((_,i)=>x0+ws.slice(0,i).reduce((a,b)=>a+b,0));
+  let y=o.y;
+  const cellX=(i,al)=>al==="r"?xs[i]+ws[i]-pad:al==="c"?xs[i]+ws[i]/2:xs[i]+pad;
+  const head=()=>{
+    doc.setFont("helvetica","bold"); doc.setFontSize(fs-0.9);
+    const hl=cols.map((c,i)=>doc.splitTextToSize(pdfTxt(c.h),ws[i]-2*pad)), n=Math.max(...hl.map(l=>l.length)), h=n*lh*0.95+2*pad+0.6;
+    doc.setFillColor(...PC.head); doc.rect(x0,y,W,h,"F"); pdfInk(doc,PC.ink);
+    hl.forEach((l,i)=>l.forEach((t,k)=>doc.text(t,cellX(i,cols[i].al),y+pad+lh*0.78+k*lh*0.95,{align:cols[i].al==="r"?"right":cols[i].al==="c"?"center":"left"})));
+    y+=h;
+  };
+  head();
+  rows.forEach((r,ri)=>{
+    doc.setFont("helvetica",r.bold?"bold":"normal"); doc.setFontSize(fs);
+    const lines=cols.map((c,i)=>{ doc.setFont("helvetica",(r.bold||c.bold)?"bold":"normal"); return doc.splitTextToSize(pdfTxt(r.c[i]??""),ws[i]-2*pad); });
+    const nc=r.noteCol??cols.findIndex(c=>!c.w);
+    doc.setFont("helvetica","italic"); doc.setFontSize(fs-1.6);
+    const note=r.note?doc.splitTextToSize(pdfTxt(r.note),ws[Math.max(0,nc)]-2*pad):[];
+    const nl=Math.max(1,...lines.map(l=>l.length)), h=nl*lh+(note.length?note.length*lh*0.82+0.6:0)+2*pad;
+    if(y+h>bottom){ y=o.newPage?o.newPage():(doc.addPage(),o.top||20); head(); }
+    if(o.zebra!==false&&ri%2){ doc.setFillColor(...PC.zebra); doc.rect(x0,y,W,h,"F"); }
+    if(r.bar){ doc.setFillColor(...r.bar); doc.rect(x0,y,1.6,h,"F"); }
+    doc.setFontSize(fs);
+    lines.forEach((l,i)=>{ doc.setFont("helvetica",(r.bold||cols[i].bold)?"bold":"normal"); pdfInk(doc,(cols[i].color&&cols[i].color(r))||r.color||PC.ink);
+      l.forEach((t,k)=>doc.text(t,cellX(i,cols[i].al),y+pad+lh*0.78+k*lh,{align:cols[i].al==="r"?"right":cols[i].al==="c"?"center":"left"})); });
+    if(note.length){ doc.setFont("helvetica","italic"); doc.setFontSize(fs-1.6); pdfInk(doc,r.noteC||PC.warn);
+      note.forEach((t,k)=>doc.text(t,xs[nc]+pad,y+pad+lh*0.78+nl*lh+k*lh*0.82)); }
+    y+=h; doc.setDrawColor(...PC.line); doc.setLineWidth(0.15); doc.line(x0,y,x0+W,y);
+  });
+  doc.setFont("helvetica","normal"); doc.setFontSize(fs); pdfInk(doc);
+  return y;
 }
 </script>
 <script>
@@ -4763,7 +4823,7 @@ function planPage(doc,W,H,strings,withImg,title,n,N,sub){
   doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.text("Legende",lx,ly); ly+=5;
   doc.setFont("helvetica","normal"); doc.setFontSize(8);
   const line=(t,gap=4.2)=>{ doc.text(doc.splitTextToSize(pdfTxt(t),48),lx,ly); ly+=gap*Math.max(1,doc.splitTextToSize(pdfTxt(t),48).length); };
-  if(M){ line(`Modul: ${M.name}`); line(`${M.h} x ${M.w} mm, ${M.wp} Wp`); }
+  if(M){ doc.splitTextToSize(pdfTxt(`Modul: ${M.name}`),36).forEach(l=>{ doc.text(l,lx,ly); ly+=4.2; }); line(`${M.h} x ${M.w} mm, ${M.wp} Wp`); }
   line(`Module gesamt: ${MODS.length}`); line(`Leistung: ${fmt(M?MODS.length*M.wp/1000:0,2)} kWp`,6);
   doc.setFillColor(18,42,78); doc.rect(lx,ly-3,6,4,"F"); doc.text("Modul",lx+8,ly); ly+=5.5;
   doc.setFillColor(255,225,77); doc.rect(lx,ly-3,6,4,"F"); doc.text("Dachfläche",lx+8,ly); ly+=5.5;
@@ -4822,20 +4882,22 @@ function tablePage(doc,W,H,n,N){
   titleBlock(doc,W,H,"Stringtabelle",n,N);
 }
 function bomPage(doc,W,H,n,N){
-  const M=modOf(); let y=16; const x0=10;
-  doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.text("Stückliste und Dachflächen",x0,y); y+=9;
-  const row=(cells,ws,bold)=>{ let x=x0; doc.setFont("helvetica",bold?"bold":"normal"); doc.setFontSize(9); cells.forEach((c,i)=>{ doc.text(pdfTxt(c),x+1.5,y); x+=ws[i]; }); y+=6; doc.setDrawColor(210); doc.setLineWidth(0.15); doc.line(x0,y-4,x0+ws.reduce((a,b)=>a+b,0),y-4); };
-  const ws=[110,30,40,60]; row(["Position","Anzahl","Leistung","Bemerkung"],ws,true);
-  if(M) row([M.name,String(MODS.length),fmt(MODS.length*M.wp/1000,2)+" kWp",`${M.h} x ${M.w} mm`],ws);
-  const cnt={}; P.wrs.forEach(w=>{ const i=invOf(w.invId); if(i){ cnt[i.name]=(cnt[i.name]||0)+1; } });
-  Object.entries(cnt).forEach(([k,v])=>row([k,String(v),"",""],ws));
-  row(["DC-Strings",String(P.strings.length),"",""],ws);
-  if(P.sub&&P.sub.on&&SUB) subBomRows().forEach(r=>row([r[0]+" (K2)",String(r[1]),"",""],ws));
-  P.bats.forEach(b=>{ const B=LIB.batteries.find(x=>x.id===b.batId); const wr=P.wrs.find(w=>w.id===b.wr); if(B) row([B.name,String(b.qty),fmt(B.kwh*b.qty,2)+" kWh (nutzbar)",wr?wr.name:""],ws); });
-  y+=8; doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Dachflächen",x0,y); y+=7;
-  const w2=[50,25,40,30,30,35]; row(["Fläche","Neigung","Ausrichtung","Module","kWp","Dachfläche m²"],w2,true);
-  P.faces.forEach((f,i)=>{ const g=GEO[i], n2=g.cells.filter(c=>c.active).length; let A=0; g.poly.forEach((a,k)=>{const b=g.poly[(k+1)%g.poly.length]; A+=a[0]*b[1]-b[0]*a[1];});
-    row([f.name,f.pitch+" Grad",`${compass(azimuthOf(f))} (${Math.round(azimuthOf(f))} Grad)`,String(n2),fmt(M?n2*M.wp/1000:0,2),fmt(Math.abs(A)/2,1)],w2); });
+  const M=modOf(), x0=10, w=W-20, bottom=H-10-24-5; let y=16;
+  doc.setFont("helvetica","bold"); doc.setFontSize(13); pdfInk(doc); doc.text("Stückliste und Dachflächen",x0,y); y+=5;
+  const np=()=>{ titleBlock(doc,W,H,"Stückliste",n,N); doc.addPage(); return 16; };
+  const rows=[];
+  if(M) rows.push({c:[M.name,String(MODS.length),fmt(MODS.length*M.wp/1000,2)+" kWp",`${M.h} x ${M.w} mm`]});
+  const cnt={}; P.wrs.forEach(w2=>{ const i=invOf(w2.invId); if(i){ cnt[i.name]=(cnt[i.name]||0)+1; } });
+  Object.entries(cnt).forEach(([k,v])=>rows.push({c:[k,String(v),"",""]}));
+  rows.push({c:["DC-Strings",String(P.strings.filter(s=>s.mods.length).length),"",""]});
+  if(P.sub&&P.sub.on&&SUB) subBomRows().forEach(r=>rows.push({c:[r[0]+" (K2)",String(r[1]),"",""]}));
+  P.bats.forEach(b=>{ const B=LIB.batteries.find(x=>x.id===b.batId); const wr=P.wrs.find(x=>x.id===b.wr); if(B) rows.push({c:[B.name,String(b.qty),fmt(B.kwh*b.qty,2)+" kWh (nutzbar)",wr?"an "+wr.name:""]}); });
+  y=pdfTable(doc,[{h:"Position",w:0},{h:"Anzahl",w:24,al:"r"},{h:"Leistung",w:40},{h:"Bemerkung",w:60}],rows,{x:x0,y,w,fs:9,bottom,newPage:np});
+  if(y+30>bottom) y=np();
+  y+=10; doc.setFont("helvetica","bold"); doc.setFontSize(11); pdfInk(doc); doc.text("Dachflächen",x0,y); y+=3;
+  const fr=P.faces.map((f,i)=>{ const g=GEO[i], n2=g.cells.filter(c=>c.active).length; let A=0; g.poly.forEach((a,k)=>{const b=g.poly[(k+1)%g.poly.length]; A+=a[0]*b[1]-b[0]*a[1];});
+    return {c:[f.name,f.pitch+"°",`${compass(azimuthOf(f))} (${Math.round(azimuthOf(f))}°)`,String(n2),fmt(M?n2*M.wp/1000:0,2),fmt(Math.abs(A)/2,1)]}; });
+  pdfTable(doc,[{h:"Fläche",w:0},{h:"Neigung",w:26,al:"r"},{h:"Ausrichtung",w:40},{h:"Module",w:24,al:"r"},{h:"kWp",w:24,al:"r"},{h:"Dachfläche m²",w:32,al:"r"}],fr,{x:x0,y,w:170,fs:9,bottom,newPage:np});
   titleBlock(doc,W,H,"Stückliste",n,N);
 }
 async function exportPdf(into){

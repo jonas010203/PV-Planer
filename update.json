@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.10.03.3",
+    "version": "2026.10.04.1",
     "file": "Dachplaner-PV.html",
-    "notes": "Angebot: die Liste springt beim Ändern von Menge, Preis, Aufschlag, Option oder beim Löschen nicht mehr nach oben, der Cursor bleibt im Feld. Traufe frei wählbar, Dreiecke automatisch mit längster Kante als Traufe."
+    "notes": "PDFs überarbeitet: Preisaufstellung mit sauberen Spalten (nichts überlappt mehr), Summenblock und Fußzeile; Stückliste, Packliste und Netzanmeldung brechen lange Namen um; Übersichtsschaltplan und Prüfprotokoll ohne Überschneidungen."
   },
   "library": {
     "version": "2026.10.01.2",
