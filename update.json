@@ -1,12 +1,12 @@
 {
   "app": {
-    "version": "2026.10.04.1",
+    "version": "2026.10.04.2",
     "file": "Dachplaner-PV.html",
-    "notes": "PDFs überarbeitet: Preisaufstellung mit sauberen Spalten (nichts überlappt mehr), Summenblock und Fußzeile; Stückliste, Packliste und Netzanmeldung brechen lange Namen um; Übersichtsschaltplan und Prüfprotokoll ohne Überschneidungen."
+    "notes": "Viel mehr Ziegeltypen: Lehmann-Aufdachmodulhalter für 69 weitere Ziegel- und Dachsteinmodelle (u. a. Braas Rubin 9V/11V/13V/15V, Turmalin, Doppel-S, Creaton, Koramic, Tondach, Nelskamp) in vier Farben. PDFs überarbeitet."
   },
   "library": {
-    "version": "2026.10.01.2",
+    "version": "2026.10.04.2",
     "file": "library.json",
-    "notes": "Neu: SMA Sunny Tripower Hybrid X 5/6/8/10/12/15, BYD Battery-Box HVS+ 5.1–12.8 und HVM+ 8.3–22.1 mit Shop-Preisen."
+    "notes": "247 neue Lehmann-Modulhalter (Blechersatzziegel) mit Lehmann-Artikelnummer und Richtpreis."
   }
 }
