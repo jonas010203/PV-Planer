@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.10.04.2",
+    "version": "2026.10.06.1",
     "file": "Dachplaner-PV.html",
-    "notes": "Viel mehr Ziegeltypen: Lehmann-Aufdachmodulhalter für 69 weitere Ziegel- und Dachsteinmodelle (u. a. Braas Rubin 9V/11V/13V/15V, Turmalin, Doppel-S, Creaton, Koramic, Tondach, Nelskamp) in vier Farben. PDFs überarbeitet."
+    "notes": "Flachdach: Module aufgeständert nach Süd, Ost, West oder Ost-West (K2 Dome 6, 10°/15°), Reihenabstände, Stückliste nach K2-Sets, Ertrag je Ost- und Westseite. Maße aus Foto/Street View: Referenz über bekannte Ziegel legen und Traufe/Sparren messen, oder Ziegel zählen."
   },
   "library": {
     "version": "2026.10.04.2",

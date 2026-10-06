@@ -1464,14 +1464,31 @@ function distSeg(p,a,b){
 function azimuthOf(f){ const fr=frame(f); const dx=-fr.vx, dy=-fr.vy; let a=Math.atan2(dx,-dy)*180/Math.PI; return (a+360)%360; }
 function compass(a){ return ["N","NO","O","SO","S","SW","W","NW"][Math.round(a/45)%8]; }
 
+/* Flachdach, aufgeständert (K2 Dome 6): f.flat={sys,tilt,gap,ridge,valley}
+   sys "s"  = eine Richtung: Süd, Ost oder West – die Module zeigen zur gewählten Bezugskante (wie bei der Traufe)
+   sys "ow" = Ost-West-Doppelreihen (Zeltform): Reihe 0 zeigt zur Bezugskante, Reihe 1 entgegengesetzt, dann wieder Gang
+   Im Grundriss belegt ein Modul nur Breite·cos(Aufstellwinkel). Reihenabstand Süd: ohne Vorgabe so, dass die Vorderkante
+   der nächsten Reihe bei ~23° Sonnenhöhe frei bleibt (= Höhe·2,3; bei 10° und 1,13 m Modul 0,45 m wie K2 S-Dome 6.10).
+   Ost-West: First 5 cm, Gang zwischen Doppelreihen 22 cm (→ Raster ≈ 2,5 m wie K2 D-Dome 6 bei Modulbreite 1061–1170 mm). */
+const FLAT_DEF={sys:"s",tilt:10,gap:null,ridge:0.05,valley:0.22};
+function flatCfg(f){
+  if(!f||!f.flat) return null; const c=Object.assign({},FLAT_DEF,f.flat);
+  c.sys=c.sys==="ow"?"ow":"s"; c.tilt=clampNum(+c.tilt||10,0,35); c.ridge=clampNum(+c.ridge||0,0,1); c.valley=clampNum(+c.valley||0,0,3);
+  c.gap=(c.gap==null||c.gap===""||!Number.isFinite(+c.gap))?null:clampNum(+c.gap,0,5); return c;
+}
+const flatAutoGap=(c,mvSlope)=>Math.round(mvSlope*Math.sin(rad(c.tilt))*2.3*100)/100;
 /* Kontext einer Dachfläche: Geometrie in Metern (u = entlang Traufe, v = entlang Sparren) */
 function faceCtx(f0){
   const f=clampFace(f0);
   const fr=frame(f), M=modOf(), poly=f.pts.map(p=>toUV(fr,p));
   const c={fr,poly,M,f,mu:0,mv:0,fitAt:()=>false};
   if(!M||f.pts.length<3) return c;
-  c.dims=o=>o==="l"?[M.h/1000,M.w/1000]:[M.w/1000,M.h/1000];
-  [c.mu,c.mv]=c.dims(f.orient==="m"?rowOri(f,0):f.orient);
+  const fl=c.flat=flatCfg(f), ct=fl?Math.cos(rad(fl.tilt)):1;
+  c.dims=o=>o==="l"?[M.h/1000,M.w/1000*ct]:[M.w/1000,M.h/1000*ct];
+  [c.mu,c.mv]=c.dims(f.orient==="m"&&!fl?rowOri(f,0):f.orient==="m"?"l":f.orient);
+  /* Abstand von Reihe j zur nächsten (Schrägdach: Modulfuge) */
+  c.step=(j,mv)=>{ if(!fl) return mv+f.gap; if(fl.sys==="ow") return mv+(j%2?fl.valley:fl.ridge);
+    return mv+(fl.gap!=null?fl.gap:flatAutoGap(fl,mv/ct)); };
   if(!(c.mu>0.05)||!(c.mv>0.05)) return c; /* Modulmaße unplausibel (z. B. defekter Bibliothekseintrag) */
   let umin=1e9,umax=-1e9,vmin=1e9,vmax=-1e9;
   poly.forEach(q=>{umin=Math.min(umin,q[0]);umax=Math.max(umax,q[0]);vmin=Math.min(vmin,q[1]);vmax=Math.max(vmax,q[1]);});
@@ -1499,6 +1516,7 @@ function faceCtx(f0){
 /* Ausrichtung einer Modulreihe (j = 0 an der Traufe). „m“ = gemischt: jede Reihe einzeln hochkant oder quer */
 function rowOri(f,j){
   if(f.orient!=="m") return f.orient==="l"?"l":"p";
+  if(f.flat) return "l";
   const o=(Array.isArray(f.rowOri)&&f.rowOri[j])||f.rowDef;
   return o==="l"?"l":"p";
 }
@@ -1512,7 +1530,7 @@ function layoutFace(c,f,cb){
       for(let u=c.umin;u<=c.umax;){ if(c.fitAt(u,v,mu,mv)){ cb(i++,j,u,v,true,mu,mv,o); u+=mu+g; } else u+=0.01; } }
     else{ const nI=Math.min(400,Math.max(0,Math.floor((c.umax-u0)/(mu+g))+1));
       for(let i=0;i<nI;i++){ const u=u0+i*(mu+g); cb(i,j,u,v,c.fitAt(u,v,mu,mv),mu,mv,o); } }
-    v+=mv+g;
+    v+=c.step?c.step(j,mv):mv+g;
   }
   return rows;
 }
@@ -1520,10 +1538,12 @@ function layoutFace(c,f,cb){
 function faceCells(f){
   const c=faceCtx(f), out={fr:c.fr,poly:c.poly,cells:[],rows:[],mu:c.mu,mv:c.mv};
   if(!c.M||f.pts.length<3||!(c.mu>0.05)||!(c.mv>0.05)) return out;
-  const fr=c.fr, tog=new Set(f.tog||[]);
+  const fr=c.fr, tog=new Set(f.tog||[]), fl=c.flat, az0=azimuthOf(f);
+  out.flat=fl;
   out.rows=layoutFace(c,f,(i,j,u,v,fit,mu,mv,o)=>{
-    const cs=[[u,v],[u+mu,v],[u+mu,v+mv],[u,v+mv]];
-    out.cells.push({key:f.id+":"+i+","+j,i,j,u,v,mu,mv,o,fit,active:fit!==tog.has(i+","+j),xy:cs.map(q=>toXY(fr,q[0],q[1])),c:toXY(fr,u+mu/2,v+mv/2)});
+    const cs=[[u,v],[u+mu,v],[u+mu,v+mv],[u,v+mv]], back=!!(fl&&fl.sys==="ow"&&j%2);
+    out.cells.push({key:f.id+":"+i+","+j,i,j,u,v,mu,mv,o,fit,active:fit!==tog.has(i+","+j),xy:cs.map(q=>toXY(fr,q[0],q[1])),c:toXY(fr,u+mu/2,v+mv/2),
+      az:back?(az0+180)%360:az0, tilt:fl?fl.tilt:(f.pitch||0), lowV:!back});
   });
   return out;
 }
@@ -1535,9 +1555,9 @@ function countFit(f){
    Bei gemischter Belegung bleiben die Reihenausrichtungen fest, nur der Versatz wird gesucht. */
 function optimizeFace(f,rows){
   const before=countFit({...f,tog:[]}); let best={n:-1,o:f.orient,ou:0,ov:0};
-  for(const o of (f.orient==="m"?["m"]:["p","l"])){
+  for(const o of (f.orient==="m"&&!f.flat?["m"]:f.flat?["l"]:["p","l"])){   /* Flachdach (K2 Dome): nur Querformat */
     const t={...f,orient:o,tog:[],pack:rows?"rows":"grid",offU:0,offV:0}, M=modOf(); if(!M) return null;
-    const mu=(o==="p"?M.w:M.h)/1000, mv=(o==="l"?M.w:M.h)/1000; /* gemischt: größtes Maß als Suchbereich */
+    const mu=(o==="p"?M.w:M.h)/1000, mv=(o==="l"?M.w:M.h)/1000+(f.flat?1:0); /* gemischt: größtes Maß als Suchbereich; Flachdach: + Reihenabstand */
     if(rows){ for(let ov=0;ov<mv+f.gap;ov+=0.05){ t.offV=ov; const n=countFit(t); if(n>best.n+0||(n===best.n&&o===f.orient&&ov<best.ov)) best={n,o,ou:0,ov}; } }
     else for(let ou=0;ou<mu+f.gap;ou+=0.04) for(let ov=0;ov<mv+f.gap;ov+=0.04){ t.offU=ou; t.offV=ov; const n=countFit(t); if(n>best.n) best={n,o,ou,ov}; }
   }
@@ -1573,6 +1593,15 @@ function recompute(){
   if(typeof refreshSub==="function") refreshSub();
 }
 const modByKey=k=>MODS.find(m=>m.key===k);
+/* Teilflächen für Ertrag und Netzanmeldung: je Dachfläche und Modulausrichtung (Ost-West-Flachdach = zwei Teilflächen) */
+function faceGroups(){
+  const map=new Map();
+  MODS.forEach(m=>{ const f=P.faces[m.fi]; if(!f) return; const az=m.az??azimuthOf(f), tilt=m.tilt??(f.pitch||0), k=m.fi+"|"+Math.round(az)+"|"+tilt;
+    let g=map.get(k); if(!g){ g={f,fi:m.fi,az,tilt,n:0,flat:!!f.flat}; map.set(k,g); } g.n++; });
+  const out=[...map.values()];
+  out.forEach(g=>{ g.label=g.f.name+(out.filter(x=>x.fi===g.fi).length>1?" "+compass(g.az):""); });
+  return out;
+}
 
 /* ───────── String-Prüfung ───────── */
 function checkString(s){
@@ -1800,6 +1829,8 @@ function drawScene(g,V,o){
       const [p0,p1,p2,p3]=c.xy.map(p=>[V.x+p[0]*V.k,V.y+p[1]*V.k]);
       g.beginPath(); g.moveTo((p0[0]+p1[0])/2,(p0[1]+p1[1])/2); g.lineTo((p3[0]+p2[0])/2,(p3[1]+p2[1])/2);
       g.lineWidth=.6*lw; g.strokeStyle="rgba(255,255,255,.28)"; g.stroke();
+      /* Flachdach: hohe Kante gelb – die Module zeigen zur anderen Seite */
+      if(geo.flat){ const hi=c.lowV?[p3,p2]:[p0,p1]; g.beginPath(); g.moveTo(...hi[0]); g.lineTo(...hi[1]); g.lineWidth=2.6*lw; g.strokeStyle="rgba(255,214,64,.95)"; g.stroke(); }
     });
   });
   if(typeof drawSub==="function"&&(o.sub||(o.ui&&UI.tab==="unterbau"))) drawSub(g,V,o);
@@ -1831,7 +1862,8 @@ function drawScene(g,V,o){
     const c=centroid(f.pts), az=azimuthOf(f);
     const top=[V.x+c[0]*V.k,V.y+c[1]*V.k];
     if(o.labels!==false){
-      haloText(g,`${f.name}  ${f.pitch}° · ${compass(az)} ${Math.round(az)}°`,top[0],V.y+Math.min(...f.pts.map(p=>p[1]))*V.k-12*lw*fs,12*fs*lw,"#ffe14d");
+      const fl=flatCfg(f);
+      haloText(g,fl?`${f.name}  Flachdach · ${fl.sys==="ow"?"Ost-West":compass(az)+" "+Math.round(az)+"°"} · ${fl.tilt}° aufgeständert`:`${f.name}  ${f.pitch}° · ${compass(az)} ${Math.round(az)}°`,top[0],V.y+Math.min(...f.pts.map(p=>p[1]))*V.k-12*lw*fs,12*fs*lw,"#ffe14d");
       if(o.dims!==false&&(!o.ui||f.id===UI.selFace)){
         f.pts.forEach((a,k)=>{
           const b=f.pts[(k+1)%f.pts.length], pa=geo.poly[k], pb=geo.poly[(k+1)%f.pts.length];
@@ -1841,7 +1873,7 @@ function drawScene(g,V,o){
           let nx=-dy/dl, ny=dx/dl; const cx=V.x+c[0]*V.k, cy=V.y+c[1]*V.k;
           if((cx-mx)*nx+(cy-my)*ny>0){ nx=-nx; ny=-ny; }
           const off=(o.dimOff||13)*lw*fs;
-          haloText(g,(k===0?"Traufe ":"")+fmt(L,2)+" m",mx+nx*off,my+ny*off,10.5*fs*lw,k===0?"#ffb066":"#bfe6ff");
+          haloText(g,(k===0?(f.flat?"Bezug ":"Traufe "):"")+fmt(L,2)+" m",mx+nx*off,my+ny*off,10.5*fs*lw,k===0?"#ffb066":"#bfe6ff");
         });
       }
       if(!o.strings) haloText(g,`${n} Module · ${fmt(kwp,2)} kWp`,top[0],top[1],12*fs*lw,"#fff");
@@ -2215,6 +2247,7 @@ function renderSide(){
     <div class="sec"><h2>Dachflächen</h2><div class="list">${P.faces.map(x=>`<div class="${x.id===UI.selFace?"sel":""}" data-act="selFace" data-id="${x.id}"><span class="grow">${esc(x.name)}</span><span class="mono hint">${x.pitch}° · ${compass(azimuthOf(x))}</span></div>`).join("")||`<div class="hint">Noch keine Fläche.</div>`}</div></div>`;
     if(f) h+=`<div class="sec"><h2>Fläche bearbeiten</h2>
       ${txt("fName","Name",f.name,'data-f="name"')}
+      ${flatTypeHtml(f)}
       <div class="grid2">${num("fPitch","Dachneigung (°)",f.pitch,'data-f="pitch" min="0" max="80"',1)}<label class="f">Ausrichtung<input type="text" readonly value="${compass(azimuthOf(f))} ${Math.round(azimuthOf(f))}°"></label></div>
       <div class="hint">Ausrichtung wird aus der Traufe berechnet (Bild = Norden oben). Die Dachneigung gibt es meist aus Bauplan oder Aufmaß; sie streckt die Sparrenlänge gegenüber dem Luftbild.</div>
       <h2 style="margin-top:6px">Maße vorgeben</h2>
@@ -2222,6 +2255,7 @@ function renderSide(){
       <div class="grid2">${num("fDimU","Traufe (m)",dimNow(f).eave.toFixed(2),'data-f="dimU" min="0.5"',0.01)}${num("fDimV","Sparrenlänge (m)",dimNow(f).raf.toFixed(2),'data-f="dimV" min="0.5"',0.01)}</div>
       ${num("fDimH","Tiefe von oben, z. B. Bayernatlas (m)",(dimNow(f).raf*Math.cos(rad(f.pitch||0))).toFixed(2),'data-f="dimH" min="0.5"',0.01)}
       <div class="hint">Karten wie der Bayernatlas messen waagerecht. Die Traufe kannst du direkt übernehmen, die Dachtiefe trägst du hier ein. Die Sparrenlänge rechnet das Programm über die Dachneigung selbst aus.</div>
+      <button data-act="fotoMass" type="button">Maße aus Foto / Street View messen</button>
       ${(f.kU||f.kV)?`<button data-act="resetDims" type="button">Maße auf Bildmaßstab zurücksetzen</button>`:""}
       ${eaveSelHtml(f)}
       <div class="row"><button data-act="delFace" class="dng" type="button">Fläche löschen</button></div>
@@ -2237,9 +2271,9 @@ function renderSide(){
       ${M?`<div class="stat"><span>Gewählt</span><b>${esc(M.name)}</b><span>Maße</span><b>${M.h} × ${M.w} mm</b><span>U_OC / I_SC</span><b>${M.voc} V / ${M.isc} A</b><span>U_MPP / I_MPP</span><b>${M.vmpp} V / ${M.impp} A</b></div><div class="hint">${M.ok?"Werte aus dem Datenblatt.":"Werte sind Näherungen, bitte prüfen."} Weitere Module unter „Bibliothek“.</div>`:`<div class="banner">Kein Modul gewählt.</div>`}</div>
     <div class="sec"><h2>Dachflächen</h2><div class="list">${P.faces.map((x,i)=>{const n=GEO[i]?GEO[i].cells.filter(c=>c.active).length:0; return `<div class="${x.id===UI.selFace?"sel":""}" data-act="selFace" data-id="${x.id}"><span class="grow">${esc(x.name)}</span><span class="mono">${n} Mod.</span></div>`;}).join("")}</div></div>`;
     if(f) h+=`<div class="sec"><h2>Belegung ${esc(f.name)}</h2>
-      <label class="f">Ausrichtung der Module<select id="fOrient" data-f="orient"><option value="p"${f.orient==="p"?" selected":""}>Hochkant</option><option value="l"${f.orient==="l"?" selected":""}>Quer</option><option value="m"${f.orient==="m"?" selected":""}>Gemischt (je Reihe wählbar)</option></select></label>
+      <label class="f">Ausrichtung der Module<select id="fOrient" data-f="orient"><option value="p"${f.orient==="p"?" selected":""}>Hochkant</option><option value="l"${f.orient==="l"?" selected":""}>Quer</option>${f.flat?"":`<option value="m"${f.orient==="m"?" selected":""}>Gemischt (je Reihe wählbar)</option>`}</select></label>
       ${f.orient==="m"?rowOriHtml(f):""}
-      <div class="grid2" style="grid-template-columns:repeat(3,1fr)">${num("fEdgeE","Traufe (m)",f.edgeE??f.edge,'data-f="edgeE" min="0" max="3"',0.05)}${num("fEdgeR","First (m)",f.edgeR??f.edge,'data-f="edgeR" min="0" max="3"',0.05)}${num("fEdgeS","Seite (m)",f.edgeS??f.edge,'data-f="edgeS" min="0" max="3"',0.05)}</div>
+      <div class="grid2" style="grid-template-columns:repeat(3,1fr)">${num("fEdgeE",f.flat?"Rand vorn (m)":"Traufe (m)",f.edgeE??f.edge,'data-f="edgeE" min="0" max="3"',0.05)}${num("fEdgeR",f.flat?"Rand hinten (m)":"First (m)",f.edgeR??f.edge,'data-f="edgeR" min="0" max="3"',0.05)}${num("fEdgeS","Seite (m)",f.edgeS??f.edge,'data-f="edgeS" min="0" max="3"',0.05)}</div>
       <div class="grid2">${num("fGap","Modulfuge (m)",f.gap,'data-f="gap" min="0" max="0.3"',0.005)}<label class="f">Belegungsart<select id="fPack" data-f="pack"><option value="grid"${f.pack==="rows"?"":" selected"}>Raster (Spalten fluchtend)</option><option value="rows"${f.pack==="rows"?" selected":""}>Reihen einzeln (mehr Module)</option></select></label></div>
       <div class="row"><button data-act="optGrid" class="pri" type="button">Belegung optimieren</button><button data-act="optRows" type="button">Maximal füllen</button></div>
       <div class="hint">„Optimieren“ probiert beide Ausrichtungen und verschiebt das Raster, bis die meisten Module passen. „Maximal füllen“ richtet jede Reihe einzeln aus.</div>
@@ -2247,6 +2281,7 @@ function renderSide(){
       <div class="hint">Klick auf einen Rasterplatz setzt oder entfernt ein Modul von Hand.</div>
       <button data-act="resetTog" type="button">Handänderungen zurücksetzen</button>
       <div id="faceStat">${faceStatHtml()}</div></div>`;
+    if(f&&f.flat) h+=flatSideHtml(f);
     h+=`<div class="stat"><span>Gesamt</span><b>${MODS.length} Module · ${fmt(M?MODS.length*M.wp/1000:0,2)} kWp</b></div>`;
   }
   else if(UI.tab==="strings"){
@@ -2349,6 +2384,7 @@ side.addEventListener("click",e=>{
     case "selFace": UI.selFace=id; UI.selObst=null; renderSide(); draw(); break;
     case "delFace": deleteSelected(); break;
     case "delObst": deleteSelected(); break;
+    case "fotoMass": openFotoMass(); break;
     case "rotEave": { const f=selFace(); if(f) applyEave(f,1); break; }
     case "eaveLong": { const f=P.faces.find(x=>x.id===b.dataset.id)||selFace(); if(f) applyEave(f,longestEdge(f)); break; }
     case "resetTog": { const f=selFace(); if(f){ f.tog=[]; changed(); renderSide(); } break; }
@@ -2402,12 +2438,14 @@ function eaveSelHtml(f){
   const L=faceEdges(f), lg=longestEdge(f);
   const opts=L.map((l,k)=>{ const t={...f,pts:[...f.pts.slice(k),...f.pts.slice(0,k)]}, a=azimuthOf(t);
     return `<option value="${k}"${k?"":" selected"}>Kante ${k+1}: ${fmt(l,2)} m · ${compass(a)} ${Math.round(a)}°${k===lg?" · längste":""}</option>`; }).join("");
-  return `<label class="f">Traufe (untere Kante, an ihr richtet sich das Modulraster aus)<select id="fEave" data-eave="1">${opts}</select></label>
-    ${eaveSuspect(f)?`<div class="banner">Bei einem Dreieck (Walmseite) ist die Traufe fast immer die längste Kante. Gerade ist es eine der Schrägen, deshalb liegen die Module schräg. <button type="button" data-act="eaveLong" data-id="${f.id}">Längste Kante als Traufe</button></div>`:""}`;
+  return `<label class="f">${f.flat?"Bezugskante (die Module zeigen zu dieser Kante, Reihen parallel dazu)":"Traufe (untere Kante, an ihr richtet sich das Modulraster aus)"}<select id="fEave" data-eave="1">${opts}</select></label>
+    ${eaveSuspect(f)&&!f.flat?`<div class="banner">Bei einem Dreieck (Walmseite) ist die Traufe fast immer die längste Kante. Gerade ist es eine der Schrägen, deshalb liegen die Module schräg. <button type="button" data-act="eaveLong" data-id="${f.id}">Längste Kante als Traufe</button></div>`:""}`;
 }
 function applyEave(f,k){
   const keys=new Set((GEO[P.faces.indexOf(f)]||{cells:[]}).cells.map(c=>c.key)), inStr=P.strings.some(s=>s.mods.some(m=>keys.has(m)));
-  const go=()=>{ if(setEave(f,k)){ changed(true); renderSide(); toast("Traufe geändert: "+compass(azimuthOf(f))+" "+Math.round(azimuthOf(f))+"°. Belegung neu prüfen."); } else renderSide(); };
+  /* Kante über ihren Startpunkt merken – die Nummer kann sich ändern, bis die Rückfrage bestätigt ist */
+  const p0=f.pts[((k%f.pts.length)+f.pts.length)%f.pts.length];
+  const go=()=>{ const k2=f.pts.indexOf(p0); if(k2>0&&setEave(f,k2)){ changed(true); renderSide(); toast((f.flat?"Ausrichtung geändert: ":"Traufe geändert: ")+compass(azimuthOf(f))+" "+Math.round(azimuthOf(f))+"°. Belegung neu prüfen."); } else { changed(true); renderSide(); } };
   if(inStr) modal("Traufe ändern?",`<div class="hint">Das Modulraster von „${esc(f.name)}“ wird neu aufgebaut. Die Module dieser Fläche fallen dabei aus ihren Strings und müssen neu zugeordnet werden.</div>`,"Ändern",()=>{ go(); return true; });
   else go();
 }
@@ -2517,6 +2555,10 @@ function offerFromPlan(){
     if(b.cross) add.push(newItem({t:"free",name:"Kreuzverbinder / Befestigung Trägerschienen (Querformat)",qty:b.cross,unit:"Stk",ekFix:3.5,note:"Richtwert – nach K2-Stückliste prüfen"}));
     add.push(newItem({t:"free",name:"Holzbauschrauben für Dachhaken (2 je Haken), Kleinteile",qty:1,unit:"Pausch.",ekFix:Math.round(Math.max(10,(b.hooks||0)*2*0.45)*100)/100,note:"Richtwert – nach K2-Stückliste prüfen"}));
   }
+  /* Flachdach: K2 Dome 6 nach domeBom(); Ballast und Statik immer aus K2 Base */
+  const dome=typeof domeBom==="function"?domeBom():[];
+  dome.forEach(r=>{ const a=artOf(r.art); add.push(newItem(a?{t:"art",art:a.id,name:a.name,qty:r.qty,unit:"Stk",grp:"Unterbau"}:{t:"free",name:r.name,qty:r.qty,unit:"Stk",grp:"Unterbau",note:"Kein Shop-Artikel – Preis eintragen"})); });
+  if(dome.length) add.push(newItem({t:"free",name:"Ballastierung (Betonsteine/-platten) laut K2 Base",qty:1,unit:"Pausch.",grp:"Unterbau",note:"Menge und Gewicht aus K2 Base, Dachlast prüfen"}));
   const strWithMods=P.strings.filter(s=>s.mods.length), ns=strWithMods.length;
   if(ns){
     const lens=strWithMods.map(s=>cableCheck(s)?.len), nk=lens.filter(l=>l!=null).length;
@@ -2767,7 +2809,7 @@ function computeSub(){
   };
   GEO.forEach((g,fi)=>{
     const f=P.faces[fi], cells=g.cells.filter(c=>c.active); const out={fi,rails:[],lower:[],hooks:[]}; res.faces.push(out);
-    if(!cells.length||!g.mu||!g.poly.length) return;
+    if(!cells.length||!g.mu||!g.poly.length||f.flat) return;   /* Flachdach: K2 Dome 6, siehe domeBom() */
     const gap=f.gap, r=S.klemm/100, ext=S.ext;
     const umin=Math.min(...g.poly.map(q=>q[0])), u0=umin+(f.sparOff||0);
     const rafters=(a,b)=>{ const out=[]; for(let k=Math.ceil((a-u0)/S.spar-1e-9);u0+k*S.spar<=b+1e-9;k++) out.push(u0+k*S.spar); return out; };
@@ -2851,8 +2893,33 @@ function drawSub(g,V,o){
 }
 
 /* ───────── Seitenleiste ───────── */
+/* ───────── Flachdach: K2 Dome 6 (D-Dome Ost-West, S-Dome eine Richtung), 10° oder 15° ─────────
+   Mengen nach dem Aufbau der K2-Montagesets (Solarhandel24-Lieferumfang), je zusammenhängendem Reihenabschnitt mit k Modulen:
+   D-Dome (Doppelreihe): Base Set k+1, Peak 2(k+1), Endklemme 8, Mittelklemme 4(k−1), Speed Porter 4(k+1)
+   S-Dome (Einzelreihe): Base Set k+1, Peak k+1, Windbreaker k, Mittelklemme 2(k−1), Endklemme 4, Speed Porter 4(k+1), Schraube 2(k+1)
+   Ballast, Bautenschutz und Festanbindung (> 3° Dachneigung) kommen aus K2 Base. */
+function domeBom(){
+  const q={}, add=(k,n)=>{ if(n>0) q[k]=(q[k]||0)+n; }, M=modOf();
+  const segs=cells=>{ const is=[...new Set(cells.map(c=>c.i))].sort((a,b)=>a-b), out=[]; let k=0;
+    is.forEach((x,ix)=>{ if(ix&&x!==is[ix-1]+1){ out.push(k); k=0; } k++; }); if(k) out.push(k); return out; };
+  GEO.forEach((g,fi)=>{ const f=P.faces[fi], fl=flatCfg(f); if(!fl) return; const act=g.cells.filter(c=>c.active); if(!act.length) return;
+    const t15=fl.tilt>=12.5, longM=M&&M.h>=1799;
+    if(fl.sys==="ow"){ const pairs=new Map(); act.forEach(c=>{ const p=Math.floor(c.j/2); (pairs.get(p)||pairs.set(p,[]).get(p)).push(c); });
+      pairs.forEach(cs=>segs(cs).forEach(k=>{ add(t15?"dbase15":"dbase10",k+1); add(t15?"peak15":"peak10",2*(k+1)); add("ec",8); add("mc",4*(k-1)); add("porter",4*(k+1)); })); }
+    else{ const rows=new Map(); act.forEach(c=>(rows.get(c.j)||rows.set(c.j,[]).get(c.j)).push(c));
+      rows.forEach(cs=>segs(cs).forEach(k=>{ add(t15?"sbase15":"sbase10",k+1); add(t15?"peak15":"peak10",k+1); add((t15?"wb15":"wb10")+(longM?"l":""),k); add("mc",2*(k-1)); add("ec",4); add("porter",4*(k+1)); add("screw",2*(k+1)); })); }
+  });
+  const A={dbase10:"k2-systems-d-dome-6-10-base-set-l-flachdach",dbase15:"k2-systems-d-dome-6-15-base-set-l-flachdach",sbase10:"k2-systems-s-dome-6-10-base-set-l-flachdach",sbase15:"k2-s-dome-6-15-base-set-l-2004176",
+    peak10:"k2-systems-dome-6-10-peak",peak15:"k2-systems-dome-6-15-peak",wb10:"k2-systems-s-dome-6-10-windbreaker-kurz",wb10l:"k2-s-dome-6-10-windbreaker-long-2003250",wb15:"k2-systems-s-dome-6-15-windbreaker-ls",wb15l:"k2-s-dome-6-15-windbreaker-2004180",
+    ec:"k2-systems-domeclamp-ec-schwarz",mc:"k2-systems-domeclamp-mc-schwarz",porter:"k2-systems-dome-6-10-speedporter",screw:"selbstschneidende-dunnblechschraube-6-0x25"};
+  const N={dbase10:"K2 D-Dome 6.10 Base Set",dbase15:"K2 D-Dome 6.15 Base Set",sbase10:"K2 S-Dome 6.10 Base Set",sbase15:"K2 S-Dome 6.15 Base Set",peak10:"K2 Dome 6.10 Peak",peak15:"K2 Dome 6.15 Peak",
+    wb10:"K2 S-Dome 6.10 Windbreaker",wb10l:"K2 S-Dome 6.10 Windbreaker long",wb15:"K2 S-Dome 6.15 Windbreaker",wb15l:"K2 S-Dome 6.15 Windbreaker long",ec:"K2 DomeClamp Endklemme",mc:"K2 DomeClamp Mittelklemme",porter:"K2 Dome Speed Porter",screw:"Gewindeformende Schraube mit Dichtscheibe 6,0×25"};
+  return Object.keys(A).filter(k=>q[k]>0).map(k=>({k,art:A[k],name:N[k],qty:q[k]}));
+}
+const hasFlat=()=>P.faces.some(f=>f.flat&&(GEO[P.faces.indexOf(f)]||{cells:[]}).cells.some(c=>c.active));
 function subBomRows(){
-  if(!SUB) return [];
+  const dome=domeBom().map(r=>[r.name,r.qty,"Stk"]);
+  if(!SUB||!P.sub||!P.sub.on) return dome;
   const b=SUB.bom, rows=[], light=true;
   Object.keys(b.rails).map(Number).sort((x,y)=>x-y).forEach(l=>rows.push([`${railName()}, ${fmt(l,2)} m`,b.rails[l],"Stk"]));
   const hook=artOf(P.sub.hook);
@@ -2861,7 +2928,7 @@ function subBomRows(){
   rows.push(["Mittelklemme Clamp MC 25–40 mm",b.mid,"Stk"]); rows.push(["Endklemme Clamp EC 25–40 mm",b.end,"Stk"]);
   rows.push([light?"Schienenverbinder SolidRail Light":"Schienenverbinder SolidRail Medium/Alpin",b.conn,"Stk"]); rows.push(["EndCap SolidRail",b.endcap,"Stk"]);
   if(b.cross) rows.push(["Kreuzverbindungen (Querformat)",b.cross,"Stk"]);
-  return rows.filter(r=>r[1]>0);
+  return rows.filter(r=>r[1]>0).concat(dome);
 }
 function subSideHtml(){
   const S=ensureSub(), f=selFace(); refreshSub();
@@ -3097,7 +3164,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.10.04.2", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.04.2";
+const APP_VERSION="2026.10.06.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.04.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -3558,6 +3625,34 @@ function runSelfTests(){
     const sus=eaveSuspect(f), moved=setEave(f,longestEdge(f)), a=azimuthOf(f), after=eaveSuspect(f); if(!save) P=null;
     /* Spitze oben, Traufe unten waagerecht → Fläche fällt nach unten = Süd (180°) */
     return sus&&moved&&f.pts[0][0]===100&&f.pts[1][0]===0&&Math.round(a)===180&&!after&&!f.tog.length&&f.offU===0&&f.kU===undefined; });
+  /* Flachdach: 10 × 6 m, Bezugskante unten (Süd), 1 px = 1 cm. Gegen den Inhalt der K2-Sets geprüft:
+     S-Dome-Set „4 Module“: 5 Base, 5 Peak, 4 Windbreaker, 6 MC, 4 EC, 20 Porter, 10 Schrauben
+     D-Dome-Set „6 Module“: 4 Base, 8 Peak, 8 EC, 8 MC, 16 Porter */
+  test("Flachdach K2 Dome 6: Raster, Ost-West-Reihen und Stückliste wie K2-Sets",()=>{
+    const save=P, sg=GEO, sm=MODS;
+    try{
+      P=newProject("Test"); P.scale=0.01; P.modId=DEF_MODULES.find(m=>m.h===1762&&m.w===1134).id;
+      const f={id:"tf",name:"T",pts:[[0,600],[1000,600],[1000,0],[0,0]],pitch:0,orient:"l",edge:0.6,edgeE:0.6,edgeR:0.6,edgeS:0.6,gap:0.02,offU:0,offV:0,tog:[],pack:"grid",flat:{sys:"s",tilt:10,gap:null,ridge:0.05,valley:0.22}};
+      P.faces=[f]; recompute(); const g=GEO[0], c0=g.cells.find(c=>c.i===0&&c.j===0), c1=g.cells.find(c=>c.i===0&&c.j===1);
+      const mvF=1.134*Math.cos(rad(10)), gap=flatAutoGap(flatCfg(f),1.134);
+      const okGeo=eq(c0.mv,mvF,1e-9)&&eq(c1.v-c0.v,mvF+gap,1e-9)&&Math.round(c0.az)===180&&c0.tilt===10&&eq(gap,0.45,0.005);
+      const keep=(cols,rows)=>{ f.tog=g.cells.filter(c=>c.fit&&!(c.i<cols&&rows.includes(c.j))).map(c=>c.i+","+c.j); recompute(); };
+      keep(4,[0]); const s=Object.fromEntries(domeBom().map(r=>[r.k,r.qty]));
+      const okS=s.sbase10===5&&s.peak10===5&&s.wb10===4&&s.mc===6&&s.ec===4&&s.porter===20&&s.screw===10;
+      f.flat.sys="ow"; f.tog=[]; recompute(); const g2=GEO[0]; f.tog=g2.cells.filter(c=>c.fit&&!(c.i<3&&c.j<2)).map(c=>c.i+","+c.j); recompute();
+      const d=Object.fromEntries(domeBom().map(r=>[r.k,r.qty])), r1=GEO[0].cells.find(c=>c.active&&c.j===1);
+      const okD=d.dbase10===4&&d.peak10===8&&d.ec===8&&d.mc===8&&d.porter===16&&Math.round(r1.az)===0&&MODS.length===6&&faceGroups().length===2;
+      return okGeo&&okS&&okD;
+    } finally { P=save; GEO=sg; MODS=sm; if(P) recompute(); }
+  });
+  test("Maße aus Foto: 5 Ziegel Rubin 11V auf 500 px, Traufe 2000 px = 4,70 m",()=>{
+    const save=JSON.stringify({pts:FM.pts,n:FM.n,bw:FM.bw,bl:FM.bl});
+    try{ FM.bw=235; FM.bl=350; FM.n={refU:5,refV:4}; FM.pts={refU:[[100,400],[600,400]],eave:[[0,410],[2000,410]],refV:[[10,0],[10,280]],raf:[[10,0],[10,1050]]};
+      const r=fmResult(); /* 5·0,235/500·2000 = 4,70 m; 4·0,35/280·1050 = 5,25 m */
+      const hook=TILE_DIM.slice().sort((a,b)=>b[0].length-a[0].length);
+      return eq(r.eave,4.70,1e-9)&&eq(r.raf,5.25,1e-9)&&hook.length===TILE_DIM.length;
+    } finally { Object.assign(FM,JSON.parse(save)); }
+  });
   test("Drag & Drop erkennt Bild, PDF und Projektdatei",()=>{
     const f=(name,type)=>({name,type});
     return isImgFile(f("dach.png","image/png"))&&isImgFile(f("IMG_1.HEIC",""))&&isPdfFile(f("Lageplan.PDF",""))&&isPdfFile(f("x","application/pdf"))
@@ -4172,9 +4267,9 @@ function pvDayShape(lat,m,aspect){ /* 24 Stundenanteile (Summe 1) */
 }
 function yieldFaces(){
   const M=modOf(); if(!M||!MODS.length) return [];
-  return P.faces.map((f,fi)=>{ const n=MODS.filter(c=>c.fi===fi).length; if(!n) return null;
-    const kwp=n*M.wp/1000, az=azimuthOf(f), asp=az-180, spec=pvgisMonthly(P.lat||51,f.pitch||0,asp);
-    return {f,n,kwp,az,asp,monthly:spec.map(v=>v*kwp),spec:spec.reduce((a,b)=>a+b,0)}; }).filter(Boolean);
+  /* je Teilfläche (Ost-West-Flachdach: Ost und West getrennt), Neigung = Dachneigung bzw. Aufstellwinkel */
+  return faceGroups().map(g=>{ const kwp=g.n*M.wp/1000, az=g.az, asp=az-180, spec=pvgisMonthly(P.lat||51,g.tilt,asp);
+    return {f:g.f,n:g.n,kwp,az,asp,tilt:g.tilt,label:g.label,monthly:spec.map(v=>v*kwp),spec:spec.reduce((a,b)=>a+b,0)}; });
 }
 function batUsable(){ return (P.bats||[]).reduce((a,b)=>{ const B=LIB.batteries.find(x=>x.id===b.batId); return a+(B?(+B.kwh||0)*(+b.qty||1):0); },0); }
 /* Jahressimulation; cons in kWh/Jahr, cap in kWh */
@@ -4239,7 +4334,7 @@ function yieldSideHtml(){
   return `<div class="sec"><h2>Ertragsprognose</h2>
     <div class="kpis" style="grid-template-columns:1fr 1fr;margin:0"><div class="kpi sun"><b>${kwh(r.year)}</b><span>Ertrag pro Jahr</span></div><div class="kpi"><b>${fmt(r.year/r.kwp,0)}</b><span>kWh je kWp</span></div></div>
     <div class="bars" aria-label="Monatsertrag">${r.monthly.map((v,i)=>`<div style="height:${Math.max(2,v/mx*100)}%" title="${kwh(v)}"><span>${mn[i]}</span></div>`).join("")}</div>
-    <div class="stat">${r.faces.map(f=>`<span>${esc(f.f.name)} · ${compass(f.az)} ${fmt(f.f.pitch||0,0)}°</span><b>${kwh(f.monthly.reduce((a,b)=>a+b,0))}</b>`).join("")}</div>
+    <div class="stat">${r.faces.map(f=>`<span>${esc(f.label)} · ${compass(f.az)} ${fmt(f.tilt,0)}°</span><b>${kwh(f.monthly.reduce((a,b)=>a+b,0))}</b>`).join("")}</div>
     <div class="hint">PVGIS-Daten der EU (2005–2023) für ${fmt(P.lat||51,1)}° N, 14 % Systemverluste. Verschattung durch Gauben, Kamine oder Bäume ist nicht eingerechnet.</div></div>
   <div class="sec"><h2>Eigenverbrauch &amp; Autarkie</h2>
     <div class="grid2">${num("yCons","Jahresverbrauch (kWh)",c.cons,'data-y="cons" min="500"',100)}${num("yPrice","Strompreis (€/kWh)",c.price,'data-y="price" min="0"',0.01)}</div>
@@ -4434,7 +4529,7 @@ function netzData(){
     if(!B) return null; const kwh=(+B.kwh||0)*(+b.qty||1), vavg=((+B.vmin||0)+(+B.vmax||0))/2, pBat=(+B.imax||0)*(+b.qty||1)*vavg/1000;
     const pInv=inv&&inv.hybrid?(+inv.batI||0)*Math.min(vavg,inv.batVmax||vavg)/1000:0, p=Math.min(pBat||99,inv?inv.pac:99,pInv||99);
     return {B,b,inv,kwh,p:Math.round(p*10)/10,dc:!!(inv&&inv.hybrid)}; }).filter(Boolean);
-  const faces=P.faces.map((f,fi)=>({f,n:MODS.filter(m=>m.fi===fi).length,az:azimuthOf(f)})).filter(x=>x.n);
+  const faces=faceGroups();
   const main=faces.slice().sort((a,b)=>b.n-a.n)[0];
   const checks=[];
   const one=wrs.filter(x=>invPhases(x.inv)===1), sOne=one.reduce((a,x)=>a+x.inv.pac,0);
@@ -4492,8 +4587,8 @@ async function exportNetzPdf(into){
   H("PV-Module");
   if(d.M){ KV("Hersteller / Typ",d.M.name,true); KV("Anzahl",MODS.length+" Stück"); KV("Modulleistung",d.M.wp+" Wp");
     KV("Installierte Leistung (Bruttoleistung MaStR)",fmt(d.kwp,2)+" kWp",true);
-    d.faces.forEach(x=>KV(x.f.name,`${x.n} Module · Ausrichtung ${compass(x.az)} (${fmt(x.az,0)}°) · Neigung ${fmt(x.f.pitch||0,0)}°`));
-    if(d.main) KV("Hauptausrichtung / Neigung (MaStR)",`${compass(d.main.az)} · ${fmt(d.main.f.pitch||0,0)}°`); }
+    d.faces.forEach(x=>KV(x.label,`${x.n} Module · Ausrichtung ${compass(x.az)} (${fmt(x.az,0)}°) · ${x.flat?"aufgeständert":"Neigung"} ${fmt(x.tilt,0)}°`));
+    if(d.main) KV("Hauptausrichtung / Neigung (MaStR)",`${d.faces.some(x=>x.flat&&flatCfg(x.f).sys==="ow")&&d.faces.length===2?"Ost-West":compass(d.main.az)} · ${fmt(d.main.tilt,0)}°`); }
   H("Wechselrichter");
   d.wrs.forEach(({w,inv},i)=>{ KV(`Wechselrichter ${i+1}`,inv.name,true); KV("  Bemessungsleistung P_Amax / S_Amax",`${fmt(inv.pac,2)} kW / ${fmt(inv.pac,2)} kVA · ${invPhases(inv)===3?"dreiphasig":"einphasig"}`);
     KV("  NA-Schutz / Einheitenzertifikat","integriert · Einheitenzertifikat und NA-Schutz-Zertifikat nach VDE-AR-N 4105 beilegen"); });
@@ -4658,7 +4753,15 @@ function planCheck(){
   const out=[], add=(lv,tab,txt)=>out.push({lv,tab,txt}), M=modOf();
   if(!P.scale) add("bad","karte","Maßstab fehlt – Längen, Flächen und Kabelwege stimmen nicht");
   if(!P.faces.length) add("bad","dach","Noch keine Dachfläche gezeichnet");
-  P.faces.filter(eaveSuspect).forEach(f=>add("warn","dach",`${f.name}: Dreieck, aber die Traufe ist nicht die längste Kante – Module liegen dadurch schräg`));
+  /* Flachdach (K2 Dome 6) */
+  P.faces.filter(f=>f.flat).forEach(f=>{ const n=(GEO[P.faces.indexOf(f)]||{cells:[]}).cells.filter(c=>c.active).length; if(!n) return;
+    if((f.pitch||0)>10) add("bad","dach",`${f.name}: Dachneigung ${f.pitch}° – K2 Dome 6 nur bis 10°`);
+    else if((f.pitch||0)>3) add("warn","dach",`${f.name}: Dachneigung ${f.pitch}° – über 3° Festanbindung Dome FixPro nötig (nicht nur Ballast)`);
+    if(f.orient==="p") add("warn","module",`${f.name}: Module hochkant – K2 Dome 6 ist für Querformat ausgelegt`);
+    if(Math.min(f.edgeE??f.edge??0.3,f.edgeR??f.edge??0.3,f.edgeS??f.edge??0.3)<0.6-1e-6) add("warn","module",`${f.name}: Randabstand unter 0,6 m (K2 Dome 6 Mindestabstand zum Dachrand)`);
+    if(M&&(M.h<1448||M.h>2390||M.w<950||M.w>1170)) add("warn","module",`${M.name}: ${M.h} × ${M.w} mm liegt außerhalb der Dome-6-Freigabe (1448–2390 × 950–1170 mm)`);
+    add("info","unterbau",`${f.name}: Ballast, Dachlast und Windzonen mit K2 Base rechnen`); });
+  P.faces.filter(f=>eaveSuspect(f)&&!f.flat).forEach(f=>add("warn","dach",`${f.name}: Dreieck, aber die Traufe ist nicht die längste Kante – Module liegen dadurch schräg`));
   if(!MODS.length) add("bad","module","Noch keine Module belegt");
   const used=new Set(P.strings.flatMap(s=>s.mods)), rest=MODS.filter(m=>!used.has(m.key)).length;
   if(rest) add("warn","strings",`${rest} Modul${rest===1?"":"e"} keinem String zugeordnet`);
@@ -4743,6 +4846,8 @@ const isPdfFile=f=>f.type==="application/pdf"||/\.pdf$/i.test(f.name||"");
 const isImgFile=f=>/^image\//.test(f.type)||/\.(jpe?g|png|webp|gif|heic|bmp)$/i.test(f.name||"");
 const isProjFile=f=>/\.json$/i.test(f.name||"")||f.type==="application/json";
 function dropHint(){
+  if(document.querySelector(".mback.fm")) return "Foto hier ablegen zum Messen";
+  if(document.querySelector(".mback")) return "";
   if(VIEW!=="project") return "Projektdatei (.dachplaner.json) hier ablegen zum Importieren";
   if(!P) return "";
   if(UI.tab==="vorort") return "Bilder hier ablegen – sie werden als Fotos gespeichert";
@@ -4841,6 +4946,160 @@ function pdfTable(doc,cols,rows,o){
   });
   doc.setFont("helvetica","normal"); doc.setFontSize(fs); pdfInk(doc);
   return y;
+}
+</script>
+<script>
+/* ───────── Flachdach: Bedienung (Dachart im Schritt „Dach“, System und Richtung im Schritt „Module“) ─────────
+   Die Richtung wird über die Bezugskante festgelegt (gleiche Technik wie die Traufe): Die Module zeigen zu dieser Kante,
+   die Reihen laufen parallel dazu. „Süd/Ost/West/Ost-West“ wählt automatisch die passende Gebäudekante. */
+const FLAT_DIRS=[["s",180,"Süd"],["s",90,"Ost"],["s",270,"West"],["ow",90,"Ost-West"]];
+const angDiff=(a,b)=>{ const d=Math.abs(((a-b)%360+360)%360); return Math.min(d,360-d); };
+function edgeAz(f,k){ return azimuthOf({...f,pts:[...f.pts.slice(k),...f.pts.slice(0,k)]}); }
+/* Kante, deren Ausrichtung dem Ziel am nächsten kommt (Ost-West: Ost oder West, beides passt) */
+function edgeFor(f,target,ow){
+  let best=0,bd=1e9; f.pts.forEach((_,k)=>{ const a=edgeAz(f,k), d=ow?Math.min(angDiff(a,90),angDiff(a,270)):angDiff(a,target); if(d<bd-1e-6){ bd=d; best=k; } });
+  return {k:best,dev:bd};
+}
+function flatTypeHtml(f){
+  return `<label class="f">Dachart<select id="fType" data-ftype="1"><option value="steil"${f.flat?"":" selected"}>Schrägdach (Module dachparallel)</option><option value="flach"${f.flat?" selected":""}>Flachdach (Module aufgeständert)</option></select></label>
+    ${f.flat?`<div class="hint">Flachdach: Neigung unten ist die Dachneigung selbst (meist 0–5°). Aufstellwinkel, Richtung und Reihenabstand stellst du im Schritt „Module“ ein.</div>`:""}`;
+}
+function flatSideHtml(f){
+  const c=flatCfg(f), M=modOf(); if(!c) return "";
+  const az=azimuthOf(f), cur=c.sys==="ow"?"Ost-West":compass(az);
+  const mvS=M?(f.orient==="p"?M.h:M.w)/1000:1.13, mvF=mvS*Math.cos(rad(c.tilt)), auto=flatAutoGap(c,mvS);
+  const pitchRow=c.sys==="ow"?2*mvF+c.ridge+c.valley:mvF+(c.gap!=null?c.gap:auto);
+  const btn=([sys,a,l])=>{ const on=c.sys===sys&&(sys==="ow"||angDiff(az,a)<=45); return `<button type="button" data-act="flatDir" data-id="${sys}:${a}" class="${on?"on":""}">${l}</button>`; };
+  const dev=c.sys==="ow"?Math.min(angDiff(az,90),angDiff(az,270)):null;
+  return `<div class="sec"><h2>Flachdach ${esc(f.name)}</h2>
+    <div class="hint">K2 Dome 6: Module quer, ballastiert bis 3° Dachneigung (darüber Festanbindung Dome FixPro), mind. 0,6 m Abstand zum Dachrand.</div>
+    <div class="row seg">${FLAT_DIRS.map(btn).join("")}</div>
+    <div class="stat"><span>Ausrichtung</span><b>${c.sys==="ow"?`Ost-West (${compass(az)} ${Math.round(az)}° / ${compass((az+180)%360)} ${Math.round((az+180)%360)}°)`:`${cur} ${Math.round(az)}°`}</b>
+      <span>Reihenraster</span><b>${fmt(pitchRow,2)} m${c.sys==="ow"?" je Doppelreihe":""}</b></div>
+    ${dev!=null&&dev>20?`<div class="banner">Die Gebäudekanten liegen ${Math.round(dev)}° neben Ost/West – die Reihen folgen dem Gebäude.</div>`:""}
+    <div class="grid2"><label class="f">Aufstellwinkel<select data-fl="tilt">${[10,15].map(v=>`<option value="${v}"${+c.tilt===v?" selected":""}>${v}° (Dome 6.${v})</option>`).join("")}${[10,15].includes(+c.tilt)?"":`<option selected value="${c.tilt}">${c.tilt}°</option>`}</select></label>
+      ${c.sys==="ow"?num("flRidge","Abstand am First (m)",c.ridge,'data-fl="ridge" min="0" max="1"',0.01)
+        :`<label class="f">Gang zwischen Reihen (m)<input type="number" data-fl="gap" step="0.05" min="0" max="5" value="${c.gap!=null?c.gap:""}" placeholder="auto ${fmt(auto,2)}"></label>`}</div>
+    ${c.sys==="ow"?`<div class="grid2">${num("flValley","Gang zwischen Doppelreihen (m)",c.valley,'data-fl="valley" min="0" max="3"',0.05)}<span></span></div>`
+      :`<div class="hint">Leer = automatisch: Abstand so, dass die nächste Reihe bei rund 23° Sonnenhöhe nicht verschattet wird (${fmt(auto,2)} m). K2 S-Dome 6.10 hat 0,43–0,54 m.</div>`}
+    <div class="hint">Gelbe Linie = hohe Modulkante. Statik und Ballast immer mit K2 Base rechnen.</div></div>`;
+}
+function setFlat(f,on){
+  if(on&&!f.flat){
+    f.pitchSteil=f.pitch; if(!(f.pitch<=10)) f.pitch=0;
+    f.flat={sys:"s",tilt:10,gap:null,ridge:0.05,valley:0.22}; f.orient="l"; f.edgeE=f.edgeR=f.edgeS=0.6; f.tog=[]; f.offU=0; f.offV=0;
+    const e=edgeFor(f,180,false); if(e.k) setEave(f,e.k);
+  } else if(!on&&f.flat){ delete f.flat; if(f.pitchSteil!=null){ f.pitch=f.pitchSteil; delete f.pitchSteil; } f.tog=[]; }
+}
+side.addEventListener("change",e=>{
+  const t=e.target; if(!P) return; const f=selFace(); if(!f) return;
+  if(t.dataset.ftype){ setFlat(f,t.value==="flach"); changed(true); renderSide(); toast(f.flat?"Flachdach: Module nach Süden, 10°, mind. 0,6 m Randabstand – im Schritt „Module“ änderbar":"Schrägdach"); return; }
+  if(t.dataset.fl==="tilt"&&f.flat){ f.flat.tilt=+t.value; f.tog=[]; changed(); renderSide(); }
+});
+side.addEventListener("input",e=>{
+  const t=e.target; if(!P||!t.dataset.fl||t.dataset.fl==="tilt") return; const f=selFace(); if(!f||!f.flat) return;
+  const v=t.value===""?null:parseFloat(t.value); f.flat[t.dataset.fl]=t.dataset.fl==="gap"?(v==null||!Number.isFinite(v)?null:v):(Number.isFinite(v)?v:0); changed();
+});
+side.addEventListener("click",e=>{
+  const b=e.target.closest('[data-act="flatDir"]'); if(!b||!P) return; const f=selFace(); if(!f||!f.flat) return;
+  const [sys,a]=b.dataset.id.split(":"), ow=sys==="ow", ed=edgeFor(f,+a,ow);
+  f.flat.sys=ow?"ow":"s"; f.tog=[];
+  if(ed.k) applyEave(f,ed.k); else { changed(true); renderSide(); }
+  if(!ow&&ed.dev>30) toast(`Keine Gebäudekante zeigt genau nach ${b.textContent} – nächste Kante ${Math.round(ed.dev)}° daneben`);
+});
+</script>
+<script>
+/* ───────── Maße aus Foto (z. B. Google-Street-View-Screenshot) ─────────
+   Idee: Die Deckbreite eines Ziegels ist bekannt. Klickt man im Foto über einen oder mehrere Ziegel, weiß man,
+   wie viele Pixel ein Meter AUF DIESER LINIE sind. Damit lässt sich die Traufe (gleiche Linie, gleiche Entfernung) messen.
+   Für die Sparrenlänge entsprechend über Ziegelreihen (Decklänge) – oder einfach Reihen zählen.
+   Perspektive: nur entlang derselben Linie messen, auf der auch die Referenz liegt. Werte gehen in „Maße vorgeben“. */
+const TILE_DIM=[ /* Deckbreite, Decklänge von–bis in mm, Herstellerangaben */
+  ["Braas Frankfurter Pfanne",300,312,345],["Braas Harzer Pfanne",300,312,345],["Braas Taunus Pfanne",300,312,345],["Braas Doppel-S",300,312,345],["Braas Tegalit",300,312,345],
+  ["Braas Harzer Pfanne 7 (BIG)",330,385,420],["Braas Rubin 9V",267,370,400],["Braas Rubin 11V",235,335,370],["Braas Rubin 13V",225,330,360],["Braas Rubin 15V",204,330,350],
+  ["Erlus Großfalzziegel",224,335,351],["Erlus E58 / E58 S",202,335,355],["Biberschwanz 18 × 38 (Doppeldeckung)",180,150,170]];
+const FM={img:null,mode:"refU",pts:{},n:{refU:1,refV:1},zoom:1,tile:null,bw:300,bl:330};
+function fmTileFromHook(){
+  const h=P&&P.sub&&artOf(P.sub.hook), n=h?h.name:""; if(!n) return null;
+  /* alle kennzeichnenden Wörter müssen im Artikelnamen stehen (längster Name zuerst: „Harzer Pfanne 7 (BIG)“ vor „Harzer Pfanne“) */
+  const L=n.toLowerCase(), words=t=>t.toLowerCase().split(/[\s()\/×]+/).filter(w=>w.length>1&&!["braas","erlus"].includes(w));
+  return TILE_DIM.slice().sort((a,b)=>b[0].length-a[0].length).find(t=>words(t[0]).every(w=>L.includes(w)))||null;
+}
+function fmLen(k){ const p=FM.pts[k]; return p&&p.length===2?Math.hypot(p[1][0]-p[0][0],p[1][1]-p[0][1]):0; }
+function fmResult(){
+  const pu=fmLen("refU"), pv=fmLen("refV"), mu=fmLen("eave"), mv=fmLen("raf");
+  const mpU=pu?(FM.n.refU*FM.bw/1000)/pu:0, mpV=pv?(FM.n.refV*FM.bl/1000)/pv:0;
+  return {eave:mu&&mpU?mu*mpU:null, raf:mv&&mpV?mv*mpV:null};
+}
+const FM_STEPS=[["refU","1 · Ziegel waagerecht","Klick auf zwei Punkte über eine Anzahl Ziegel entlang der Traufe (z. B. 5 Ziegel)","#ffb020"],
+  ["eave","2 · Traufe messen","Klick auf Anfang und Ende der Traufe – auf derselben Linie wie Schritt 1","#ff6a00"],
+  ["refV","3 · Ziegelreihen schräg","Klick über eine Anzahl Ziegelreihen den Sparren hinauf","#36c3ff"],
+  ["raf","4 · Sparren messen","Klick von Traufe bis First – auf derselben Linie wie Schritt 3","#2f7dff"]];
+function fmBody(){
+  const sel=FM.tile?FM.tile[0]:"";
+  return `<div class="hint">Screenshot aus Google Street View (oder ein eigenes Foto) laden, einfügen (Cmd/Strg+V) oder hineinziehen. Dann über bekannte Ziegel eine Referenz legen und Traufe bzw. Sparren messen. Nur auf derselben Linie messen wie die Referenz – die Perspektive verzerrt sonst.</div>
+    <div class="grid2"><label class="f">Ziegel<select id="fmTile"><option value="">eigene Maße</option>${TILE_DIM.map(t=>`<option${t[0]===sel?" selected":""}>${esc(t[0])}</option>`).join("")}</select></label>
+      <label class="f">Foto<input id="fmFile" type="file" accept="image/*"></label></div>
+    <div class="grid2"><label class="f">Deckbreite (mm)<input id="fmBw" type="number" step="1" value="${FM.bw}"></label><label class="f">Decklänge / Lattweite (mm)<input id="fmBl" type="number" step="1" value="${FM.bl}"></label></div>
+    <div class="row seg" id="fmModes">${FM_STEPS.map(([k,l])=>`<button type="button" data-fm="${k}" class="${FM.mode===k?"on":""}">${l}</button>`).join("")}</div>
+    <div class="hint" id="fmHint">${esc(FM_STEPS.find(s=>s[0]===FM.mode)[2])}</div>
+    <div class="row"><label class="f" style="flex:1">Ziegel in Schritt 1<input id="fmNu" type="number" min="1" step="1" value="${FM.n.refU}"></label><label class="f" style="flex:1">Reihen in Schritt 3<input id="fmNv" type="number" min="1" step="1" value="${FM.n.refV}"></label>
+      <span style="align-self:end" class="row"><button type="button" data-fmz="-1" aria-label="Verkleinern">−</button><button type="button" data-fmz="1" aria-label="Vergrößern">+</button></span></div>
+    <div id="fmWrap" style="flex-shrink:0;min-height:${FM.img?"260px":"80px"};max-height:60vh;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel2);touch-action:pan-x pan-y">
+      <canvas id="fmCv" style="display:block;cursor:crosshair"></canvas>${FM.img?"":`<div class="hint" style="padding:30px;text-align:center">Noch kein Foto</div>`}</div>
+    <div class="stat" id="fmRes"></div>
+    <details><summary class="hint">Ohne Foto: Ziegel zählen</summary>
+      <div class="grid2"><label class="f">Ziegel entlang der Traufe<input id="fmCu" type="number" min="0" step="1"></label><label class="f">Ziegelreihen bis zum First<input id="fmCv2" type="number" min="0" step="1"></label></div>
+      <div class="hint">Traufe ≈ Anzahl × Deckbreite, Sparrenlänge ≈ Reihen × Decklänge (ohne Überstände).</div></details>`;
+}
+function fmDraw(){
+  const cv=$("#fmCv"); if(!cv) return; const g=cv.getContext("2d"), im=FM.img;
+  const wrap=$("#fmWrap"), W=Math.max(300,(wrap.clientWidth||800)-2)*FM.zoom;
+  if(!im){ cv.width=0; cv.height=0; fmRes(); return; }
+  const k=W/im.naturalWidth; cv.width=Math.round(W); cv.height=Math.round(im.naturalHeight*k); FM.k=k;
+  g.drawImage(im,0,0,cv.width,cv.height);
+  FM_STEPS.forEach(([key,,,col])=>{ const p=FM.pts[key]; if(!p) return; g.strokeStyle=col; g.fillStyle=col; g.lineWidth=2.5;
+    if(p.length===2){ g.beginPath(); g.moveTo(p[0][0]*k,p[0][1]*k); g.lineTo(p[1][0]*k,p[1][1]*k); g.stroke(); }
+    p.forEach(q=>{ g.beginPath(); g.arc(q[0]*k,q[1]*k,5,0,7); g.fill(); }); });
+  fmRes();
+}
+function fmRes(){
+  const r=fmResult(), el=$("#fmRes"); if(!el) return; const f=selFace();
+  const cu=+($("#fmCu")||{}).value||0, cv=+($("#fmCv2")||{}).value||0;
+  const cnt={eave:cu?cu*FM.bw/1000:null, raf:cv?cv*FM.bl/1000:null};
+  const row=(l,v,k)=>v?`<span>${l}</span><b>${fmt(v,2)} m ${f?`<button type="button" data-fmset="${k}" data-v="${v}">für „${esc(f.name)}“ übernehmen</button>`:""}</b>`:"";
+  el.innerHTML=(row("Traufe (Foto)",r.eave,"eave")+row("Sparrenlänge (Foto)",r.raf,"raf")+row("Traufe (gezählt)",cnt.eave,"eave")+row("Sparrenlänge (gezählt)",cnt.raf,"raf"))
+    ||`<span class="hint">Noch keine Messung</span><b></b>`;
+}
+function fmLoad(file){ if(!file||!/^image\//.test(file.type)) return; const fr=new FileReader();
+  fr.onload=()=>{ const im=new Image(); im.onload=()=>{ FM.img=im; FM.pts={}; const m=document.querySelector(".mback.fm"); if(m){ m.querySelector(".mbox").innerHTML=fmBox(); } fmDraw(); }; im.src=fr.result; }; fr.readAsDataURL(file); }
+const fmBox=()=>`<h3 style="margin:0">Maße aus Foto / Street View</h3>${fmBody()}<div class="row" style="justify-content:flex-end"><button type="button" data-m="cancel">Schließen</button></div>`;
+function openFotoMass(){
+  const t=fmTileFromHook(); if(t&&!FM.tile){ FM.tile=t; FM.bw=t[1]; FM.bl=Math.round((t[2]+t[3])/2); }
+  const m=modal("Maße aus Foto / Street View",fmBody(),"Schließen",()=>true); m.classList.add("fm");
+  const box=m.querySelector(".mbox"); box.style.width="min(1100px,100%)"; box.innerHTML=fmBox();
+  const onPaste=e=>{ const it=[...(e.clipboardData||{}).items||[]].find(i=>/^image\//.test(i.type)); if(it){ e.preventDefault(); fmLoad(it.getAsFile()); } };
+  document.addEventListener("paste",onPaste); new MutationObserver((_,o)=>{ if(!m.isConnected){ document.removeEventListener("paste",onPaste); o.disconnect(); } }).observe(document.body,{childList:true});
+  m.addEventListener("dragover",e=>{ e.preventDefault(); e.stopPropagation(); });
+  m.addEventListener("drop",e=>{ e.preventDefault(); e.stopPropagation(); DROP.depth=0; dropShow(false); const f=[...e.dataTransfer.files].find(x=>/^image\//.test(x.type)); if(f) fmLoad(f); });
+  m.addEventListener("change",e=>{ const t=e.target;
+    if(t.id==="fmFile"&&t.files[0]) fmLoad(t.files[0]);
+    if(t.id==="fmTile"){ const d=TILE_DIM.find(x=>x[0]===t.value); FM.tile=d||null; if(d){ FM.bw=d[1]; FM.bl=Math.round((d[2]+d[3])/2); $("#fmBw").value=FM.bw; $("#fmBl").value=FM.bl; } fmRes(); } });
+  m.addEventListener("input",e=>{ const t=e.target;
+    if(t.id==="fmBw") FM.bw=+t.value||0; if(t.id==="fmBl") FM.bl=+t.value||0;
+    if(t.id==="fmNu") FM.n.refU=Math.max(1,+t.value||1); if(t.id==="fmNv") FM.n.refV=Math.max(1,+t.value||1); fmRes(); });
+  m.addEventListener("click",e=>{
+    const b=e.target.closest("[data-fm],[data-fmz],[data-fmset]");
+    if(b&&b.dataset.fm){ FM.mode=b.dataset.fm; m.querySelectorAll("[data-fm]").forEach(x=>x.classList.toggle("on",x===b)); $("#fmHint").textContent=FM_STEPS.find(s=>s[0]===FM.mode)[2]; return; }
+    if(b&&b.dataset.fmz){ FM.zoom=clampNum(FM.zoom*(b.dataset.fmz>0?1.5:1/1.5),1,6); fmDraw(); return; }
+    if(b&&b.dataset.fmset){ const f=selFace(); if(!f) return; const v=+b.dataset.v, base=baseDims(f);
+      if(b.dataset.fmset==="eave") f.kU=v/base.eave; else f.kV=v/base.raf; changed(); renderSide(); toast(`${f.name}: ${b.dataset.fmset==="eave"?"Traufe":"Sparrenlänge"} ${fmt(v,2)} m übernommen`); return; }
+    if(e.target.id==="fmCv"&&FM.img){ const r=e.target.getBoundingClientRect(), x=(e.clientX-r.left)/FM.k, y=(e.clientY-r.top)/FM.k;
+      const p=FM.pts[FM.mode]; FM.pts[FM.mode]=(!p||p.length===2)?[[x,y]]:[p[0],[x,y]];
+      if(FM.pts[FM.mode].length===2){ const i=FM_STEPS.findIndex(s=>s[0]===FM.mode); if(i<FM_STEPS.length-1){ FM.mode=FM_STEPS[i+1][0]; m.querySelectorAll("[data-fm]").forEach(x=>x.classList.toggle("on",x.dataset.fm===FM.mode)); $("#fmHint").textContent=FM_STEPS[i+1][2]; } }
+      fmDraw(); }
+  });
+  requestAnimationFrame(fmDraw);
 }
 </script>
 <script>
@@ -5137,7 +5396,7 @@ function bomPage(doc,W,H,n,N){
   const cnt={}; P.wrs.forEach(w2=>{ const i=invOf(w2.invId); if(i){ cnt[i.name]=(cnt[i.name]||0)+1; } });
   Object.entries(cnt).forEach(([k,v])=>rows.push({c:[k,String(v),"",""]}));
   rows.push({c:["DC-Strings",String(P.strings.filter(s=>s.mods.length).length),"",""]});
-  if(P.sub&&P.sub.on&&SUB) subBomRows().forEach(r=>rows.push({c:[r[0]+" (K2)",String(r[1]),"",""]}));
+  subBomRows().forEach(r=>rows.push({c:[/^K2 /.test(r[0])?r[0]:r[0]+" (K2)",String(r[1]),"",""]}));
   P.bats.forEach(b=>{ const B=LIB.batteries.find(x=>x.id===b.batId); const wr=P.wrs.find(x=>x.id===b.wr); if(B) rows.push({c:[B.name,String(b.qty),fmt(B.kwh*b.qty,2)+" kWh (nutzbar)",wr?"an "+wr.name:""]}); });
   y=pdfTable(doc,[{h:"Position",w:0},{h:"Anzahl",w:24,al:"r"},{h:"Leistung",w:40},{h:"Bemerkung",w:60}],rows,{x:x0,y,w,fs:9,bottom,newPage:np});
   if(y+30>bottom) y=np();
