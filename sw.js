@@ -1,7 +1,7 @@
-/* Dachplaner PV – Service Worker (Version 2026.10.06.1)
+/* Dachplaner PV – Service Worker (Version 2026.10.08.1)
    Programmseite: erst Netz (höchstens 4 s), sonst die gespeicherte Kopie → läuft offline, ist online immer aktuell.
    Symbole/Schriften: aus dem Zwischenspeicher. GitHub-API (Projektabgleich) und update.json gehen nie über den Cache. */
-const CACHE="dachplaner-2026.10.06.1";
+const CACHE="dachplaner-2026.10.08.1";
 const CORE=["./","manifest.webmanifest","icon-192.png","icon-512.png","apple-touch-icon.png"];
 self.addEventListener("install",e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())); });
 self.addEventListener("activate",e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith("dachplaner-")&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });

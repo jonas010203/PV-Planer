@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.10.06.1",
+    "version": "2026.10.08.1",
     "file": "Dachplaner-PV.html",
-    "notes": "Flachdach: Module aufgeständert nach Süd, Ost, West oder Ost-West (K2 Dome 6, 10°/15°), Reihenabstände, Stückliste nach K2-Sets, Ertrag je Ost- und Westseite. Maße aus Foto/Street View: Referenz über bekannte Ziegel legen und Traufe/Sparren messen, oder Ziegel zählen."
+    "notes": "Fotomontage: Street-View-Screenshot oder Foto laden, Dachecken anklicken – die geplanten Module erscheinen perspektivisch richtig im Foto, lassen sich dort verschieben und einzeln setzen/entfernen. Das Bild kommt ins Kundenblatt. Dazu Flachdach (K2 Dome 6) und Maße aus Foto."
   },
   "library": {
     "version": "2026.10.04.2",

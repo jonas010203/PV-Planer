@@ -2280,6 +2280,7 @@ function renderSide(){
       <div class="grid2">${num("fOffU","Raster versetzt ← → (m)",f.offU,'data-f="offU"',0.05)}${num("fOffV","Raster versetzt ↑ ↓ (m)",f.offV,'data-f="offV"',0.05)}</div>
       <div class="hint">Klick auf einen Rasterplatz setzt oder entfernt ein Modul von Hand.</div>
       <button data-act="resetTog" type="button">Handänderungen zurücksetzen</button>
+      <button data-act="montage" type="button">Fotomontage (Street View): Module aufs Foto setzen</button>
       <div id="faceStat">${faceStatHtml()}</div></div>`;
     if(f&&f.flat) h+=flatSideHtml(f);
     h+=`<div class="stat"><span>Gesamt</span><b>${MODS.length} Module · ${fmt(M?MODS.length*M.wp/1000:0,2)} kWp</b></div>`;
@@ -2385,6 +2386,7 @@ side.addEventListener("click",e=>{
     case "delFace": deleteSelected(); break;
     case "delObst": deleteSelected(); break;
     case "fotoMass": openFotoMass(); break;
+    case "montage": openMontage(); break;
     case "rotEave": { const f=selFace(); if(f) applyEave(f,1); break; }
     case "eaveLong": { const f=P.faces.find(x=>x.id===b.dataset.id)||selFace(); if(f) applyEave(f,longestEdge(f)); break; }
     case "resetTog": { const f=selFace(); if(f){ f.tog=[]; changed(); renderSide(); } break; }
@@ -3164,7 +3166,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.10.06.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.04.2";
+const APP_VERSION="2026.10.08.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.04.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
@@ -3653,6 +3655,13 @@ function runSelfTests(){
       return eq(r.eave,4.70,1e-9)&&eq(r.raf,5.25,1e-9)&&hook.length===TILE_DIM.length;
     } finally { Object.assign(FM,JSON.parse(save)); }
   });
+  test("Fotomontage: Perspektive (Homographie) trifft Ecken, Mittelpunkt und Rückrechnung",()=>{
+    /* bekannte Perspektive H0 → aus 4 Eckpunkten muss genau H0 herauskommen */
+    const H0=[120,-35,400, 8,-60,700, 0.02,-0.01,1], src=[[0,0],[10,0],[10,6],[0,6]], dst=src.map(([u,v])=>hApply(H0,u,v));
+    const H=homography(src,dst), Hi=hInv(H), c=hApply(H,5,3), c0=hApply(H0,5,3), back=hApply(Hi,...c);
+    const aff=homography(src.slice(0,3),dst.slice(0,3)); /* Dreieck: affin, Ecken exakt */
+    return eq(c[0],c0[0],1e-6)&&eq(c[1],c0[1],1e-6)&&eq(back[0],5,1e-9)&&eq(back[1],3,1e-9)
+      &&src.slice(0,3).every(([u,v],i)=>{ const q=hApply(aff,u,v); return eq(q[0],dst[i][0],1e-6)&&eq(q[1],dst[i][1],1e-6); }); });
   test("Drag & Drop erkennt Bild, PDF und Projektdatei",()=>{
     const f=(name,type)=>({name,type});
     return isImgFile(f("dach.png","image/png"))&&isImgFile(f("IMG_1.HEIC",""))&&isPdfFile(f("Lageplan.PDF",""))&&isPdfFile(f("x","application/pdf"))
@@ -4805,8 +4814,11 @@ async function exportCustPdf(into){
   doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.text(T([P.kunde,P.adresse].filter(Boolean).join(" · ")||P.name),L,24);
   doc.setFontSize(8.5); doc.text(T((firm?firm+" · ":"")+"Stand "+new Date().toLocaleDateString("de-DE")),L,29.5);
   /* Plan */
-  let y=42; const img=renderPlanCanvas(false,!!IMG,R-L,86,false); const iw=Math.min(R-L,img.mmW), ih=img.mmH*(iw/img.mmW);
-  doc.addImage(img.url,"JPEG",L+(R-L-iw)/2,y,iw,ih); doc.setDrawColor(210); doc.rect(L+(R-L-iw)/2,y,iw,ih); y+=ih+7;
+  /* Fotomontage (wenn vorhanden und gewünscht) statt Draufsicht – so sieht der Kunde sein Haus */
+  let y=42; const mt=P.mont&&P.mont.cust!==false&&typeof mtImageUrl==="function"?await mtImageUrl(1800):null;
+  if(mt){ const ih=Math.min(92,(R-L)*mt.h/mt.w), iw=ih*mt.w/mt.h; doc.addImage(mt.url,"JPEG",L+(R-L-iw)/2,y,iw,ih); doc.setDrawColor(210); doc.rect(L+(R-L-iw)/2,y,iw,ih); y+=ih+7; }
+  else{ const img=renderPlanCanvas(false,!!IMG,R-L,86,false); const iw=Math.min(R-L,img.mmW), ih=img.mmH*(iw/img.mmW);
+    doc.addImage(img.url,"JPEG",L+(R-L-iw)/2,y,iw,ih); doc.setDrawColor(210); doc.rect(L+(R-L-iw)/2,y,iw,ih); y+=ih+7; }
   /* Kennzahlen */
   const kwp=MODS.length*M.wp/1000, kpis=[["Anlagenleistung",fmt(kwp,2)+" kWp"],["Module",MODS.length+" × "+M.wp+" Wp"]];
   if(r){ kpis.push(["Ertrag pro Jahr",fmt(r.year,0).replace(/\B(?=(\d{3})+(?!\d))/g,".")+" kWh"],["Autarkie",fmt(r.sim.aut*100,0)+" %"],["Eigenverbrauch",fmt(r.sim.evq*100,0)+" %"],["CO₂ vermieden".replace("₂","2"),"ca. "+fmt(r.year*0.363/1000,1)+" t / Jahr"]); }
@@ -4847,6 +4859,7 @@ const isImgFile=f=>/^image\//.test(f.type)||/\.(jpe?g|png|webp|gif|heic|bmp)$/i.
 const isProjFile=f=>/\.json$/i.test(f.name||"")||f.type==="application/json";
 function dropHint(){
   if(document.querySelector(".mback.fm")) return "Foto hier ablegen zum Messen";
+  if(document.querySelector(".mback.mt")) return "Foto hier ablegen für die Fotomontage";
   if(document.querySelector(".mback")) return "";
   if(VIEW!=="project") return "Projektdatei (.dachplaner.json) hier ablegen zum Importieren";
   if(!P) return "";
@@ -5100,6 +5113,178 @@ function openFotoMass(){
       fmDraw(); }
   });
   requestAnimationFrame(fmDraw);
+}
+</script>
+<script>
+/* ───────── Fotomontage: geplante Module perspektivisch auf ein Foto (z. B. Google Street View) setzen ─────────
+   Je Dachfläche klickt man ihre Ecken im Foto an (gleiche Reihenfolge wie im Plan, Ecke 1→2 = Traufe).
+   Aus den Ecken (Meter auf der Dachfläche ↔ Pixel im Foto) wird eine Homographie gerechnet; damit landen alle
+   Module verzerrungsrichtig im Bild. Ziehen verschiebt das Modulraster der Fläche (offU/offV, wirkt auch im Plan),
+   Antippen setzt/entfernt ein Modul. Das Foto wird als Vor-Ort-Foto gespeichert und dadurch mit abgeglichen.
+   P.mont = {ph: Foto-id, pts: {Flächen-id: [[x,y], …] in Fotopixeln}, cust: true (im Kundenblatt verwenden)} */
+const MT={img:null,face:null,mode:"move",drag:null,zoom:1,k:1};
+const MT_CAT="Ansicht / Fotomontage";
+function mtEnsure(){ P.mont=P.mont&&typeof P.mont==="object"?P.mont:{}; if(!P.mont.pts||typeof P.mont.pts!=="object") P.mont.pts={}; if(P.mont.cust==null) P.mont.cust=true; return P.mont; }
+/* Kleinste Quadrate über Normalgleichungen (Gauß mit Spaltenpivot) */
+function solveLS(A,b){
+  const m=A[0].length, N=[...Array(m)].map(()=>new Array(m+1).fill(0));
+  A.forEach((r,i)=>{ for(let p=0;p<m;p++){ for(let q=0;q<m;q++) N[p][q]+=r[p]*r[q]; N[p][m]+=r[p]*b[i]; } });
+  for(let c=0;c<m;c++){ let pv=c; for(let r=c+1;r<m;r++) if(Math.abs(N[r][c])>Math.abs(N[pv][c])) pv=r; [N[c],N[pv]]=[N[pv],N[c]];
+    const d=N[c][c]; if(Math.abs(d)<1e-12) return null;
+    for(let r=0;r<m;r++){ if(r===c) continue; const f=N[r][c]/d; if(f) for(let q=c;q<=m;q++) N[r][q]-=f*N[c][q]; } }
+  return N.map((r,i)=>r[m]/r[i]);
+}
+/* Homographie (≥ 4 Punkte, bei mehr Punkten ausgeglichen) bzw. affin bei 3 Punkten (Dreiecksflächen). Fotokoordinaten
+   werden für die Rechnung durch 1000 geteilt (bessere Kondition) und danach zurückskaliert. */
+function homography(src,dst){
+  const n=Math.min(src.length,dst.length); if(n<3) return null; const s=1000, A=[], b=[];
+  if(n===3){ for(let i=0;i<3;i++){ const [u,v]=src[i], x=dst[i][0]/s, y=dst[i][1]/s; A.push([u,v,1,0,0,0]); b.push(x); A.push([0,0,0,u,v,1]); b.push(y); }
+    const h=solveLS(A,b); return h&&[h[0]*s,h[1]*s,h[2]*s,h[3]*s,h[4]*s,h[5]*s,0,0,1]; }
+  for(let i=0;i<n;i++){ const [u,v]=src[i], x=dst[i][0]/s, y=dst[i][1]/s; A.push([u,v,1,0,0,0,-x*u,-x*v]); b.push(x); A.push([0,0,0,u,v,1,-y*u,-y*v]); b.push(y); }
+  const h=solveLS(A,b); return h&&[h[0]*s,h[1]*s,h[2]*s,h[3]*s,h[4]*s,h[5]*s,h[6],h[7],1];
+}
+const hApply=(H,u,v)=>{ const w=H[6]*u+H[7]*v+H[8]; return [(H[0]*u+H[1]*v+H[2])/w,(H[3]*u+H[4]*v+H[5])/w]; };
+function hInv(H){ const [a,b,c,d,e,f,g,h,i]=H, A=e*i-f*h, B=-(d*i-f*g), C=d*h-e*g, det=a*A+b*B+c*C; if(Math.abs(det)<1e-15) return null;
+  return [A/det,-(b*i-c*h)/det,(b*f-c*e)/det, B/det,(a*i-c*g)/det,-(a*f-c*d)/det, C/det,-(a*h-b*g)/det,(a*e-b*d)/det]; }
+/* Homographie einer Fläche: Ecken im Plan (Meter, Flächenkoordinaten) → angeklickte Fotopunkte */
+function mtH(fi){ const f=P.faces[fi], g=GEO[fi], p=P.mont&&P.mont.pts&&P.mont.pts[f.id]; if(!g||!p||p.length<Math.min(4,f.pts.length)||p.some(q=>!q)) return null;
+  return homography(g.poly.slice(0,p.length),p); }
+/* Module ins Foto zeichnen (g = 2D-Kontext, k = Anzeigemaßstab) */
+function mtDrawModules(g,k){
+  P.faces.forEach((f,fi)=>{ const H=mtH(fi), geo=GEO[fi]; if(!H||!geo) return;
+    geo.cells.filter(c=>c.active).forEach(c=>{
+      const P4=[[c.u,c.v],[c.u+c.mu,c.v],[c.u+c.mu,c.v+c.mv],[c.u,c.v+c.mv]].map(([u,v])=>hApply(H,u,v).map(z=>z*k));
+      const gr=g.createLinearGradient(P4[0][0],P4[0][1],P4[2][0],P4[2][1]); gr.addColorStop(0,"rgba(34,52,86,.97)"); gr.addColorStop(.55,"rgba(16,26,46,.97)"); gr.addColorStop(1,"rgba(44,64,100,.97)");
+      g.beginPath(); P4.forEach((p,i)=>i?g.lineTo(...p):g.moveTo(...p)); g.closePath(); g.fillStyle=gr; g.fill();
+      /* Zellraster: Hochkant 6 × 10, quer 10 × 6 (bezogen auf u × v) */
+      const nu=c.o==="l"?10:6, nv=c.o==="l"?6:10; g.lineWidth=Math.max(.4,.6*k); g.strokeStyle="rgba(170,190,220,.22)"; g.beginPath();
+      for(let s=1;s<nu;s++){ const u=c.u+c.mu*s/nu, a=hApply(H,u,c.v), b=hApply(H,u,c.v+c.mv); g.moveTo(a[0]*k,a[1]*k); g.lineTo(b[0]*k,b[1]*k); }
+      for(let s=1;s<nv;s++){ const v=c.v+c.mv*s/nv, a=hApply(H,c.u,v), b=hApply(H,c.u+c.mu,v); g.moveTo(a[0]*k,a[1]*k); g.lineTo(b[0]*k,b[1]*k); }
+      g.stroke();
+      g.beginPath(); P4.forEach((p,i)=>i?g.lineTo(...p):g.moveTo(...p)); g.closePath(); g.lineWidth=Math.max(.8,1.1*k); g.strokeStyle="rgba(205,212,222,.9)"; g.stroke();
+    });
+  });
+}
+async function mtLoadPhoto(){
+  const m=P.mont; if(!m||!m.ph) return null; const d=await S.get("photo/"+P.id+"/"+m.ph); if(!d||!d.data) return null;
+  return await new Promise(res=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>res(null); im.src=d.data; });
+}
+const mtReady=()=>!!(P&&P.mont&&P.mont.ph&&P.faces.some((f,fi)=>mtH(fi)));
+/* fertiges Bild (für Kundenblatt / Speichern) */
+async function mtImageUrl(maxW=1800){
+  if(!mtReady()) return null; const im=MT.img&&MT.img.__ph===P.mont.ph?MT.img:await mtLoadPhoto(); if(!im) return null;
+  const k=Math.min(1,maxW/im.naturalWidth), c=document.createElement("canvas"); c.width=Math.round(im.naturalWidth*k); c.height=Math.round(im.naturalHeight*k);
+  const g=c.getContext("2d"); g.drawImage(im,0,0,c.width,c.height); mtDrawModules(g,k); return {url:c.toDataURL("image/jpeg",0.88),w:c.width,h:c.height};
+}
+/* ─── Dialog ─── */
+function mtFace(){ return P.faces.find(f=>f.id===MT.face)||P.faces[0]||null; }
+function mtHint(){
+  const f=mtFace(); if(!MT.img) return "Foto laden: Datei wählen, Screenshot mit Cmd/Strg+V einfügen oder hineinziehen.";
+  if(!f) return "Erst im Schritt „Dach“ eine Dachfläche zeichnen.";
+  const p=(P.mont.pts[f.id]||[]), need=f.pts.length;
+  if(MT.mode==="corners"&&p.length<need) return `Ecke ${p.length+1} von ${need} von „${f.name}“ im Foto anklicken (Nummern wie im kleinen Plan links oben, Ecke 1→2 = Traufe/Bezugskante).`;
+  return "Module ziehen = Raster verschieben (gilt auch im Plan) · Antippen = Modul setzen/entfernen · Eckpunkte lassen sich nachziehen.";
+}
+function mtBox(){
+  const m=mtEnsure(), f=mtFace();
+  return `<h3 style="margin:0">Fotomontage</h3>
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <label class="f" style="flex:1;min-width:180px">Foto<input id="mtFile" type="file" accept="image/*"></label>
+      ${P.photos&&P.photos.length?`<label class="f" style="flex:1;min-width:180px">oder vorhandenes Foto<select id="mtPh"><option value="">–</option>${P.photos.map(p=>`<option value="${esc(p.id)}"${p.id===m.ph?" selected":""}>${esc(p.cat+(p.cap?" · "+p.cap:""))}</option>`).join("")}</select></label>`:""}
+      <label class="f" style="flex:1;min-width:160px">Dachfläche<select id="mtFace">${P.faces.map(x=>`<option value="${x.id}"${f&&x.id===f.id?" selected":""}>${esc(x.name)}${(m.pts[x.id]||[]).length>=Math.min(4,x.pts.length)?" ✓":""}</option>`).join("")}</select></label></div>
+    <div class="row seg"><button type="button" data-mt="corners" class="${MT.mode==="corners"?"on":""}">Ecken setzen</button><button type="button" data-mt="move" class="${MT.mode==="move"?"on":""}">Module verschieben</button>
+      <button type="button" data-mtz="-1" aria-label="Verkleinern">−</button><button type="button" data-mtz="1" aria-label="Vergrößern">+</button>
+      <span class="grow"></span><label class="row"><input type="checkbox" id="mtCust" ${m.cust!==false?"checked":""}> im Kundenblatt zeigen</label></div>
+    <div class="hint" id="mtHint">${esc(mtHint())}</div>
+    <div id="mtWrap" style="flex-shrink:0;min-height:${MT.img?"300px":"80px"};max-height:64vh;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel2)">
+      <canvas id="mtCv" style="display:block;touch-action:none;cursor:crosshair"></canvas>${MT.img?"":`<div class="hint" style="padding:30px;text-align:center">Noch kein Foto</div>`}</div>
+    <div class="row"><button type="button" data-mt="reset">Ecken dieser Fläche neu setzen</button><span class="grow"></span><button type="button" data-mt="png">Bild speichern</button><button type="button" data-m="cancel">Fertig</button></div>`;
+}
+function mtDraw(){
+  const cv=$("#mtCv"); if(!cv) return; const im=MT.img; if(!im){ cv.width=0; cv.height=0; return; }
+  const wrap=$("#mtWrap"), W=Math.max(300,(wrap.clientWidth||900)-2)*MT.zoom, k=W/im.naturalWidth; MT.k=k;
+  cv.width=Math.round(W); cv.height=Math.round(im.naturalHeight*k); const g=cv.getContext("2d");
+  g.drawImage(im,0,0,cv.width,cv.height); mtDrawModules(g,k);
+  const f=mtFace(); if(!f) return; const pts=P.mont.pts[f.id]||[];
+  /* Eckpunkte der gewählten Fläche */
+  g.lineWidth=2; g.strokeStyle="#ffe14d"; if(pts.length>1){ g.beginPath(); pts.forEach((p,i)=>i?g.lineTo(p[0]*k,p[1]*k):g.moveTo(p[0]*k,p[1]*k)); if(pts.length===f.pts.length) g.closePath(); g.setLineDash([6,4]); g.stroke(); g.setLineDash([]); }
+  if(pts.length>1){ g.beginPath(); g.moveTo(pts[0][0]*k,pts[0][1]*k); g.lineTo(pts[1][0]*k,pts[1][1]*k); g.lineWidth=3; g.strokeStyle="#ff8a1f"; g.stroke(); }
+  pts.forEach((p,i)=>{ g.beginPath(); g.arc(p[0]*k,p[1]*k,7,0,7); g.fillStyle="#ffe14d"; g.fill(); g.fillStyle="#111"; g.font="bold 10px sans-serif"; g.textAlign="center"; g.textBaseline="middle"; g.fillText(String(i+1),p[0]*k,p[1]*k); });
+  /* kleiner Plan links oben: Ecken nummeriert, nächste Ecke hervorgehoben */
+  const geo=GEO[P.faces.indexOf(f)]; if(geo&&geo.poly.length){ const us=geo.poly.map(q=>q[0]), vs=geo.poly.map(q=>q[1]), bw=Math.max(...us)-Math.min(...us)||1, bh=Math.max(...vs)-Math.min(...vs)||1, s=Math.min(110/bw,80/bh);
+    /* Plan so zeigen, wie man die Fläche von unten (vor der Traufe stehend) sieht: Traufe unten, rechts = rechts.
+       Blickrichtung d = v-Achse; „rechts“ im Bild (y nach unten) = d um 90° im Uhrzeigersinn → (−dy, dx) */
+    const fr=frame(f), sg=(-fr.ux*fr.vy+fr.uy*fr.vx)>=0?1:-1, umin=Math.min(...us), umax=Math.max(...us), vmin=Math.min(...vs);
+    const X=u=>14+(sg>0?u-umin:umax-u)*s, Y=v=>14+bh*s-(v-vmin)*s;
+    g.fillStyle="rgba(10,20,26,.72)"; g.fillRect(6,6,bw*s+16,bh*s+20);
+    g.beginPath(); geo.poly.forEach((q,i)=>i?g.lineTo(X(q[0]),Y(q[1])):g.moveTo(X(q[0]),Y(q[1]))); g.closePath(); g.strokeStyle="#ffe14d"; g.lineWidth=1.5; g.stroke();
+    g.beginPath(); g.moveTo(X(geo.poly[0][0]),Y(geo.poly[0][1])); g.lineTo(X(geo.poly[1][0]),Y(geo.poly[1][1])); g.strokeStyle="#ff8a1f"; g.lineWidth=3; g.stroke();
+    geo.poly.forEach((q,i)=>{ const nx=i===pts.length&&MT.mode==="corners"; g.beginPath(); g.arc(X(q[0]),Y(q[1]),nx?8:6,0,7); g.fillStyle=nx?"#4cf":"#ffe14d"; g.fill(); g.fillStyle="#111"; g.font="bold 9px sans-serif"; g.textAlign="center"; g.textBaseline="middle"; g.fillText(String(i+1),X(q[0]),Y(q[1])); });
+  }
+  const h=$("#mtHint"); if(h) h.textContent=mtHint();
+}
+async function mtSetPhoto(file){
+  if(!file||!/^image\//.test(file.type)) return;
+  const data=await new Promise((res,rej)=>{ const fr=new FileReader(); fr.onerror=rej; fr.onload=()=>{ const im=new Image(); im.onerror=()=>rej(new Error("Bild nicht lesbar"));
+    im.onload=()=>{ const k=Math.min(1,2000/Math.max(im.naturalWidth,im.naturalHeight)), c=document.createElement("canvas"); c.width=Math.round(im.naturalWidth*k); c.height=Math.round(im.naturalHeight*k);
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height); res(c.toDataURL("image/jpeg",0.86)); }; im.src=fr.result; }; fr.readAsDataURL(file); });
+  const id=uid("ph"); await S.set("photo/"+P.id+"/"+id,{data}); if(!Array.isArray(P.photos)) P.photos=[]; P.photos.push({id,cat:MT_CAT,cap:"",ts:new Date().toISOString()});
+  const m=mtEnsure(); m.ph=id; m.pts={}; MT.mode="corners"; changed(); await mtUsePhoto();
+}
+async function mtUsePhoto(){ MT.img=await mtLoadPhoto(); if(MT.img) MT.img.__ph=P.mont.ph; mtRefresh(); }
+function mtRefresh(){ const box=document.querySelector(".mback.mt .mbox"); if(box){ const sc=$("#mtWrap")?[$("#mtWrap").scrollLeft,$("#mtWrap").scrollTop]:null; box.innerHTML=mtBox(); if(sc){ $("#mtWrap").scrollLeft=sc[0]; $("#mtWrap").scrollTop=sc[1]; } } requestAnimationFrame(mtDraw); }
+function openMontage(){
+  if(!P.faces.length){ toast("Erst im Schritt „Dach“ eine Dachfläche zeichnen"); return; }
+  const m=mtEnsure(); MT.face=(P.faces.find(f=>f.id===UI.selFace)||P.faces[0]).id;
+  if(!MT.img||MT.img.__ph!==m.ph) MT.img=null;
+  const f0=mtFace(); MT.mode=f0&&(m.pts[f0.id]||[]).length>=Math.min(4,f0.pts.length)?"move":"corners";
+  const dlg=modal("Fotomontage","","Fertig",()=>true); dlg.classList.add("mt"); const box=dlg.querySelector(".mbox"); box.style.width="min(1200px,100%)"; box.innerHTML=mtBox();
+  if(m.ph&&!MT.img) mtUsePhoto(); else requestAnimationFrame(mtDraw);
+  const onPaste=e=>{ const it=[...((e.clipboardData||{}).items||[])].find(i=>/^image\//.test(i.type)); if(it){ e.preventDefault(); mtSetPhoto(it.getAsFile()); } };
+  document.addEventListener("paste",onPaste); new MutationObserver((_,o)=>{ if(!dlg.isConnected){ document.removeEventListener("paste",onPaste); o.disconnect(); renderSide(); draw(); } }).observe(document.body,{childList:true});
+  dlg.addEventListener("dragover",e=>{ e.preventDefault(); e.stopPropagation(); });
+  dlg.addEventListener("drop",e=>{ e.preventDefault(); e.stopPropagation(); DROP.depth=0; dropShow(false); const f=[...e.dataTransfer.files].find(x=>/^image\//.test(x.type)); if(f) mtSetPhoto(f); });
+  dlg.addEventListener("change",async e=>{ const t=e.target;
+    if(t.id==="mtFile"&&t.files[0]) mtSetPhoto(t.files[0]);
+    if(t.id==="mtPh"&&t.value){ m.ph=t.value; m.pts={}; MT.mode="corners"; changed(); mtUsePhoto(); }
+    if(t.id==="mtFace"){ MT.face=t.value; const f=mtFace(); MT.mode=(m.pts[f.id]||[]).length>=Math.min(4,f.pts.length)?"move":"corners"; mtRefresh(); }
+    if(t.id==="mtCust"){ m.cust=t.checked; scheduleSave(); } });
+  dlg.addEventListener("click",async e=>{ const b=e.target.closest("[data-mt],[data-mtz]"); if(!b) return;
+    if(b.dataset.mtz){ MT.zoom=clampNum(MT.zoom*(b.dataset.mtz>0?1.5:1/1.5),1,6); mtDraw(); return; }
+    const a=b.dataset.mt;
+    if(a==="corners"||a==="move"){ MT.mode=a; dlg.querySelectorAll("[data-mt=corners],[data-mt=move]").forEach(x=>x.classList.toggle("on",x===b)); mtDraw(); }
+    else if(a==="reset"){ const f=mtFace(); if(f){ delete m.pts[f.id]; MT.mode="corners"; changed(); mtRefresh(); } }
+    else if(a==="png"){ const r=await mtImageUrl(4000); if(!r){ toast("Erst Foto laden und Ecken setzen"); return; } const blob=await (await fetch(r.url)).blob();
+      const name=("Ansicht_"+(P.name||"Projekt")).replace(/[^\wäöüÄÖÜß-]+/g,"_")+".jpg"; const dl=await (window.claude?.use?.("downloads")??null);
+      if(dl) await dl.save({filename:name,data:blob}); else await saveFile(name,blob); }
+  });
+  /* Zeiger: Ecken setzen/ziehen, Module ziehen, antippen */
+  dlg.addEventListener("pointerdown",e=>{
+    if(e.target.id!=="mtCv"||!MT.img) return; const cv=e.target, r=cv.getBoundingClientRect(), x=(e.clientX-r.left)/MT.k, y=(e.clientY-r.top)/MT.k, f=mtFace(); if(!f) return;
+    const pts=m.pts[f.id]=m.pts[f.id]||[], near=pts.findIndex(p=>Math.hypot(p[0]-x,p[1]-y)*MT.k<12);
+    cv.setPointerCapture(e.pointerId);
+    if(near>=0){ MT.drag={type:"corner",i:near}; return; }
+    if(MT.mode==="corners"&&pts.length<f.pts.length){ pts.push([x,y]); if(pts.length===f.pts.length){ MT.mode="move"; mtRefresh(); changed(); } else mtDraw(); MT.drag=null; return; }
+    /* Fläche unter dem Zeiger (auch andere Flächen mit gesetzten Ecken) */
+    for(const [fi,ff] of P.faces.entries()){ const H=mtH(fi), Hi=H&&hInv(H); if(!Hi) continue; const uv=hApply(Hi,x,y);
+      if(inPoly(uv,GEO[fi].poly)){ MT.drag={type:"move",fi,uv0:uv,off:[ff.offU||0,ff.offV||0],x0:e.clientX,y0:e.clientY,moved:false}; return; } }
+    MT.drag=null;
+  });
+  dlg.addEventListener("pointermove",e=>{ const d=MT.drag; if(!d||e.target.id!=="mtCv") return; const r=e.target.getBoundingClientRect(), x=(e.clientX-r.left)/MT.k, y=(e.clientY-r.top)/MT.k;
+    if(d.type==="corner"){ const f=mtFace(); m.pts[f.id][d.i]=[x,y]; d.moved=true; requestAnimationFrame(mtDraw); return; }
+    if(Math.hypot(e.clientX-d.x0,e.clientY-d.y0)<5&&!d.moved) return; d.moved=true;
+    const H=mtH(d.fi), Hi=H&&hInv(H); if(!Hi) return; const uv=hApply(Hi,x,y), f=P.faces[d.fi];
+    f.offU=Math.round((d.off[0]+uv[0]-d.uv0[0])*100)/100; f.offV=Math.round((d.off[1]+uv[1]-d.uv0[1])*100)/100;
+    if(!d.raf){ d.raf=requestAnimationFrame(()=>{ d.raf=0; recompute(); mtDraw(); }); }
+  });
+  dlg.addEventListener("pointerup",e=>{ const d=MT.drag; MT.drag=null; if(!d) return;
+    if(d.type==="move"&&!d.moved){ /* Antippen: Modul setzen/entfernen wie im Plan */
+      const H=mtH(d.fi), Hi=H&&hInv(H), f=P.faces[d.fi]; if(!Hi) return; const uv=d.uv0;
+      const c=GEO[d.fi].cells.find(c=>uv[0]>=c.u&&uv[0]<=c.u+c.mu&&uv[1]>=c.v&&uv[1]<=c.v+c.mv);
+      if(c){ const t=c.i+","+c.j, s=new Set(f.tog||[]); s.has(t)?s.delete(t):s.add(t); f.tog=[...s]; }
+    }
+    changed(); mtDraw();
+  });
 }
 </script>
 <script>
