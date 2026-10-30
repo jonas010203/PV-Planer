@@ -1,8 +1,8 @@
 {
   "app": {
-    "version": "2026.10.08.1",
+    "version": "2026.10.30.1",
     "file": "Dachplaner-PV.html",
-    "notes": "Fotomontage: Street-View-Screenshot oder Foto laden, Dachecken anklicken – die geplanten Module erscheinen perspektivisch richtig im Foto, lassen sich dort verschieben und einzeln setzen/entfernen. Das Bild kommt ins Kundenblatt. Dazu Flachdach (K2 Dome 6) und Maße aus Foto."
+    "notes": "Schritt „Module“: deutlicher Hinweis, wenn der Maßstab fehlt oder auf eine Fläche kein Modul passt, mit Fläche und Modulmaß und Sprung zum Maßstab."
   },
   "library": {
     "version": "2026.10.04.2",

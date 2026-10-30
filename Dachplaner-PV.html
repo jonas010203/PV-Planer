@@ -2083,6 +2083,7 @@ function renderNav(){
   el.innerHTML=(i>0?`<button data-nav="${STEPS[i-1]}" type="button">← Zurück</button>`:"")+`<span class="msg ${l}">${esc(m)}</span>`+(i<STEPS.length-1?`<button class="pri" data-nav="${STEPS[i+1]}" type="button">Weiter: ${STEP_LABEL[STEPS[i+1]]} →</button>`:"");
 }
 $("#sideNav").addEventListener("click",e=>{ const b=e.target.closest("[data-nav]"); if(b) setTab(b.dataset.nav); });
+$("#sideBody").addEventListener("click",e=>{ const b=e.target.closest("button[data-nav]"); if(b&&P) setTab(b.dataset.nav); }); /* Sprung-Knöpfe in Hinweisen */
 /* ───────── Auswahlliste statt <select size=…> ─────────
    Native Listboxen schneiden lange Namen ab (z. B. Ziegeltypen) und sind auf dem iPad schlecht zu treffen.
    Jede Listbox in der Seitenleiste bekommt eine sichtbare, umbrechende Liste; das <select> bleibt versteckt
@@ -2270,6 +2271,12 @@ function renderSide(){
       <select id="modSel" data-p="modId" size="7" aria-label="Modultyp">${optHtml(LIB.modules,P.modId)}</select>
       ${M?`<div class="stat"><span>Gewählt</span><b>${esc(M.name)}</b><span>Maße</span><b>${M.h} × ${M.w} mm</b><span>U_OC / I_SC</span><b>${M.voc} V / ${M.isc} A</b><span>U_MPP / I_MPP</span><b>${M.vmpp} V / ${M.impp} A</b></div><div class="hint">${M.ok?"Werte aus dem Datenblatt.":"Werte sind Näherungen, bitte prüfen."} Weitere Module unter „Bibliothek“.</div>`:`<div class="banner">Kein Modul gewählt.</div>`}</div>
     <div class="sec"><h2>Dachflächen</h2><div class="list">${P.faces.map((x,i)=>{const n=GEO[i]?GEO[i].cells.filter(c=>c.active).length:0; return `<div class="${x.id===UI.selFace?"sel":""}" data-act="selFace" data-id="${x.id}"><span class="grow">${esc(x.name)}</span><span class="mono">${n} Mod.</span></div>`;}).join("")}</div></div>`;
+    /* Warum keine Module? Meist fehlt der Maßstab (dann gilt ein Ersatzwert von 2 cm/px) oder die Fläche ist zu klein */
+    if(P.faces.length&&!P.scale) h+=`<div class="sec"><div class="banner">Maßstab fehlt. Bis er gesetzt ist, rechnet das Programm mit 2 cm pro Pixel, die Dachflächen sind dann meist viel zu klein und es passen keine Module.<br>
+      Unter „Karte“ eine bekannte Strecke anklicken (z. B. Hauswand aus dem Bayernatlas) oder unter „Dach“ die Maße der Fläche vorgeben.</div><button type="button" data-nav="karte">Zum Maßstab („Karte“)</button></div>`;
+    if(f){ const g=GEO[P.faces.indexOf(f)];
+      if(g&&g.poly.length&&!g.cells.some(c=>c.fit)){ const d=dimNow(f);
+        h+=`<div class="sec"><div class="banner">Auf „${esc(f.name)}“ passt kein Modul: Die Fläche ist im Programm nur ${fmt(d.eave,2)} m × ${fmt(d.raf,2)} m groß${M?`, ein Modul braucht ${fmt(M.w/1000,2)} m × ${fmt(M.h/1000,2)} m plus Randabstände`:""}. ${P.scale?"Maße unter „Dach“ und die Randabstände unten prüfen.":"Erst den Maßstab setzen."}</div></div>`; } }
     if(f) h+=`<div class="sec"><h2>Belegung ${esc(f.name)}</h2>
       <label class="f">Ausrichtung der Module<select id="fOrient" data-f="orient"><option value="p"${f.orient==="p"?" selected":""}>Hochkant</option><option value="l"${f.orient==="l"?" selected":""}>Quer</option>${f.flat?"":`<option value="m"${f.orient==="m"?" selected":""}>Gemischt (je Reihe wählbar)</option>`}</select></label>
       ${f.orient==="m"?rowOriHtml(f):""}
@@ -3166,7 +3173,7 @@ $("#undoBtn").onclick=()=>undoStep(true); $("#redoBtn").onclick=()=>undoStep(fal
     "library":{"version":"2026.09.21","file":"library.json","notes":"…"}}
    Bibliothek-Updates (neue Module, Wechselrichter, Speicher, Artikelpreise) werden direkt eingespielt,
    Programm-Updates als neue Datei heruntergeladen. Projekte und eigene Einträge bleiben erhalten. */
-const APP_VERSION="2026.10.08.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.04.2";
+const APP_VERSION="2026.10.30.1", UPDATE_URL="https://jonas010203.github.io/PV-Planer", LIB_BUILD="2026.10.04.2";
 const UPD={info:null,appNew:false,libNew:false,checking:false};
 const IS_APP=()=>!S.db;
 /* Installierte Web-App (GitHub Pages): Programm-Updates kommen beim nächsten Start von selbst,
